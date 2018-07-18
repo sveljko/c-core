@@ -72,7 +72,7 @@ static void save_ip(pubnub_t* pb)
     PUBNUB_ASSERT_OPT(pb->pal.ip_len > 0);
     BIO_ADDR_rawaddress(ap, pb->pal.ip, &pb->pal.ip_len);
 #else
-#error Don't have BIO_get_conn_ip nor BIO_get_conn_address - can't get the IP address of the connection
+#error Don_t have BIO_get_conn_ip nor BIO_get_conn_address - can_t get the IP address of the connection
 #endif
 }
 
@@ -91,7 +91,7 @@ static void restore_ip(pubnub_t* pb)
     BIO_set_conn_address(pb->pal.socket, ap);
     BIO_ADDR_free(ap);
 #else
-#error Don't have BIO_set_conn_ip nor BIO_set_conn_address - can't set the IP address of the connection
+#error Don_t have BIO_set_conn_ip nor BIO_set_conn_address - can_t set the IP address of the connection
 #endif
 }
 
