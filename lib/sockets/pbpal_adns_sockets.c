@@ -8,6 +8,9 @@
 
 #if !defined(_WIN32)
 #include <arpa/inet.h>
+#define CAST
+#else
+#define CAST (int*)
 #endif
 
 #include <stdint.h>
@@ -239,7 +242,7 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr_in* resolv
     int                i, msg_size;
     unsigned           addr_size = sizeof *dest;
 
-    msg_size = recvfrom(skt, (char*)buf, sizeof buf, 0, dest, &addr_size);
+    msg_size = recvfrom(skt, (char*)buf, sizeof buf, 0, dest, CAST&addr_size);
     if (msg_size <= 0) {
         return socket_would_block() ? +1 : -1;
     }
