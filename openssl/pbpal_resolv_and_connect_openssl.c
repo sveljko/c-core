@@ -22,9 +22,13 @@
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 
+#include <string.h>
+
+
 #define HTTP_PORT 80
 
 #define DNS_PORT 53
+
 
 static int print_to_pubnub_log(const char* s, size_t len, void* p)
 {
@@ -125,8 +129,8 @@ static enum pbpal_resolv_n_connect_result start_dns_resolution(pubnub_t*   pb,
     }
 
     pbpal_set_socket_blocking_io(pb->pal.dns_socket, 0);
-    dest.sin_family         = AF_INET;
-    dest.sin_port           = htons(DNS_PORT);
+    dest.sin_family = AF_INET;
+    dest.sin_port   = htons(DNS_PORT);
     get_dns_ip(&dest);
     error = send_dns_query(
         pb->pal.dns_socket, (struct sockaddr*)&dest, (unsigned char*)origin);
@@ -354,7 +358,7 @@ static enum pbpal_resolv_n_connect_result finish_resolv_and_connect(pubnub_t* pb
 
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     PUBNUB_LOG_TRACE("finish_resolv_and_connect(pb=%p)\n", pb);
-    
+
 #if PUBNUB_PROXY_API
     switch (pb->proxy_type) {
     case pbproxyHTTP_CONNECT:
@@ -567,6 +571,7 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t* pb)
 enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t* pb)
 {
 #ifdef PUBNUB_CALLBACK_API
+    char                  s[20];
     SSL*                  ssl = NULL;
     struct sockaddr_in    dns_server;
     struct sockaddr_in    dest;
@@ -587,7 +592,7 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t* pb)
     pb->pal.dns_socket = SOCKET_INVALID;
 
     memcpy(pb->pal.ip, &dest.sin_addr.s_addr, 4);
-    restore_ip(pb);
+    BIO_set_conn_hostname(pb->pal.socket, inet_ntop(AF_INET, pb->pal.ip, s, sizeof s));
 
     BIO_get_ssl(pb->pal.socket, &ssl);
     if (NULL == ssl) {
