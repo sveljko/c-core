@@ -1,6 +1,9 @@
+language: c
+os:
+  - linux
+  - osx
 dist: trusty
 sudo: false
-language: c
 compiler:
   - clang
   - gcc
@@ -9,3 +12,6 @@ script:
   - posix/pubnub_fntest
   - openssl/pubnub_fntest
   - cpp/fntest_runner
+env:
+  global:
+    secure: 20IM8uKomTtzvcu7lBpY7y0JUCP2fCArBx1gh42DkkqGMNk8p6NFrbH47DVc2Z5cQovpWvfa/Jr8gfTPuSlx+WdFh01Vc90z7rOrT/XrvrClNi3fyV+qdYXs7ha6qhKqhUDSTLUN+qWvYZrPxrzKUhIUIocKVX2EDmJv4xCrBs17TEzNUxX1x0+xYDYXktP1E0QFPUn1/2gELDsG8KT2xwLPHRimgBffizKElbzmnO+dWgAyPgGiRaPUequdyv3sybbkwNmD8dsSKIXBeqM0medjUWmegq6xC+39MlB3BGV8XEsJyZzlmoTGVXr0kjOl38Jkv9nbsq66CsUR1bGpU6CJzXd1PAjSTZD4cvcp7qixTP0wMYfgbkjJ1CRSsETsXpOLsxdjCVojVkdOqHDvEX4BixyNASiXfUW7BKAJlVAx+u+URqOy2v5pKvqL1ZToD+TfHGjQQVjtMp47yPvWEiEUmHQRUBbLnlO0uFa9vga2FkMeqsTBGcnklh485mqKqqSDYBt2A3o+JMvI1vj+6/JddvvX6/3Zo+AyPOcUzncs0OCrtJLMr3kDv4AyoPvVf2Ec7IWJ9il9ChxgGaU8l/LEEu+Dsa8RVtT8v4xPLnzKwILY64ioWPSe8YECcAB98GiOMuu/VmQ0DMy9dNzqRitQoKaPz6wugCwKJqTloZ8=
