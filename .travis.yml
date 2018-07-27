@@ -1,11 +1,18 @@
+language: c
+os:
+- linux
+- osx
 dist: trusty
 sudo: false
-language: c
 compiler:
-  - clang
-  - gcc
+- clang
+- gcc
 script:
-  - make -f posix.mk
-  - posix/pubnub_fntest
-  - openssl/pubnub_fntest
-  - cpp/fntest_runner
+- make -f posix.mk
+- posix/pubnub_fntest
+- openssl/pubnub_fntest
+- cpp/fntest_runner
+env:
+  global:
+  - secure: 20IM8uKomTtzvcu7lBpY7y0JUCP2fCArBx1gh42DkkqGMNk8p6NFrbH47DVc2Z5cQovpWvfa/Jr8gfTPuSlx+WdFh01Vc90z7rOrT/XrvrClNi3fyV+qdYXs7ha6qhKqhUDSTLUN+qWvYZrPxrzKUhIUIocKVX2EDmJv4xCrBs17TEzNUxX1x0+xYDYXktP1E0QFPUn1/2gELDsG8KT2xwLPHRimgBffizKElbzmnO+dWgAyPgGiRaPUequdyv3sybbkwNmD8dsSKIXBeqM0medjUWmegq6xC+39MlB3BGV8XEsJyZzlmoTGVXr0kjOl38Jkv9nbsq66CsUR1bGpU6CJzXd1PAjSTZD4cvcp7qixTP0wMYfgbkjJ1CRSsETsXpOLsxdjCVojVkdOqHDvEX4BixyNASiXfUW7BKAJlVAx+u+URqOy2v5pKvqL1ZToD+TfHGjQQVjtMp47yPvWEiEUmHQRUBbLnlO0uFa9vga2FkMeqsTBGcnklh485mqKqqSDYBt2A3o+JMvI1vj+6/JddvvX6/3Zo+AyPOcUzncs0OCrtJLMr3kDv4AyoPvVf2Ec7IWJ9il9ChxgGaU8l/LEEu+Dsa8RVtT8v4xPLnzKwILY64ioWPSe8YECcAB98GiOMuu/VmQ0DMy9dNzqRitQoKaPz6wugCwKJqTloZ8=
+  - secure: KmTc+tHNrcgzjWvOfbAvv5iJBZyQrwfXstPR0+5h9QZUXKM2MZ91gM0ZZKwspnO4fLIzKTxl3YjVwfEceuET0Nye0o5gNqdG7fdTSIkuja2EmccNANvOqLQpmGzVCaHa3xShHlFUudDByoI+Cexe9fDfIeonBc/knr45pUwhakvYBV9lne8YrEMlqkwaRHeaKJUlGUaMy55VohKfAmZfAkVkxDL6/oT27211vY6b5rOubIA3PajhA9ZLxpxcFEW8E9jSzkWqgIO5/RQpusS/5csrcqTiJ2vRQrX6Yi9KTFaG9sr0hT9y3wB/7DZKEsl3tzDZbALG1d0XId8n0OmKLHh5U2YE1TExBRrIBDQj2Qf3y21KLo5NMh2KyPQ2rkLwigPnYd+VC2G748jpftkr5D/iMK3RVAphT0Y49KsXZFDz+V9cNPFpp77xXw1lj/Zw0SkfYS/ThQJtA7AKD4yinyQtyq7uZM6XDP3zg8xVW5aNGI/C9NsWARU4WdZz+sJ0pJ/JVuEfJfLC1loMgp3HX+pWJHiodid4M9epk5qtpv2K7FpBYOMoBYj0u4baQaIXqzfyZYS43gx7l3WKXSoTItm0vD9TMKJ0np9OqiUgKvJ440Q4j1/4YBTIaJ31y+H0RK8M1lIao6v/GQVwy8hgZTcrx4aZBPmA+uHFKkWJM1U=
