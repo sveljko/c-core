@@ -4,4 +4,8 @@ language: c
 compiler:
   - clang
   - gcc
-script: make -f posix.mk
+script:
+  - make -f posix.mk
+  - posix/pubnub_fntest
+  - openssl/pubnub_fntest
+  - cpp/fntest_runner
