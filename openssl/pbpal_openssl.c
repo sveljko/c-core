@@ -369,11 +369,16 @@ int pbpal_close(pubnub_t* pb)
     pb->unreadlen = 0;
     if (pb->pal.socket != NULL) {
         pbntf_lost_socket(pb);
+#ifdef PUBNUB_CALLBACK_API
+        if(pb->pal.dns_socket != SOCKET_INVALID) {
+            socket_close(pb->pal.dns_socket);
+            pb->pal.dns_socket = SOCKET_INVALID;
+        }
+#endif
         BIO_free_all(pb->pal.socket);
         pb->pal.socket = NULL;
         pb->sock_state = STATE_NONE;
     }
-
     PUBNUB_LOG_TRACE("pbpal_close(pb=%p) returning 0\n", pb);
 
     return 0;
