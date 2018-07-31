@@ -29,21 +29,23 @@ SOURCEFILES += ../lib/miniz/miniz_tinfl.c ../core/pbgzip_decompress.c
 OBJFILES += miniz_tinfl.o pbgzip_decompress.o
 endif
 
+CFLAGS = -g -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_WARNING  -Wall -D PUBNUB_THREADSAFE -D PUBNUB_PROXY_API=$(USE_PROXY)
+# -g enables debugging, remove to get a smaller executable
+# -fsanitize=address Use AddressSanitizer
+# -fsanitize=thread Use ThreadSanitizer
+
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
 SOURCEFILES += ../posix/monotonic_clock_get_time_darwin.c
 OBJFILES += monotonic_clock_get_time_darwin.o
-LDLIBS=-lpthread -lssl -lcrypto
+LDLIBS = -lpthread -lssl -lcrypto -L/usr/local/opt/openssl/lib
+CFLAGS += -I/usr/local/opt/openssl/include
 else
 SOURCEFILES += ../posix/monotonic_clock_get_time_posix.c
 OBJFILES += monotonic_clock_get_time_posix.o
 LDLIBS=-lrt -lpthread -lssl -lcrypto
 endif
 
-CFLAGS = -g -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_WARNING  -Wall -D PUBNUB_THREADSAFE -D PUBNUB_PROXY_API=$(USE_PROXY)
-# -g enables debugging, remove to get a smaller executable
-# -fsanitize=address Use AddressSanitizer
-# -fsanitize=thread Use ThreadSanitizer
 
 INCLUDES=-I .. -I .
 

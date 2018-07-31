@@ -132,5 +132,18 @@ int main(int argc, char *argv[])
     char const *origin = (argc > 3) ? argv[3] : "pubsub.pubnub.com";
     unsigned max_conc_thread = (argc > 4) ? atoi(argv[4]) : 1;
 
+    char const* envar = getenv("PUBNUB_PUBKEY");
+    if (envar != NULL) {
+         pubkey = envar;
+    }
+    envar = getenv("PUBNUB_KEYSUB");
+    if (envar != NULL) {
+        keysub = envar;
+    }
+    envar = getenv("PUBNUB_ORIGIN");
+    if (envar != NULL) {
+        origin = envar;
+    }
+
     return run_tests(m_aTest, TEST_COUNT, max_conc_thread, pubkey, keysub, origin);
 }
