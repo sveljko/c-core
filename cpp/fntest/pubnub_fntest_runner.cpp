@@ -165,14 +165,19 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
 }
 
 
+static char const* getenv_ex(char const *env, char const *dflt)
+{
+    char const* s = getenv(env);
+    return (NULL == s) ? dflt : strdup(s);
+}
+
+
 int main(int argc, char *argv[])
 {
-    char const *pubkey = (argc > 1) ? argv[1] : "demo";
-    char const *keysub = (argc > 2) ? argv[2] : "demo";
-    char const *origin = (argc > 3) ? argv[3] : "pubsub.pubnub.com";
+    char const *pubkey = getenv_ex("PUBNUB_PUBKEY", (argc > 1) ? argv[1] : "demo");
+    char const *keysub = getenv_ex("PUBNUB_KEYSUB", (argc > 2) ? argv[2] : "demo");
+    char const *origin = getenv_ex("PUBNUB_ORIGIN", (argc > 3) ? argv[3] : "pubsub.pubnub.com");
     unsigned max_conc_thread = (argc > 4) ? std::atoi(argv[4]) : 1;
-
-    std::cout << "Using: pubkey == " << pubkey << ", keysub == " << keysub << ", orign: " << origin << std::endl;
 
     return run_tests(m_aTest, TEST_COUNT, max_conc_thread, pubkey, keysub, origin);
 }
