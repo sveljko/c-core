@@ -354,7 +354,7 @@ enum pubnub_res pbpal_read_status(pubnub_t* pb)
 
 bool pbpal_closed(pubnub_t* pb)
 {
-    return pb->pal.socket == NULL;
+    return (pb->pal.socket == NULL) && (pb->pal.dns_socket == SOCKET_INVALID);
 }
 
 
@@ -368,13 +368,19 @@ int pbpal_close(pubnub_t* pb)
 {
     pb->unreadlen = 0;
     if (pb->pal.socket != NULL) {
-        pbntf_lost_socket(pb);
 #ifdef PUBNUB_CALLBACK_API
-        if(pb->pal.dns_socket != SOCKET_INVALID) {
-            socket_close(pb->pal.dns_socket);
-            pb->pal.dns_socket = SOCKET_INVALID;
-        }
+        || (pb->pal.dns_socket != SOCKET_INVALID)
 #endif
+       ) {
+        pbntf_lost_socket(pb);
+    }
+#ifdef PUBNUB_CALLBACK_API
+    if(pb->pal.dns_socket != SOCKET_INVALID) {
+        socket_close(pb->pal.dns_socket);
+        pb->pal.dns_socket = SOCKET_INVALID;
+    }
+#endif
+    if (pb->pal.socket != NULL) {
         BIO_free_all(pb->pal.socket);
         pb->pal.socket = NULL;
         pb->sock_state = STATE_NONE;
@@ -387,11 +393,27 @@ int pbpal_close(pubnub_t* pb)
 
 void pbpal_free(pubnub_t* pb)
 {
+    /* While this should not happen, it doesn't hurt to 'catch' it, if it happens..
+     */
+    if (pb->pal.socket != NULL) {
+#ifdef PUBNUB_CALLBACK_API
+        || (pb->pal.dns_socket != SOCKET_INVALID)
+#endif
+       ) {
+        pbntf_lost_socket(pb);
+    }
+#ifdef PUBNUB_CALLBACK_API
+    if(pb->pal.dns_socket != SOCKET_INVALID) {
+        PUBNUB_LOG_TRACE("pbpal_free(%p): Unexpected pb->pal.dns_socket == %p\n",
+                         pb,
+                         pb->pal.dns_socket);
+        socket_close(pb->pal.dns_socket);
+    }
+#endif
     if (pb->pal.socket != NULL) {
         PUBNUB_LOG_TRACE("pbpal_free(%p): Unexpected pb->pal.socket == %p\n",
                          pb,
                          pb->pal.socket);
-        pbntf_lost_socket(pb);
         BIO_free_all(pb->pal.socket);
     }
 
