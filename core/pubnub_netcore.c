@@ -171,10 +171,11 @@ static enum pubnub_res parse_pubnub_result(struct pubnub_* pb)
     enum pubnub_res pbres = m_aParseResponse[pb->trans](&pb->core);
     if (pbres != PNR_OK) {
         PUBNUB_LOG_WARNING("pb=%p parsing response for transaction type #%d "
-                           "returned error %d\n",
+                           "returned error %d\nResponse was: %s\n",
                            pb,
                            pb->trans,
-                           pbres);
+                           pbres,
+                           pb->core.http_reply);
     }
 
     return pbres;
