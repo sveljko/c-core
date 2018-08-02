@@ -6,7 +6,7 @@
 #include "core/pubnub_blocking_io.h"
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 1200
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 1500
 
 
 TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
