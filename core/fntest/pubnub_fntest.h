@@ -25,7 +25,7 @@ void pnfntst_stop_timer(pnfntst_timer_t *t);
 #define pnfntst_restart_timer(t, ms) pnfntst_stop_timer(t), pnfntst_start_timer(t, ms)
 int pnfntst_reset_timer(pnfntst_timer_t *t);
 bool pnfntst_timer_is_running(pnfntst_timer_t *t);
-void pnfntst_free_timer(pnfntst_timer_t *t);
+void pnfntst_free_timer(void* t);
 
 
 #include "core/pubnub_api_types.h"
