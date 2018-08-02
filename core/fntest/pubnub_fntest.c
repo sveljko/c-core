@@ -43,12 +43,19 @@ bool pnfntst_got_messages(pubnub_t* p, ...)
         if (NULL == msg) {
             break;
         }
+        printf("got_messages: message '%s' on channel '%s'\n",
+               msg,
+               pubnub_get_channel(p));
         for (i = 0; i < count; ++i) {
             if ((missing & (0x01 << i)) && (strcmp(msg, aMsgs[i]) == 0)) {
                 missing &= ~(0x01 << i);
                 break;
             }
         }
+    }
+
+    if (missing) {
+        printf("got messages: missing bitmap: %X\n", missing);
     }
     return !missing;
 }
