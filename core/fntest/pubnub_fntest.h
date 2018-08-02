@@ -38,20 +38,20 @@ void pnfntst_free_timer(pnfntst_timer_t *t);
 bool pnfntst_got_messages(pubnub_t *p, ...);
 
 
-/** Returns whether the @p message specified as a string is the
-    next in the buffer of received messages in the the context @p p
-    and if it was received on the given @p channel (also a string).
-    Don't use this function after a subscribe to a single channel,
-    because in that case there is no channel information in the
-    message buffer, and it will fail, even if the messages was
-    really received from the channel at hand.
-    
+/** Returns whether the @p message specified as a string is the next
+    in the buffer of received messages in the the context @p p and if
+    it was received on the given @p channel (also a string).  Don't
+    use this function after a subscribe to a single channel, because
+    in that case there is no channel information in the message
+    buffer, and it will fail, even if the messages was really received
+    from the channel at hand.
  */
 bool pnfntst_got_message_on_channel(pubnub_t *p, char const *message, char const *channel);
 
 
 bool pnfntst_subscribe_and_check(pubnub_t *p, char const *chan, char const*chgroup, unsigned ms, ...);
-void pnfntst_free(pubnub_t *p);
+
+void pnfntst_free(void* p);
 
 #include "fntest/pubnub_fntest_pal.h"
 
