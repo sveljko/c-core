@@ -135,11 +135,11 @@ static int run_tests(struct TestData aTest[],
                failed_count,
                indete_count);
         for (next_test = 0; next_test < failed_count; ++next_test) {
-            printf("\x1b[41m Test '%s' failed!\x1b[m\n",
+            printf("Test \x1b[41m '%s' \x1b[m failed!\n",
                    aTest[next_test].name);
         }
         for (next_test = 0; next_test < indete_count; ++next_test) {
-            printf("\x1b[33m Test '%s' indeterminate\x1b[m\n",
+            printf("Test \x1b[33m '%s' \x1b[m indeterminate\n",
                    aTest[next_test].name);
         }
         return failed_count + indete_count;
