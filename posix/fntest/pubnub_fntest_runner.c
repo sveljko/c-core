@@ -136,12 +136,10 @@ static int run_tests(struct TestData aTest[],
                indete_count);
         for (next_test = 0; next_test < failed_count; ++next_test) {
             printf("\x1b[41m Test '%s' failed!\x1b[m\n",
-                   next_test + 1,
                    aTest[next_test].name);
         }
         for (next_test = 0; next_test < indete_count; ++next_test) {
-            printf("\x1b[33m Test '%s' indeterminate \x1b[m\n",
-                   next_test + 1,
+            printf("\x1b[33m Test '%s' indeterminate\x1b[m\n",
                    aTest[next_test].name);
         }
         return failed_count + indete_count;
