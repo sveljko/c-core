@@ -5,7 +5,7 @@
 #include "core/pubnub_blocking_io.h"
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 900
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 1000
 
 
 TEST_DEF(simple_connect_and_send_over_single_channel) {
