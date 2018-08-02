@@ -173,7 +173,7 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
 
 void pnfntst_free(void* p)
 {
-    pubnub_t* pbp = p
+    pubnub_t* pbp = p;
     pubnub_cancel(p);
     pubnub_await(p);
     if (pubnub_free(p) != 0) {
