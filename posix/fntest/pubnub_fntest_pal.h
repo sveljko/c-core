@@ -20,6 +20,7 @@
 #define TEST_DEF(tst)                                                          \
     void* pnfn_test_##tst(void* pResult)                                       \
     {                                                                          \
+        char const* const this_test_name_ = #tst;                              \
         TEST_BEGIN();
 
 #define TEST_END()                                                             \
