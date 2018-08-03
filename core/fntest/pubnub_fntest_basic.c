@@ -4,8 +4,9 @@
 #include "pubnub_fntest.h"
 #include "core/pubnub_blocking_io.h"
 
+
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 5000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 4000
 
 
 #define expect_PNR_OK(pbp, trans, timeout)                                     \
@@ -17,17 +18,17 @@
 
 TEST_DEF(simple_connect_and_send_over_single_channel)
 {
-
-    static pubnub_t* pbp;
-    pbp = pubnub_alloc();
+    static pubnub_t*  pbp;
+    char const* const chan = this_test_name_;
+    pbp                    = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    expect_PNR_OK(pbp, pubnub_subscribe(pbp, this_test_name_, NULL), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"Test 1\""), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"Test 1-2\""), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_subscribe(pbp, this_test_name_, NULL), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 1\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 1-2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
 
     expect(pnfntst_got_messages(pbp, "\"Test 1\"", "\"Test 1-2\"", NULL));
 
@@ -38,32 +39,20 @@ TEST_ENDDEF
 
 TEST_DEF(connect_and_send_over_several_channels_simultaneously)
 {
-
-    static pubnub_t* pbp;
-    enum pubnub_res  rslt;
-    pbp = pubnub_alloc();
+    static pubnub_t*  pbp;
+    char const* const chan = this_test_name_;
+    pbp                    = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
-    expect_pnr(rslt, PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp);
-
-    rslt = pubnub_publish(pbp, this_test_name_, "\"Test M1\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "two", "\"Test M1 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test M1\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M1 - 2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test M1\"", NULL));
 
-    rslt = pubnub_subscribe(pbp, "two", NULL);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "two", NULL), 10 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test M1 - 2\"", NULL));
 
     TEST_POP_DEFERRED;
@@ -73,7 +62,6 @@ TEST_ENDDEF
 
 TEST_DEF(simple_connect_and_send_over_single_channel_in_group)
 {
-
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
     pbp = pubnub_alloc();
@@ -295,7 +283,7 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
 
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
-    enum pubnub_res  rslt;
+    char             chanlist[100];
     pbp = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_init(pbp, g_pubkey, g_keysub);
@@ -305,17 +293,12 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
     pubnub_init(pbp_2, g_pubkey, g_keysub);
     pubnub_origin_set(pbp_2, g_origin);
 
-    expect_pnr(pubnub_subscribe(pbp_2, "ch,two", NULL), PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp_2);
-
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test M5\""), PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp);
-    rslt = pubnub_publish(pbp, "two", "\"Test M5-2\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-    rslt = pubnub_subscribe(pbp_2, "ch,two", NULL);
-    expect_pnr_maybe_started(rslt, pbp_2, 10 * SECONDS, PNR_OK);
-
-    expect(pnfntst_got_messages(pbp_2, "\"Test M5\"", "\"Test M5-2\"", NULL));
+    snprintf(chanlist, sizeof chanlist, "%s,two", this_test_name_);
+    expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chanlist, NULL), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"M5\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"M5-2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chanlist, NULL), 10 * SECONDS);
+    expect(pnfntst_got_messages(pbp_2, "\"M5\"", "\"M5-2\"", NULL));
 
     TEST_POP_DEFERRED;
     TEST_POP_DEFERRED;
