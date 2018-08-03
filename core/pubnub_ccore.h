@@ -141,10 +141,5 @@ enum pubnub_res pbcc_channel_registry_prep(struct pbcc_context* p,
                                            char const*          param,
                                            char const*          channel);
 
-/** Helper function, calls pubnub_alloc() and, if it succeeds, then calls
-    pubnub_init() to set the pub/sub keys and then sets the origin, all
-    according to test run parameters.
-*/
-pubnub_t* pnfntst_create_ctx(void)
 
 #endif /* !defined INC_PUBNUB_CCORE */

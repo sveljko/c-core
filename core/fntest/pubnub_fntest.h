@@ -53,6 +53,14 @@ bool pnfntst_subscribe_and_check(pubnub_t *p, char const *chan, char const*chgro
 
 void pnfntst_free(void* p);
 
+
+/** Helper function, calls pubnub_alloc() and, if it succeeds, then calls
+    pubnub_init() to set the pub/sub keys and then sets the origin, all
+    according to test run parameters.
+*/
+pubnub_t* pnfntst_create_ctx(void);
+
+
 #include "fntest/pubnub_fntest_pal.h"
 
 #endif /* !defined INC_PUBNUB_FNTEST */
