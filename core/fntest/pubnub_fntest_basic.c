@@ -8,30 +8,28 @@
 #define CHANNEL_REGISTRY_PROPAGATION_DELAY 5000
 
 
+#define expect_PNR_OK(pbp, trans, timeout)                                     \
+    do {                                                                       \
+        enum pubnub_res M_rslt_ = trans;                                       \
+        expect_pnr_maybe_started(M_rslt_, pbp, timeout, PNR_OK);               \
+    } while (0)
+
+
 TEST_DEF(simple_connect_and_send_over_single_channel)
 {
 
     static pubnub_t* pbp;
-    enum pubnub_res  rslt;
     pbp = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
-    expect_pnr(rslt, PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, this_test_name_, NULL), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"Test 1\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"Test 1-2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, this_test_name_, NULL), 10 * SECONDS);
 
-    rslt = pubnub_publish(pbp, this_test_name_, "\"Test 1\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, this_test_name_, "\"Test 1 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    expect(pnfntst_got_messages(pbp, "\"Test 1\"", "\"Test 1 - 2\"", NULL));
+    expect(pnfntst_got_messages(pbp, "\"Test 1\"", "\"Test 1-2\"", NULL));
 
     TEST_POP_DEFERRED;
 }
@@ -139,8 +137,15 @@ TEST_DEF(connect_and_send_over_several_channels_in_group_simultaneously)
     rslt = pubnub_publish(pbp, "two", "\"Test M2 - 2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    expect(pnfntst_subscribe_and_check(
-        pbp, NULL, this_test_name_, 10 * SECONDS, "\"Test M2\"", "ch", "\"Test M2 - 2\"", "two", NULL));
+    expect(pnfntst_subscribe_and_check(pbp,
+                                       NULL,
+                                       this_test_name_,
+                                       10 * SECONDS,
+                                       "\"Test M2\"",
+                                       "ch",
+                                       "\"Test M2 - 2\"",
+                                       "two",
+                                       NULL));
 
     rslt = pubnub_remove_channel_from_group(pbp, "ch,two", this_test_name_);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
@@ -176,8 +181,15 @@ TEST_DEF(connect_and_send_over_channel_in_group_and_single_channel_simultaneousl
     rslt = pubnub_publish(pbp, "two", "\"Test M3 - 2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    expect(pnfntst_subscribe_and_check(
-        pbp, "two", this_test_name_, 10 * SECONDS, "\"Test M3 - 1\"", "ch", "\"Test M3 - 2\"", "two", NULL));
+    expect(pnfntst_subscribe_and_check(pbp,
+                                       "two",
+                                       this_test_name_,
+                                       10 * SECONDS,
+                                       "\"Test M3 - 1\"",
+                                       "ch",
+                                       "\"Test M3 - 2\"",
+                                       "two",
+                                       NULL));
 
     rslt = pubnub_remove_channel_from_group(pbp, "ch", this_test_name_);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
@@ -391,10 +403,18 @@ TEST_DEF(connect_and_receive_over_several_channels_in_group_simultaneously)
     rslt = pubnub_publish(pbp, "two", "\"Test M6-2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    expect(pnfntst_subscribe_and_check(
-        pbp_2, NULL, this_test_name_, 10 * SECONDS, "\"Test M6\"", "ch", "\"Test M6-2\"", "two", NULL));
+    expect(pnfntst_subscribe_and_check(pbp_2,
+                                       NULL,
+                                       this_test_name_,
+                                       10 * SECONDS,
+                                       "\"Test M6\"",
+                                       "ch",
+                                       "\"Test M6-2\"",
+                                       "two",
+                                       NULL));
 
-    expect_pnr(pubnub_remove_channel_from_group(pbp_2, "ch,two", this_test_name_), PNR_STARTED);
+    expect_pnr(pubnub_remove_channel_from_group(pbp_2, "ch,two", this_test_name_),
+               PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp_2);
 
     TEST_POP_DEFERRED;
@@ -435,8 +455,15 @@ TEST_DEF(connect_and_receive_over_channel_in_group_and_single_channel_simultaneo
     rslt = pubnub_publish(pbp, "two", "\"Test M7-2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    expect(pnfntst_subscribe_and_check(
-        pbp_2, "two", this_test_name_, 10 * SECONDS, "\"Test M7\"", "ch", "\"Test M7-2\"", "two", NULL));
+    expect(pnfntst_subscribe_and_check(pbp_2,
+                                       "two",
+                                       this_test_name_,
+                                       10 * SECONDS,
+                                       "\"Test M7\"",
+                                       "ch",
+                                       "\"Test M7-2\"",
+                                       "two",
+                                       NULL));
 
     rslt = pubnub_remove_channel_from_group(pbp, "ch", this_test_name_);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
@@ -493,7 +520,8 @@ TEST_DEF(connect_and_receive_over_channel_in_group_and_multi_channel_simultaneou
                                        "three",
                                        NULL));
 
-    expect_pnr(pubnub_remove_channel_from_group(pbp_2, "three", this_test_name_), PNR_STARTED);
+    expect_pnr(pubnub_remove_channel_from_group(pbp_2, "three", this_test_name_),
+               PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp_2);
 
     TEST_POP_DEFERRED;
