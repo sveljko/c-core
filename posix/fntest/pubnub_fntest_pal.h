@@ -160,6 +160,12 @@
         pthread_cleanup_pop(1);                                                \
     } while (0)
 
+#define expect_PNR_OK(pbp, trans, timeout)                                     \
+    do {                                                                       \
+        enum pubnub_res M_rslt_ = trans;                                       \
+        expect_pnr_maybe_started(M_rslt_, pbp, timeout, PNR_OK);               \
+    } while (0)
+
 #define await_console()                                                        \
     do {                                                                       \
     } while ('\n' != getchar())

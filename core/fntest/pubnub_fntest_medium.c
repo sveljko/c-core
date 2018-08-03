@@ -6,7 +6,7 @@
 #include "core/pubnub_blocking_io.h"
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 5000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 6000
 
 
 TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
@@ -259,7 +259,6 @@ TEST_ENDDEF
 
 TEST_DEF(wrong_api_usage)
 {
-
     static pubnub_t* pbp;
     pbp = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
@@ -289,7 +288,6 @@ TEST_ENDDEF
 
 TEST_DEF(handling_errors_from_pubnub)
 {
-
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
     pbp = pubnub_alloc();

@@ -176,6 +176,13 @@
         TEST_POP_DEFERRED;                                                      \
     } while (0)
 
+
+#define expect_PNR_OK(pbp, trans, timeout)                                     \
+    do {                                                                       \
+        enum pubnub_res M_rslt_ = trans;                                       \
+        expect_pnr_maybe_started(M_rslt_, pbp, timeout, PNR_OK);               \
+    } while (0)
+
 /* FreeRTOS proper doesn't have any console support.
     There is console support in FreeRTOS+CLI, but we don't want to
     have that as a requirement for running tests...
