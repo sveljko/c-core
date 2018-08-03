@@ -26,18 +26,18 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
     pubnub_set_non_blocking_io(pbp_2);
 
     expect_pnr(pubnub_subscribe(pbp, "two,three", NULL), PNR_STARTED);
-    expect_pnr(pubnub_subscribe(pbp_2, "ch", NULL), PNR_STARTED);
+    expect_pnr(pubnub_subscribe(pbp_2, "this_test_name_", NULL), PNR_STARTED);
     await_timed_2(10 * SECONDS, PNR_OK, pbp, PNR_OK, pbp_2);
 
     expect_pnr(pubnub_publish(pbp_2, "two", "\"Test M3\""), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp_2);
-    rslt = pubnub_publish(pbp, "ch", "\"Test M3\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test M3\"");
     expect_pnr(pubnub_publish(pbp_2, "three", "\"Test M3 - 1\""), PNR_STARTED);
     expect_pnr_maybe_started_2(
         rslt, PNR_STARTED, 10 * SECONDS, pbp, PNR_OK, pbp_2, PNR_OK);
 
     rslt = pubnub_subscribe(pbp, "two,three", NULL);
-    expect_pnr(pubnub_subscribe(pbp_2, "ch", NULL), PNR_STARTED);
+    expect_pnr(pubnub_subscribe(pbp_2, this_test_name_, NULL), PNR_STARTED);
     expect_pnr_maybe_started_2(
         rslt, PNR_STARTED, 10 * SECONDS, pbp, PNR_OK, pbp_2, PNR_OK);
 
@@ -112,26 +112,26 @@ TEST_DEF(connect_disconnect_and_connect_again)
     pubnub_origin_set(pbp, g_origin);
     pubnub_set_non_blocking_io(pbp);
 
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
+    expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test M5\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test M5\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK) pubnub_cancel(pbp);
     await_timed(10 * SECONDS, PNR_CANCELLED, pbp);
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test M5 - 2\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test M5 - 2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
+    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
     expect(pnfntst_got_messages(pbp, "\"Test M5 - 2\"", NULL));
 
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
+    expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_STARTED);
     pubnub_cancel(pbp);
     await_timed(10 * SECONDS, PNR_CANCELLED, pbp);
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test M5 - 3\""), PNR_STARTED);
+    expect_pnr(pubnub_publish(pbp, this_test_name_, "\"Test M5 - 3\""), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
+    expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
     expect(pnfntst_got_messages(pbp, "\"Test M5 - 3\"", NULL));
 
@@ -267,14 +267,15 @@ TEST_DEF(wrong_api_usage)
     pubnub_origin_set(pbp, g_origin);
     pubnub_set_non_blocking_io(pbp);
 
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test - 2\""), PNR_IN_PROGRESS);
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_IN_PROGRESS);
+    expect_pnr(pubnub_subscribe(pbp,
+                                this_test_name_, NULL), PNR_STARTED);
+    expect_pnr(pubnub_publish(pbp, this_test_name_, "\"Test - 2\""), PNR_IN_PROGRESS);
+    expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_IN_PROGRESS);
     await_timed(10 * SECONDS, PNR_OK, pbp);
 
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_IN_PROGRESS);
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test - 2\""), PNR_IN_PROGRESS);
+    expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_STARTED);
+    expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_IN_PROGRESS);
+    expect_pnr(pubnub_publish(pbp, this_test_name_, "\"Test - 2\""), PNR_IN_PROGRESS);
 
     pubnub_cancel(pbp);
     await_timed(10 * SECONDS, PNR_CANCELLED, pbp);
@@ -296,7 +297,7 @@ TEST_DEF(handling_errors_from_pubnub)
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test "), PNR_STARTED);
+    expect_pnr(pubnub_publish(pbp, this_test_name_, "\"Test "), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_PUBLISH_FAILED, pbp);
     expect(400 == pubnub_last_http_code(pbp));
     expect(pubnub_parse_publish_result(pubnub_last_publish_result(pbp))

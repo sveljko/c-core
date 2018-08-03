@@ -18,17 +18,17 @@ TEST_DEF(simple_connect_and_send_over_single_channel)
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
+    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
     expect_pnr(rslt, PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test 1\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test 1\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test 1 - 2\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test 1 - 2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
+    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
     expect(pnfntst_got_messages(pbp, "\"Test 1\"", "\"Test 1 - 2\"", NULL));
@@ -48,17 +48,17 @@ TEST_DEF(connect_and_send_over_several_channels_simultaneously)
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
+    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
     expect_pnr(rslt, PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test M1\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test M1\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
     rslt = pubnub_publish(pbp, "two", "\"Test M1 - 2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
+    rslt = pubnub_subscribe(pbp, this_test_name_, NULL);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
     expect(pnfntst_got_messages(pbp, "\"Test M1\"", NULL));
@@ -252,22 +252,22 @@ TEST_DEF(simple_connect_and_receiver_over_single_channel)
     pubnub_origin_set(pbp_2, g_origin);
     pubnub_set_non_blocking_io(pbp_2);
 
-    rslt = pubnub_subscribe(pbp_2, "ch", NULL);
+    rslt = pubnub_subscribe(pbp_2, this_test_name_, NULL);
     expect_pnr(rslt, PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp_2);
 
-    rslt = pubnub_subscribe(pbp_2, "ch", NULL);
+    rslt = pubnub_subscribe(pbp_2, this_test_name_, NULL);
     expect_pnr(rslt, PNR_STARTED);
-    rslt = pubnub_publish(pbp, "ch", "\"Test 3 - 1\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test 3 - 1\"");
     expect_pnr(rslt, PNR_STARTED);
     await_timed_2(10 * SECONDS, PNR_OK, pbp, PNR_OK, pbp_2);
 
     expect(pnfntst_got_messages(pbp_2, "\"Test 3 - 1\"", NULL));
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test 3 - 2\"");
+    rslt = pubnub_publish(pbp, this_test_name_, "\"Test 3 - 2\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
-    rslt = pubnub_subscribe(pbp_2, "ch", NULL);
+    rslt = pubnub_subscribe(pbp_2, this_test_name_, NULL);
     expect_pnr_maybe_started(rslt, pbp_2, 10 * SECONDS, PNR_OK);
 
     expect(pnfntst_got_messages(pbp_2, "\"Test 3 - 2\"", NULL));
