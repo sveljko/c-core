@@ -21,9 +21,7 @@ TEST_DEF(simple_connect_and_send_over_single_channel)
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 1\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 1-2\""), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
-
-    expect(pnfntst_got_messages(pbp, "\"Test 1\"", "\"Test 1-2\"", NULL));
+    expect(pnfntst_subscribe_and_check(pbp, chan, NULL, 10 * SECONDS, "\"Test 1\"", NULL, "\"Test 1-2\"", NULL, NULL));
 
     TEST_POP_DEFERRED;
 }

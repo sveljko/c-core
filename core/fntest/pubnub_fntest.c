@@ -100,11 +100,7 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
             break;
         }
         aMsgs[count] = msg;
-        msg          = va_arg(vl, char*);
-        if (NULL == msg) {
-            return false;
-        }
-        aChan[count] = msg;
+        aChan[count] = va_arg(vl, char*);
         ++count;
     }
     va_end(vl);
@@ -148,12 +144,13 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
                     msg,
                     chan);
             }
-            if ((NULL == msg) || (NULL == chan)) {
+            else {
                 break;
             }
             for (i = 0; i < count; ++i) {
                 if ((missing & (0x01 << i)) && (strcmp(msg, aMsgs[i]) == 0)
-                    && (strcmp(chan, aChan[i]) == 0)) {
+                    && (((NULL == chan) && (NULL == aChan[i]))
+                        || (strcmp(chan, aChan[i]) == 0))) {
                     missing &= ~(0x01 << i);
                     break;
                 }
