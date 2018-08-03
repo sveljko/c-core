@@ -171,9 +171,23 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
 void pnfntst_free(void* p)
 {
     pubnub_t* pbp = p;
-    pubnub_cancel(pbp);
-    pubnub_await(pbp);
-    if (pubnub_free(pbp) != 0) {
-        printf("Failed to free the Pubnub context\n");
+    if (pbp != NULL) {
+        pubnub_cancel(pbp);
+        pubnub_await(pbp);
+        if (pubnub_free(pbp) != 0) {
+            printf("Failed to free the Pubnub context\n");
+        }
     }
+}
+
+
+pubnub_t* pnfntst_create_ctx(void)
+{
+    pubnub_t* pbp = pubnub_alloc();
+    if (pbp != NULL) {
+        pubnub_init(pbp, g_pubkey, g_keysub);
+        pubnub_origin_set(pbp, g_origin);
+    }
+
+    return pbp;
 }

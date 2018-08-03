@@ -135,15 +135,19 @@ static int run_tests(struct TestData aTest[],
                passed_count,
                failed_count,
                indete_count);
-        for (next_test = 0; next_test < failed_count; ++next_test) {
-            printf("Test \x1b[41m '%s' \x1b[m failed!\n",
-                   aTest[next_test].name);
+        for (next_test = 0; next_test < test_count; ++next_test) {
+            switch (aTest[next_test].result) {
+            case trFail:
+                printf("Test \x1b[41m '%s' \x1b[m failed!\n",
+                       aTest[next_test].name);
+                break;
+            case trIndeterminate:
+                printf("Test \x1b[33m '%s' \x1b[m indeterminate\n",
+                       aTest[next_test].name);
+                break;
+            }
         }
-        for (next_test = 0; next_test < indete_count; ++next_test) {
-            printf("Test \x1b[33m '%s' \x1b[m indeterminate\n",
-                   aTest[next_test].name);
-        }
-        return failed_count + indete_count;
+        return failed_count;
     }
 }
 
