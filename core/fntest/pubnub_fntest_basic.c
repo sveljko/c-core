@@ -87,7 +87,7 @@ TEST_DEF(connect_and_send_over_several_channels_in_group_simultaneously)
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 
-    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp) _, 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M2-2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -491,7 +491,6 @@ TEST_ENDDEF
 TEST_DEF(broken_connection_test_multi)
 {
     static pubnub_t* pbp;
-    enum pubnub_res  rslt;
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
