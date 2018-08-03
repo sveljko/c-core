@@ -6,7 +6,7 @@
 
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 4500
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 5000
 
 
 #define expect_PNR_OK(pbp, trans, timeout)                                     \
@@ -568,45 +568,30 @@ TEST_DEF(broken_connection_test_multi)
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    expect_pnr(pubnub_subscribe(pbp, "ch,two", NULL), PNR_STARTED);
-    await_timed(12 * SECONDS, PNR_OK, pbp);
-
-    rslt = pubnub_publish(pbp, "ch", "\"Test 7\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "two", "\"Test 8\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
-    rslt = pubnub_subscribe(pbp, "ch,two", NULL);
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "ch,two", NULL), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 7\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test 8\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "ch,two", NULL), 12 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 7\"", "\"Test 8\"", NULL));
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test 7 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "two", "\"Test 8 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 7 - 2\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test 8 - 2\""), 12 * SECONDS);
 
     printf("Please disconnect from Internet. Press Enter when done.");
     await_console();
+    
     expect_pnr(pubnub_subscribe(pbp, "ch,two", NULL), PNR_STARTED);
     await_timed(12 * SECONDS, PNR_ADDR_RESOLUTION_FAILED, pbp);
+    
     printf("Please reconnect to Internet. Press Enter when done.");
     await_console();
-    expect_pnr(pubnub_subscribe(pbp, "ch,two", NULL), PNR_STARTED);
-    await_timed(12 * SECONDS, PNR_OK, pbp);
+    
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "ch,two", NULL), 12 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 7 - 2\"", "\"Test 8 - 2\"", NULL));
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test 7 - 4\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "two", "\"Test 8 - 4\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
-    rslt = pubnub_subscribe(pbp, "ch,two", NULL);
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 7 - 4\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test 8 - 4\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "ch,two", NULL), 12 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 7 - 4\"", "\"Test 8 - 4\"", NULL));
 
     TEST_POP_DEFERRED;
