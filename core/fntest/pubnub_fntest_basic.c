@@ -6,7 +6,7 @@
 
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 4000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 4500
 
 
 #define expect_PNR_OK(pbp, trans, timeout)                                     \
@@ -515,50 +515,44 @@ TEST_ENDDEF
 
 TEST_DEF(broken_connection_test)
 {
-    static pubnub_t* pbp;
-    enum pubnub_res  rslt;
-    pbp = pubnub_alloc();
+    static pubnub_t*  pbp;
+    char const* const chan = this_test_name_;
+    pbp                    = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
-    await_timed(12 * SECONDS, PNR_OK, pbp);
-
-    rslt = pubnub_publish(pbp, "ch", "\"Test 3\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 3\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 12 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 6\"", NULL));
 
-    rslt = pubnub_publish(pbp, "ch", "\"Test 6 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 6 - 2\""), 12 * SECONDS);
 
     printf("Please disconnect from Internet. Press Enter when done.");
     await_console();
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
+
+    expect_pnr(pubnub_subscribe(pbp, chan, NULL), PNR_STARTED);
     await_timed(12 * SECONDS, PNR_ADDR_RESOLUTION_FAILED, pbp);
+
     printf("Please reconnect to Internet. Press Enter when done.");
     await_console();
-    expect_pnr(pubnub_subscribe(pbp, "ch", NULL), PNR_STARTED);
-    await_timed(12 * SECONDS, PNR_OK, pbp);
+
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 12 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 6 - 2\"", NULL));
 
     printf("Please disconnect from Internet. Press Enter when done.");
     await_console();
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test 6 - 3\""), PNR_STARTED);
+
+    expect_pnr(pubnub_publish(pbp, chan, "\"Test 6 - 3\""), PNR_STARTED);
     await_timed(12 * SECONDS, PNR_ADDR_RESOLUTION_FAILED, pbp);
 
     printf("Please reconnect to Internet. Press Enter when done.");
     await_console();
-    expect_pnr(pubnub_publish(pbp, "ch", "\"Test 6 - 4\""), PNR_STARTED);
-    await_timed(12 * SECONDS, PNR_OK, pbp);
-    rslt = pubnub_subscribe(pbp, "ch", NULL);
-    expect_pnr_maybe_started(rslt, pbp, 12 * SECONDS, PNR_OK);
 
-    expect(pnfntst_got_messages(pbp, "\"Test 6 - 4\"", NULL));
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 6-4\""), 12 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 12 * SECONDS);
+    expect(pnfntst_got_messages(pbp, "\"Test 6-4\"", NULL));
 
     TEST_POP_DEFERRED;
 }
