@@ -55,38 +55,26 @@ TEST_ENDDEF
 
 TEST_DEF(simple_connect_and_send_over_single_channel_in_group)
 {
-    static pubnub_t* pbp;
-    enum pubnub_res  rslt;
-    pbp = pubnub_alloc();
+    static pubnub_t*  pbp;
+    char const* const chgrp = this_test_name_;
+    pbp                     = pubnub_alloc();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_init(pbp, g_pubkey, g_keysub);
     pubnub_origin_set(pbp, g_origin);
 
-    rslt = pubnub_remove_channel_group(pbp, this_test_name_);
-    expect_pnr(rslt, PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp);
-
-    rslt = pubnub_add_channel_to_group(pbp, "ch", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 
-    rslt = pubnub_subscribe(pbp, NULL, this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "ch", "\"Test 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "ch", "\"Test 2 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_subscribe(pbp, NULL, this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 2 - 2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 2\"", "\"Test 2 - 2\"", NULL));
 
-    rslt = pubnub_remove_channel_from_group(pbp, "ch", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    expect_PNR_OK(
+        pbp, pubnub_remove_channel_from_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
 }
