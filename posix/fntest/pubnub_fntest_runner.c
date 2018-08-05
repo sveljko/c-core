@@ -88,7 +88,10 @@ static int run_tests(struct TestData aTest[],
         }
         for (i = next_test; i < next_test + in_this_pass; ++i) {
             printf("Creating a thread for test %d\n", i + 1);
-            pthread_create(&aTest[i].pth, NULL, aTest[i].pf, &aTest[i].result);
+            if (0 != pthread_create(&aTest[i].pth, NULL, aTest[i].pf, &aTest[i].result)) {
+                printf("Failed to create a thread for test %d ('%s'), errno=%d\n",
+                       i+1, aTest[i].name, errno);
+            }
         }
         /* This is the simplest way to do it - join all threads, one
            by one.  We could improve this, wait for the first thread
@@ -97,7 +100,10 @@ static int run_tests(struct TestData aTest[],
            pthread_join_any()...
          */
         for (i = next_test; i < next_test + in_this_pass; ++i) {
-            pthread_join(aTest[i].pth, NULL);
+            if (0 != pthread_join(aTest[i].pth, NULL)) {
+                printf("Failed to join thread for test %d ('%s'), errno=%d\n",
+                       i+1, aTest[i].name, errno);
+            }
             switch (aTest[i].result) {
             case trFail:
                 printf(
