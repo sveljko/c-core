@@ -52,22 +52,23 @@ TEST_DEF(simple_connect_and_send_over_single_channel_in_group)
 {
     static pubnub_t*  pbp;
     char const* const chgrp = this_test_name_;
+    char const* const chan  = this_test_name_;
     pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
     expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "ch", chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, chan, chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 2\""), 10 * SECONDS);
-    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test 2 - 2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 2\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 2 - 2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
     expect(pnfntst_got_messages(pbp, "\"Test 2\"", "\"Test 2 - 2\"", NULL));
 
     expect_PNR_OK(
-        pbp, pubnub_remove_channel_from_group(pbp, "ch", chgrp), 10 * SECONDS);
+        pbp, pubnub_remove_channel_from_group(pbp, chan, chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
 }
