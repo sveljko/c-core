@@ -6,7 +6,7 @@
 
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 6000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 8000
 
 
 TEST_DEF(simple_connect_and_send_over_single_channel)
