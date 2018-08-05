@@ -104,28 +104,19 @@ TEST_ENDDEF
 
 TEST_DEF(connect_and_send_over_channel_in_group_and_single_channel_simultaneously)
 {
-
-    static pubnub_t* pbp;
-    enum pubnub_res  rslt;
-    pbp = pnfntst_create_ctx();
+    static pubnub_t*  pbp;
+    char const* const chgrp = this_test_name_;
+    pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
-    expect_pnr(pubnub_remove_channel_group(pbp, this_test_name_), PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp);
-    rslt = pubnub_add_channel_to_group(pbp, "ch", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 
-    rslt = pubnub_subscribe(pbp, "two", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "ch", "\"Test M3 - 1\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "two", "\"Test M3 - 2\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "two", chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M3 - 1\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M3 - 2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(pbp,
                                        "two",
                                        this_test_name_,
@@ -136,8 +127,8 @@ TEST_DEF(connect_and_send_over_channel_in_group_and_single_channel_simultaneousl
                                        "two",
                                        NULL));
 
-    rslt = pubnub_remove_channel_from_group(pbp, "ch", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    expect_PNR_OK(
+        pbp, pubnub_remove_channel_from_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
 }
@@ -146,45 +137,34 @@ TEST_ENDDEF
 
 TEST_DEF(connect_and_send_over_channel_in_group_and_multi_channel_simultaneously)
 {
-
-    static pubnub_t* pbp;
-    enum pubnub_res  rslt;
+    static pubnub_t*  pbp;
+    char const* const chgrp = this_test_name_;
+    pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
-    pbp = pnfntst_create_ctx();
 
-    expect_pnr(pubnub_remove_channel_group(pbp, this_test_name_), PNR_STARTED);
-    await_timed(10 * SECONDS, PNR_OK, pbp);
-    rslt = pubnub_add_channel_to_group(pbp, "three", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "three", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 
-    rslt = pubnub_subscribe(pbp, "ch,two", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "ch", "\"Test M4 - ch\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "two", "\"Test M4 - two\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
-    rslt = pubnub_publish(pbp, "three", "\"Test M4 - three\"");
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-
+    expect_PNR_OK(pbp, pubnub_subscribe(pbp, "ch,two", chgrp), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M4 - ch\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M4 - two\""), 10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_publish(pbp, "three", "\"Test M4-3\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(pbp,
                                        "ch,two",
-                                       this_test_name_,
+                                       chgrp,
                                        10 * SECONDS,
                                        "\"Test M4 - ch\"",
                                        "ch",
                                        "\"Test M4 - two\"",
                                        "two",
-                                       "\"Test M4 - three\"",
+                                       "\"Test M4-3\"",
                                        "three",
                                        NULL));
 
-    rslt = pubnub_remove_channel_from_group(pbp, "three", this_test_name_);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    expect_PNR_OK(
+        pbp, pubnub_remove_channel_from_group(pbp, "three", chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
 }
