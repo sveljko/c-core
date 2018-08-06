@@ -227,8 +227,15 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chanlist, NULL), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"M5\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"M5-2\""), 10 * SECONDS);
-    expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chanlist, NULL), 10 * SECONDS);
-    expect(pnfntst_got_messages(pbp_2, "\"M5\"", "\"M5-2\"", NULL));
+    expect(pnfntst_subscribe_and_check(pbp_2,
+                                       chanlist,
+                                       NULL,
+                                       10 * SECONDS,
+                                       "\"M5\"",
+                                       this_test_name_,
+                                       "\"M5-2\"",
+                                       "two",
+                                       NULL));
 
     TEST_POP_DEFERRED;
     TEST_POP_DEFERRED;
