@@ -205,7 +205,7 @@ char* pnfntst_make_name(char const* s)
     if (NULL == rslt) {
         return rslt;
     }
-    snprintf(rslt, MAX_PUNUB_CHAN_NAME, "%s_%X", s, grn);
+    snprintf(rslt, MAX_PUBNUB_CHAN_NAME, "%s_%X", s, grn);
 
     return rslt;
 }
