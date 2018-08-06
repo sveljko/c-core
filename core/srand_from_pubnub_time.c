@@ -1,7 +1,9 @@
 #include "srand_from_pubnub_time.h"
 
+#include "pubnub_pubsubapi.h"
 #include "pubnub_coreapi.h"
 #include "pubnub_ntf_sync.h"
+#include "pubnub_assert.h"
 
 #include <stdlib.h>
 #include <string.h>
