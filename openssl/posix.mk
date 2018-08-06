@@ -29,7 +29,7 @@ SOURCEFILES += ../lib/miniz/miniz_tinfl.c ../core/pbgzip_decompress.c
 OBJFILES += miniz_tinfl.o pbgzip_decompress.o
 endif
 
-CFLAGS = -g -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_TRACE  -Wall -D PUBNUB_THREADSAFE -D PUBNUB_PROXY_API=$(USE_PROXY)
+CFLAGS = -g -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_DEBUG  -Wall -D PUBNUB_THREADSAFE -D PUBNUB_PROXY_API=$(USE_PROXY)
 # -g enables debugging, remove to get a smaller executable
 # -fsanitize=address Use AddressSanitizer
 # -fsanitize=thread Use ThreadSanitizer
