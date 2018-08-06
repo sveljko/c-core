@@ -45,11 +45,12 @@ int srand_from_pubnub_time(pubnub_t* pbp)
         size_t      length_of_time = strlen(pbtime);
         char const* s              = pbtime + length_of_time - 1;
         unsigned    val_for_srand  = 0;
+        int         i;
         if (0 == length_of_time) {
             return -1;
         }
 
-        for (int i = 0; (i < MAX_UINT_NUM_OF_DIGITS) && (s > pbtime); ++i, --s) {
+        for (i = 0; (i < MAX_UINT_NUM_OF_DIGITS) && (s > pbtime); ++i, --s) {
             val_for_srand = val_for_srand * 10 + *s - '0';
         }
         srand(val_for_srand);
