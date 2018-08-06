@@ -323,9 +323,7 @@ TEST_DEF(connect_and_receive_over_channel_in_group_and_single_channel_simultaneo
     pubnub_set_non_blocking_io(pbp_2);
 
     expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
-    expect_PNR_OK(pbp,
-                  pubnub_add_channel_to_group(pbp, "ch", this_test_name_),
-                  10 * SECONDS);
+    expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 
