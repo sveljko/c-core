@@ -69,9 +69,9 @@ static void srand_from_pubnub(void)
 {
     pubnub_t* pbp = pubnub_alloc();
     if (pbp != NULL) {
-        pbp_init(pbp, g_pubkey, g_keysub);
+        pubnub_init(pbp, g_pubkey, g_keysub);
         srand_from_pubnub_time(pbp);
-        pubnub_fre(pbp);
+        pubnub_free(pbp);
     }
 }
 
