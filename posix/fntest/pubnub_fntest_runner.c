@@ -4,6 +4,10 @@
 #include "core/fntest/pubnub_fntest_basic.h"
 #include "core/fntest/pubnub_fntest_medium.h"
 
+#include "core/pubnub_alloc.h"
+#include "core/pubnub_pubsubapi.h"
+#include "core/srand_from_pubnub_time.h"
+
 #include <pthread.h>
 
 #include <stdio.h>
