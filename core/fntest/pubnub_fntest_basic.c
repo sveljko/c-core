@@ -133,7 +133,7 @@ TEST_DEF(connect_and_send_over_channel_in_group_and_single_channel_simultaneousl
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M3 - 2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(pbp,
                                        "two",
-                                       this_test_name_,
+                                       chgrp,
                                        10 * SECONDS,
                                        "\"Test M3 - 1\"",
                                        "ch",
