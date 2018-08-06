@@ -64,6 +64,18 @@ char const* g_keysub;
 char const* g_origin;
 
 
+
+static void srand_from_pubnub(void)
+{
+    pubnub_t* pbp = pubnub_alloc();
+    if (pbp != NULL) {
+        pbp_init(pbp, g_pubkey, g_keysub);
+        srand_from_pubnub_time(pbp);
+        pubnub_fre(pbp);
+    }
+}
+
+
 static int run_tests(struct TestData aTest[],
                      unsigned        test_count,
                      unsigned        max_conc_thread,
@@ -81,7 +93,7 @@ static int run_tests(struct TestData aTest[],
     g_origin = origin;
 
     printf("Starting Run of %d tests\n", test_count);
-    srand_from_pubnub_time();
+    srand_from_pubnub();
     while (next_test < test_count) {
         unsigned i;
         unsigned in_this_pass = max_conc_thread;
