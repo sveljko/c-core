@@ -1,5 +1,6 @@
 #include "srand_from_pubnub_time.h"
 
+#include "pubnub_internal.h"
 #include "pubnub_pubsubapi.h"
 #include "pubnub_coreapi.h"
 #include "pubnub_ntf_sync.h"
@@ -27,8 +28,8 @@
 
 int srand_from_pubnub_time(pubnub_t* pbp)
 {
-    char const* pbtime;
-    pubnub_res  rslt;
+    char const*     pbtime;
+    enum pubnub_res rslt;
 
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pbp));
 
