@@ -72,7 +72,7 @@ TEST_DEF(complex_send_and_receive_over_channel_plus_group_simultaneously)
     rslt   = pubnub_publish(pbp, "three", "\"Test M4 - three\"");
     expect_pnr_maybe_started_2(rslt, rslt_2, 10 * SECONDS, pbp, PNR_OK, pbp_2, PNR_OK);
 
-    rslt   = pubnub_subscribe(pbp, NULL, this_test_name_);
+    rslt   = pubnub_subscribe(pbp, NULL, chgrp);
     rslt_2 = pubnub_subscribe(pbp_2, "ch", NULL);
     expect_pnr_maybe_started_2(rslt, rslt_2, 10 * SECONDS, pbp, PNR_OK, pbp_2, PNR_OK);
 
