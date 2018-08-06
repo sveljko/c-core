@@ -4,6 +4,8 @@
 #include "pubnub_fntest.h"
 #include "core/pubnub_blocking_io.h"
 
+#include <stdlib.h>
+
 
 #define SECONDS 1000
 #define CHANNEL_REGISTRY_PROPAGATION_DELAY 10000
