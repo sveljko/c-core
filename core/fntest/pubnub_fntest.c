@@ -61,6 +61,12 @@ bool pnfntst_got_messages(pubnub_t* p, ...)
 }
 
 
+static bool eqstr(char const* s, char const* s2)
+{
+    return ((NULL == s) && (NULL == s2)) || (strcmp(s, s2) == 0);
+}
+
+
 bool pnfntst_got_message_on_channel(pubnub_t* p, char const* message, char const* channel)
 {
     char const* msg;
@@ -149,8 +155,7 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
             }
             for (i = 0; i < count; ++i) {
                 if ((missing & (0x01 << i)) && (strcmp(msg, aMsgs[i]) == 0)
-                    && (((NULL == chan) && (NULL == aChan[i]))
-                        || (strcmp(chan, aChan[i]) == 0))) {
+                    && eqstr(chan, aChan[i])) {
                     missing &= ~(0x01 << i);
                     break;
                 }
@@ -206,6 +211,8 @@ char* pnfntst_make_name(char const* s)
         return rslt;
     }
     snprintf(rslt, MAX_PUBNUB_CHAN_NAME, "%s_%X", s, grn);
+
+    printf("pnfntst_make_name() = %s\n", rslt);
 
     return rslt;
 }
