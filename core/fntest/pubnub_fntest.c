@@ -191,3 +191,21 @@ pubnub_t* pnfntst_create_ctx(void)
 
     return pbp;
 }
+
+/** See
+    https://support.pubnub.com/support/solutions/articles/14000043769-what-are-valid-channel-names-
+*/
+#define MAX_PUBNUB_CHAN_NAME 92
+
+
+char* pnfntst_make_name(char const* s)
+{
+    unsigned grn  = rand();
+    char*    rslt = malloc(MAX_PUBNUB_CHAN_NAME);
+    if (NULL == rslt) {
+        return rslt;
+    }
+    snprintf(rslt, MAX_PUNUB_CHAN_NAME, "%s_%X", s, grn);
+
+    return rslt;
+}

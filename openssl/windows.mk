@@ -24,8 +24,10 @@ INCLUDES=-I .. -I . -I ..\core\c99 -I $(OPENSSLPATH)\include
 
 all: pubnub_sync_sample.exe pubnub_crypto_sync_sample.exe cancel_subscribe_sync_sample.exe subscribe_publish_callback_sample.exe pubnub_callback_sample.exe pubnub_fntest.exe pubnub_console_sync.exe pubnub_console_callback.exe subscribe_publish_from_callback.exe publish_callback_subloop_sample.exe publish_queue_callback_subloop.exe
 
-pubnub_sync.lib: $(SOURCEFILES) ..\core\pubnub_ntf_sync.c
-	$(CC) -c $(CFLAGS) $(INCLUDES) $(SOURCEFILES) ..\core\pubnub_ntf_sync.c 
+SYNC_INTF_SOURCEFILES= ..\core\pubnub_ntf_sync.c ..\core\pubnub_sync_subscribe_loop.c ..\core\srand_from_pubnub_time.c
+
+pubnub_sync.lib : $(SOURCEFILES) $(SYNC_INTF_SOURCEFILES)
+	$(CC) -c $(CFLAGS) $(INCLUDES) $(SOURCEFILES) $(SYNC_INTF_SOURCEFILES)
 	lib $(OBJFILES) pubnub_ntf_sync.obj -OUT:$@
 
 CALLBACK_INTF_SOURCEFILES=pubnub_ntf_callback_windows.c pubnub_get_native_socket.c ..\core\pubnub_timer_list.c ..\lib\sockets\pbpal_ntf_callback_poller_poll.c ..\lib\sockets\pbpal_adns_sockets.c ..\core\pbpal_ntf_callback_queue.c ..\core\pbpal_ntf_callback_admin.c ..\core\pbpal_ntf_callback_handle_timer_list.c  ..\core\pubnub_callback_subscribe_loop.c

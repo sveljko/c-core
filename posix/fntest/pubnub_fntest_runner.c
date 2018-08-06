@@ -81,6 +81,7 @@ static int run_tests(struct TestData aTest[],
     g_origin = origin;
 
     printf("Starting Run of %d tests\n", test_count);
+    srand_from_pubnub_time();
     while (next_test < test_count) {
         unsigned i;
         unsigned in_this_pass = max_conc_thread;

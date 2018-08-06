@@ -61,6 +61,24 @@ void pnfntst_free(void* p);
 pubnub_t* pnfntst_create_ctx(void);
 
 
+/** Will use random number generation to "mix" the given string and
+    generate a random string to be used as a name in a test.  Mostly
+    to be used to generate unique names for channels and channel
+    groups, so that concurrent tests don't mess up each other.
+
+    Since random number generators (RNGs) are not fully reliable, we
+    put the given string "in the mix", which will usually be the test
+    name, making it higly likely that the generated name would be
+    different for different tests, even if RNG generates the same
+    values.
+
+    The result is allocated by this function and should be free()d
+    (unless it is NULL, of course).
+ */
+char* pnfntst_make_name(char const* s);
+
+
 #include "fntest/pubnub_fntest_pal.h"
+
 
 #endif /* !defined INC_PUBNUB_FNTEST */

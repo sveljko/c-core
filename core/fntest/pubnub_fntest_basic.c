@@ -12,7 +12,8 @@
 TEST_DEF(simple_connect_and_send_over_single_channel)
 {
     static pubnub_t*  pbp;
-    char const* const chan = this_test_name_;
+    char const* const chan = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chan);
     pbp                    = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
@@ -23,6 +24,7 @@ TEST_DEF(simple_connect_and_send_over_single_channel)
         pbp, chan, NULL, 10 * SECONDS, "\"Test 1\"", NULL, "\"Test 1-2\"", NULL, NULL));
 
     TEST_POP_DEFERRED;
+    TEST_POP_DEFERRED;
 }
 TEST_ENDDEF
 
@@ -30,7 +32,8 @@ TEST_ENDDEF
 TEST_DEF(connect_and_send_over_several_channels_simultaneously)
 {
     static pubnub_t*  pbp;
-    char const* const chan = this_test_name_;
+    char const* const chan = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chan);
     pbp                    = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
@@ -44,6 +47,7 @@ TEST_DEF(connect_and_send_over_several_channels_simultaneously)
     expect(pnfntst_got_messages(pbp, "\"Test M1 - 2\"", NULL));
 
     TEST_POP_DEFERRED;
+    TEST_POP_DEFERRED;
 }
 TEST_ENDDEF
 
@@ -51,8 +55,10 @@ TEST_ENDDEF
 TEST_DEF(simple_connect_and_send_over_single_channel_in_group)
 {
     static pubnub_t*  pbp;
-    char const* const chgrp = this_test_name_;
-    char const* const chan  = this_test_name_;
+    char const* const chgrp = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chgrp);
+    char const* const chan = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chan);
     pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
@@ -71,6 +77,8 @@ TEST_DEF(simple_connect_and_send_over_single_channel_in_group)
         pbp, pubnub_remove_channel_from_group(pbp, chan, chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
+    TEST_POP_DEFERRED;
+    TEST_POP_DEFERRED;
 }
 TEST_ENDDEF
 
@@ -78,7 +86,8 @@ TEST_ENDDEF
 TEST_DEF(connect_and_send_over_several_channels_in_group_simultaneously)
 {
     static pubnub_t*  pbp;
-    char const* const chgrp = this_test_name_;
+    char const* const chgrp = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chgrp);
     pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
@@ -99,6 +108,7 @@ TEST_DEF(connect_and_send_over_several_channels_in_group_simultaneously)
                   10 * SECONDS);
 
     TEST_POP_DEFERRED;
+    TEST_POP_DEFERRED;
 }
 TEST_ENDDEF
 
@@ -106,7 +116,8 @@ TEST_ENDDEF
 TEST_DEF(connect_and_send_over_channel_in_group_and_single_channel_simultaneously)
 {
     static pubnub_t*  pbp;
-    char const* const chgrp = this_test_name_;
+    char const* const chgrp = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chgrp);
     pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
@@ -132,6 +143,7 @@ TEST_DEF(connect_and_send_over_channel_in_group_and_single_channel_simultaneousl
         pbp, pubnub_remove_channel_from_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
+    TEST_POP_DEFERRED;
 }
 TEST_ENDDEF
 
@@ -139,7 +151,8 @@ TEST_ENDDEF
 TEST_DEF(connect_and_send_over_channel_in_group_and_multi_channel_simultaneously)
 {
     static pubnub_t*  pbp;
-    char const* const chgrp = this_test_name_;
+    char const* const chgrp = pnfntst_make_name(this_test_name_);
+    TEST_DEFER(free, chgrp);
     pbp                     = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
@@ -167,6 +180,7 @@ TEST_DEF(connect_and_send_over_channel_in_group_and_multi_channel_simultaneously
     expect_PNR_OK(
         pbp, pubnub_remove_channel_from_group(pbp, "three", chgrp), 10 * SECONDS);
 
+    TEST_POP_DEFERRED;
     TEST_POP_DEFERRED;
 }
 TEST_ENDDEF
