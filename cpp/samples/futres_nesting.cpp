@@ -85,18 +85,8 @@ static void on_published(pubnub::context &pb, pubnub_res res)
 }
 
 
-/// Here's how to use it in C++98 (without lambdas).  We shall
-/// demonstrate only the functions, not the functional objects, the
-/// only difference being that you could always pass the same
-/// functional object and keep some state in it, if you need to.
-static void cpp98(pubnub::context &pb)
-{
-    std::cout << "Publishing" << std::endl;
-    pb.publish(chan, "\"Hello world from C++!\"").then(on_published);
-}
-
-
 #if __cplusplus >= 201103L
+
 /// Here's how to use it in c++11, with lambdas
 static void cpp11(pubnub::context &ipb)
 {
@@ -160,6 +150,19 @@ static void cpp11(pubnub::context &ipb)
             });
         });
 }
+
+#else
+
+/// Here's how to use it in C++98 (without lambdas).  We shall
+/// demonstrate only the functions, not the functional objects, the
+/// only difference being that you could always pass the same
+/// functional object and keep some state in it, if you need to.
+static void cpp98(pubnub::context &pb)
+{
+    std::cout << "Publishing" << std::endl;
+    pb.publish(chan, "\"Hello world from C++!\"").then(on_published);
+}
+
 #endif
 
 int main()

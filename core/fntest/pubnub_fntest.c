@@ -112,7 +112,7 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
     va_end(vl);
 
     if ((0 == count) || (count > 16)) {
-        printf("subscribe and check: number of messages out of range: %d\n", count);
+        printf("subscribe and check: number of messages out of range: %d\n", (int)count);
         return false;
     }
 
