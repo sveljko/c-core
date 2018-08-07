@@ -14,7 +14,7 @@
 TEST_DEF(simple_connect_and_send_over_single_channel)
 {
     static pubnub_t*  pbp;
-    char const* const chan = pnfntst_make_name(this_test_name_);
+    char* const chan = pnfntst_make_name(this_test_name_);
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -34,7 +34,7 @@ TEST_ENDDEF
 TEST_DEF(connect_and_send_over_several_channels_simultaneously)
 {
     static pubnub_t*  pbp;
-    char const* const chan = pnfntst_make_name(this_test_name_);
+    char* const chan = pnfntst_make_name(this_test_name_);
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -186,7 +186,7 @@ TEST_DEF(simple_connect_and_receiver_over_single_channel)
     static pubnub_t*  pbp;
     static pubnub_t*  pbp_2;
     enum pubnub_res   rslt;
-    char const* const chan = pnfntst_make_name(this_test_name_);
+    char* const chan = pnfntst_make_name(this_test_name_);
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);

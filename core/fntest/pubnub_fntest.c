@@ -112,6 +112,7 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
     va_end(vl);
 
     if ((0 == count) || (count > 16)) {
+        printf("subscribe and check: number of messages out of range: %d\n", count);
         return false;
     }
 
@@ -144,13 +145,7 @@ bool pnfntst_subscribe_and_check(pubnub_t*   p,
             size_t      i;
             char const* msg  = pubnub_get(p);
             char const* chan = pubnub_get_channel(p);
-            if (msg != NULL) {
-                printf(
-                    "subscribe_and_check: got message '%s' on channel '%s'\n",
-                    msg,
-                    chan);
-            }
-            else {
+            if (NULL == msg) {
                 break;
             }
             for (i = 0; i < count; ++i) {
@@ -211,8 +206,6 @@ char* pnfntst_make_name(char const* s)
         return rslt;
     }
     snprintf(rslt, MAX_PUBNUB_CHAN_NAME, "%s_%X", s, grn);
-
-    printf("pnfntst_make_name() = %s\n", rslt);
 
     return rslt;
 }

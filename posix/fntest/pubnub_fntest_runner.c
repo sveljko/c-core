@@ -169,6 +169,8 @@ static int run_tests(struct TestData aTest[],
                 printf("Test \x1b[33m '%s' \x1b[m indeterminate\n",
                        aTest[next_test].name);
                 break;
+            default:
+                break;
             }
         }
         return failed_count;
