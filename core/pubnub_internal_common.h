@@ -193,6 +193,8 @@ struct pubnub_ {
 
          * PubNub using SSL? */
         bool useSSL : 1;
+        /** Try to establish TLS/SSL over existing TCP/IP connection: yes/no */
+        bool trySSL : 1;
         /** When SSL is enabled, should PubNub client ignore all SSL
          * certificate-handshake issues and still continue in SSL mode
          * if it experiences issues handshaking across local proxies,
@@ -255,6 +257,11 @@ struct pubnub_ {
     void*             user_data;
 #endif
 
+    /** Retry the same Pubnub request after closing current TCP
+        connection.
+    */
+    int retry_after_close;
+
 #if PUBNUB_PROXY_API
 
     /** The type (protocol) of the proxy to use */
@@ -298,12 +305,6 @@ struct pubnub_ {
         avoiding a sort of "endless loop".
     */
     int proxy_authorization_sent;
-
-    /** Retry the same Pubnub request after closing current TCP
-        connection. Currently, this is only used for Proxy authentication,
-        but, if need arises, could be made "general".
-    */
-    int retry_after_close;
 
     /** Data about NTLM authentication */
     struct pbntlm_context ntlm_context;
