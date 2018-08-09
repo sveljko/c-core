@@ -119,7 +119,7 @@ void pbpal_init(pubnub_t* pb)
     memset(&pb->pal, 0, sizeof pb->pal);
     pb->pal.socket = SOCKET_INVALID;
     pb->options.useSSL = pb->options.fallbackSSL = pb->options.ignoreSSL = true;
-    pb->options.crypto_first_try = true;
+    pb->options.trySSL = true;
     pb->options.use_system_certificate_store = false;
     pb->options.reuse_SSL_session            = false;
     pb->ssl_CAfile = pb->ssl_CApath = NULL;
@@ -179,7 +179,7 @@ static void report_error_from_environment(pubnub_t* pb)
 
 enum pubnub_res pbpal_handle_socket_condition(int result, pubnub_t* pb)
 {
-    if (!pb->options.crypto_first_try
+    if (!pb->options.useSSL || !pb->options.trySSL
 #if PUBNUB_PROXY_API
         || ((pb->proxy_type == pbproxyHTTP_CONNECT) && !pb->proxy_tunnel_established)
 #endif
@@ -261,7 +261,7 @@ int pbpal_send_status(pubnub_t* pb)
     }
     PUBNUB_ASSERT_OPT(pb->sock_state == STATE_SENDING_DATA);
 
-    if (!pb->options.crypto_first_try
+    if (!pb->options.useSSL || !pb->options.trySSL
 #if PUBNUB_PROXY_API
         || ((pb->proxy_type == pbproxyHTTP_CONNECT) && !pb->proxy_tunnel_established)
 #endif
@@ -327,7 +327,7 @@ enum pubnub_res pbpal_line_read_status(pubnub_t* pb)
             int recvres;
             PUBNUB_ASSERT_OPT((char*)pb->ptr + pb->left
                               == pb->core.http_buf + PUBNUB_BUF_MAXLEN);
-            if (!pb->options.crypto_first_try
+            if (!pb->options.useSSL || !pb->options.trySSL
 #if PUBNUB_PROXY_API
                 || ((pb->proxy_type == pbproxyHTTP_CONNECT) && !pb->proxy_tunnel_established)
 #endif
@@ -371,7 +371,7 @@ enum pubnub_res pbpal_line_read_status(pubnub_t* pb)
             pb->sock_state = STATE_NONE;
             return PNR_TX_BUFF_TOO_SMALL;
         }
-        if (!pb->options.crypto_first_try
+        if (!pb->options.useSSL || !pb->options.trySSL
 #if PUBNUB_PROXY_API
             || ((pb->proxy_type == pbproxyHTTP_CONNECT) && !pb->proxy_tunnel_established)
 #endif
@@ -435,7 +435,7 @@ enum pubnub_res pbpal_read_status(pubnub_t* pb)
                 to_recv = pb->left;
             }
             PUBNUB_ASSERT_OPT(to_recv > 0);
-            if (!pb->options.crypto_first_try
+            if (!pb->options.useSSL || !pb->options.trySSL
 #if PUBNUB_PROXY_API
                 || ((pb->proxy_type == pbproxyHTTP_CONNECT) && !pb->proxy_tunnel_established)
 #endif
@@ -463,7 +463,7 @@ enum pubnub_res pbpal_read_status(pubnub_t* pb)
             pb->sock_state = STATE_NONE;
             return PNR_OK;
         }
-        if (!pb->options.crypto_first_try
+        if (!pb->options.useSSL || !pb->options.trySSL
 #if PUBNUB_PROXY_API
             || ((pb->proxy_type == pbproxyHTTP_CONNECT) && !pb->proxy_tunnel_established)
 #endif

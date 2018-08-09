@@ -23,8 +23,6 @@
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 
-typedef BIO* pb_socket_t;
-
 
 #if defined(__linux__)
 /* We assume that one doesn't want to receive and handle SIGPIPE.
@@ -78,8 +76,8 @@ int socket_platform_init(void);
 
 /** The Pubnub OpenSSL context */
 struct pubnub_pal {
-    BIO*         socket;
-    pbpal_native_socket_t  dns_socket;
+    pbpal_native_socket_t socket;
+    SSL*         ssl;
     SSL_CTX*     ctx;
     SSL_SESSION* session;
     char         ip[PUBNUB_MAX_IP_ADDR_OCTET_LENGTH];

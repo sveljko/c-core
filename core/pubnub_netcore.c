@@ -313,7 +313,7 @@ static int send_init_GET_or_CONNECT(struct pubnub_* pb)
     }
 #endif
 #if PUBNUB_USE_SSL
-    if(pb->options.crypto_first_try && pb->options.useSSL && (NULL == pb->pal.ssl)) {
+    if(pb->options.trySSL && pb->options.useSSL && (NULL == pb->pal.ssl)) {
         enum pbpal_tls_result res = pbpal_start_tls(pb);
         switch(res) {
         case pbtlsEstablished:
@@ -323,7 +323,7 @@ static int send_init_GET_or_CONNECT(struct pubnub_* pb)
             return +1;
         case pbtlsFailed:
             if(pb->options.fallbackSSL){
-                pb->options.crypto_first_try = false;
+                pb->options.trySSL = false;
                 pb->retry_after_close = true;
             }
             outcome_detected(pb, PNR_CONNECT_FAILED);
@@ -516,7 +516,7 @@ next_state:
             break;
         case pbtlsFailed:
             if(pb->options.fallbackSSL){
-                pb->options.crypto_first_try = false;
+                pb->options.trySSL = false;
                 pb->retry_after_close = true;
             }
             outcome_detected(pb, PNR_CONNECT_FAILED);
@@ -556,7 +556,7 @@ next_state:
                     pb->core.http_buf_len = pb->proxy_saved_path_len;
                 }
 #if PUBNUB_USE_SSL
-                if(pb->options.useSSL && pb->options.crypto_first_try) {
+                if(pb->options.trySSL && pb->options.useSSL) {
                     strcpy(http, "https://");
                 }    
 #endif
@@ -638,7 +638,7 @@ next_state:
                 && !pb->proxy_tunnel_established) {
                 char port_toward_origin[5] = ":80";
 #if PUBNUB_USE_SSL
-                if(pb->options.useSSL && pb->options.crypto_first_try) {
+                if(pb->options.trySSL && pb->options.useSSL) {
                     strcpy(port_toward_origin, ":443");
                 }    
 #endif
