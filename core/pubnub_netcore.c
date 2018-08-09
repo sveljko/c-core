@@ -60,14 +60,12 @@ static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)
 static void close_connection(struct pubnub_* pb)
 {
     if (pbpal_close(pb) <= 0) {
-#if PUBNUB_PROXY_API
         PUBNUB_LOG_TRACE("close_connection(): pb->retry_after_close=%d\n",
                          pb->retry_after_close);
         if (pb->retry_after_close) {
             pb->state = PBS_RETRY;
             return;
         }
-#endif
         pbpal_forget(pb);
         pbntf_trans_outcome(pb, PBS_IDLE);
     }
@@ -80,14 +78,12 @@ static void close_connection(struct pubnub_* pb)
 static enum pubnub_state close_kept_alive_connection(struct pubnub_* pb)
 {
     if (pbpal_close(pb) <= 0) {
-#if PUBNUB_PROXY_API
         PUBNUB_LOG_TRACE(
             "close_kept_alive_connection(): pb->retry_after_close=%d\n",
             pb->retry_after_close);
         if (pb->retry_after_close) {
             return PBS_RETRY;
         }
-#endif
         pbpal_forget(pb);
         return PBS_READY;
     }
@@ -109,9 +105,7 @@ static void outcome_detected(struct pubnub_* pb, enum pubnub_res rslt)
         PUBNUB_LOG_TRACE("outcome_detected(pb=%p): Keepin' it alive\n", pb);
         pbntf_lost_socket(pb);
         pbntf_trans_outcome(pb, PBS_KEEP_ALIVE_IDLE);
-#if PUBNUB_PROXY_API
         pb->retry_after_close = 0;
-#endif
     }
     else {
         close_connection(pb);
@@ -248,6 +242,10 @@ static char const* pbnc_state2str(enum pubnub_state e)
         return "PBS_WAIT_CONNECT";
     case PBS_CONNECTED:
         return "PBS_CONNECTED";
+#if PUBNUB_USE_SSL
+    case PBS_WAIT_PAL_CONNECT:
+        return "PBS_WAIT_PAL_CONNECT";
+#endif
     case PBS_TX_GET:
         return "PBS_TX_GET";
     case PBS_TX_PATH:
@@ -304,16 +302,41 @@ static char const* pbnc_state2str(enum pubnub_state e)
 
 static int send_init_GET_or_CONNECT(struct pubnub_* pb)
 {
-    PUBNUB_LOG_TRACE(
-        "send_init_GET_or_CONNECT(pb=%p): pb->trans = %d\n", pb, pb->trans);
+    PUBNUB_LOG_TRACE("send_init_GET_or_CONNECT(pb=%p): pb->trans = %d\n",
+                     pb,
+                     pb->trans);
 #if PUBNUB_PROXY_API
     if ((pb->proxy_type == pbproxyHTTP_CONNECT) && (!pb->proxy_tunnel_established)) {
+        pb->state = PBS_TX_GET;
         return pbpal_send_literal_str(pb, "CONNECT ");
     }
 #endif
+#if PUBNUB_USE_SSL
+    if(pb->options.crypto_first_try && pb->options.useSSL && (NULL == pb->pal.ssl)) {
+        enum pbpal_tls_result res = pbpal_start_tls(pb);
+        switch(res) {
+        case pbtlsEstablished:
+            break;
+        case pbtlsStarted:
+            pb->state = PBS_WAIT_PAL_CONNECT;
+            return +1;
+        case pbtlsFailed:
+            if(pb->options.fallbackSSL){
+                pb->options.crypto_first_try = false;
+                pb->retry_after_close = true;
+            }
+            outcome_detected(pb, PNR_CONNECT_FAILED);
+            return +1;
+        default:
+            PUBNUB_LOG_ERROR("Unexpected result: pbpal_start_tls()=%d\n", res);
+            outcome_detected(pb, PNR_INTERNAL_ERROR);
+            return +1;
+        }
+    }
+#endif
+    pb->state = PBS_TX_GET;
     return pbpal_send_literal_str(pb, "GET ");
 }
-
 
 int pbnc_fsm(struct pubnub_* pb)
 {
@@ -328,8 +351,8 @@ next_state:
     case PBS_NULL:
         break;
     case PBS_IDLE:
-#if PUBNUB_PROXY_API
         pb->retry_after_close        = false;
+#if PUBNUB_PROXY_API
         pb->proxy_tunnel_established = false;
         pb->proxy_saved_path_len     = 0;
 #endif
@@ -345,12 +368,10 @@ next_state:
             break;
         }
         break;
-#if PUBNUB_PROXY_API
     case PBS_RETRY:
         pb->retry_after_close = false;
         pb->state             = PBS_READY;
         goto next_state;
-#endif
     case PBS_READY: {
         enum pbpal_resolv_n_connect_result rslv = pbpal_resolv_and_connect(pb);
         WATCH_ENUM(rslv);
@@ -472,14 +493,48 @@ next_state:
             outcome_detected(pb, PNR_IO_ERROR);
             break;
         }
-        pb->state = PBS_TX_GET;
+#if PUBNUB_USE_SSL
+        if (PBS_TX_GET != pb->state) {
+            break;
+        }
+#endif
         goto next_state;
+#if PUBNUB_USE_SSL
+    case PBS_WAIT_PAL_CONNECT: {
+        enum pbpal_tls_result res = pbpal_check_tls(pb);
+        switch(res) {
+        case pbtlsEstablished:
+            i = pbpal_send_literal_str(pb, "GET ");
+            if (i < 0) {
+                outcome_detected(pb, PNR_IO_ERROR);
+                break;
+            }
+            pb->state = PBS_TX_GET;
+            goto next_state;
+        case pbtlsStarted:
+            break;
+        case pbtlsFailed:
+            if(pb->options.fallbackSSL){
+                pb->options.crypto_first_try = false;
+                pb->retry_after_close = true;
+            }
+            outcome_detected(pb, PNR_CONNECT_FAILED);
+            break;
+        default:
+            PUBNUB_LOG_ERROR("Unexpected result: pbpal_check_tls()=%d\n", res);
+            outcome_detected(pb, PNR_INTERNAL_ERROR);
+            break;
+        }
+        break;
+    }
+#endif
     case PBS_TX_GET:
         i = pbpal_send_status(pb);
         if (i <= 0) {
 #if PUBNUB_PROXY_API
             switch (pb->proxy_type) {
-            case pbproxyHTTP_GET:
+            case pbproxyHTTP_GET: {
+                char http[9] = "http://";
                 pb->state = PBS_TX_SCHEME;
                 if (i < 0) {
                     outcome_detected(pb, PNR_IO_ERROR);
@@ -499,10 +554,16 @@ next_state:
                             pb->proxy_saved_path_len + 1);
                     pb->core.http_buf_len = pb->proxy_saved_path_len;
                 }
-                if (0 > pbpal_send_literal_str(pb, "http://")) {
+#if PUBNUB_USE_SSL
+                if(pb->options.useSSL && pb->options.crypto_first_try) {
+                    strcpy(http, "https://");
+                }    
+#endif
+                if (0 > pbpal_send_literal_str(pb, http)) {
                     outcome_detected(pb, PNR_IO_ERROR);
                 }
                 break;
+            }
             case pbproxyHTTP_CONNECT:
                 pb->state = PBS_TX_SCHEME;
                 if (i < 0) {
@@ -574,7 +635,13 @@ next_state:
         else if (0 == i) {
             if ((pb->proxy_type == pbproxyHTTP_CONNECT)
                 && !pb->proxy_tunnel_established) {
-                if (0 > pbpal_send_literal_str(pb, ":80")) {
+                char port_toward_origin[5] = ":80";
+#if PUBNUB_USE_SSL
+                if(pb->options.useSSL && pb->options.crypto_first_try) {
+                    strcpy(port_toward_origin, ":443");
+                }    
+#endif
+                if (0 > pbpal_send_literal_str(pb, port_toward_origin)) {
                     outcome_detected(pb, PNR_IO_ERROR);
                     break;
                 }
@@ -925,12 +992,10 @@ next_state:
         break;
     case PBS_WAIT_CLOSE:
         if (pbpal_closed(pb)) {
-#if PUBNUB_PROXY_API
             if (pb->retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
-#endif
             pbpal_forget(pb);
             pbntf_trans_outcome(pb, PBS_IDLE);
         }
@@ -943,12 +1008,10 @@ next_state:
         break;
     case PBS_WAIT_CANCEL_CLOSE:
         if (pbpal_closed(pb)) {
-#if PUBNUB_PROXY_API
             if (pb->retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
-#endif
             pbpal_forget(pb);
             pb->core.msg_ofs = pb->core.msg_end = 0;
             pbntf_trans_outcome(pb, PBS_IDLE);
@@ -981,18 +1044,13 @@ next_state:
         if (i < 0) {
             pb->state = close_kept_alive_connection(pb);
         }
-        else {
-            pb->state = PBS_TX_GET;
-        }
         goto next_state;
     case PBS_KEEP_ALIVE_WAIT_CLOSE:
         if (pbpal_closed(pb)) {
-#if PUBNUB_PROXY_API
             if (pb->retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
-#endif
             pbpal_forget(pb);
             pb->state = PBS_READY;
             goto next_state;
