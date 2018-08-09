@@ -7,8 +7,14 @@
 #include "lib/sockets/pbpal_adns_sockets.h"
 #include "core/pubnub_dns_servers.h"
 
+#include <string.h>
 #include <sys/types.h>
 
+#if defined(_WIN32)
+#include "windows/pubnub_get_native_socket.h"
+#else
+#include "posix/pubnub_get_native_socket.h"
+#endif
 
 #define HTTP_PORT 80
 
