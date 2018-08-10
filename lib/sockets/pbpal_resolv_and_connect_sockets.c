@@ -174,9 +174,6 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
     memset(&dest, '\0', sizeof dest);
     switch (read_dns_response(skt, (struct sockaddr*)&dns_server, &dest)) {
     case -1:
-//
-        printf("--------------->puko sam kod read_dns_response!\n");
-		//
 		return pbpal_resolv_failed_rcv;
     case +1:
         return pbpal_resolv_rcv_wouldblock;
