@@ -9,6 +9,7 @@
    we find a better solution...
 */
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <unistd.h>
 #include <sys/socket.h>
@@ -37,14 +38,6 @@
 #define socket_recv(socket, buf, len, flags)                                   \
     recv((socket), (buf), (len), (flags))
 
-/* Treating `EINPROGRESS` the same as `EWOULDBLOCK` isn't
-   the greatest solution, but it is good for now.
-*/
-#define socket_would_block()                                                   \
-    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
-
-#define socket_timed_out() (errno == ETIMEDOUT)
-
 /** On Windows, one needs to call WSAStartup(), which is not trivial */
 int socket_platform_init(void);
 
@@ -55,11 +48,29 @@ int socket_platform_init(void);
 
 #define socket_close(socket) close(socket)
 
+/* Treating `EINPROGRESS` the same as `EWOULDBLOCK` isn't
+   the greatest solution, but it is good for now.
+*/
+#define socket_would_block()                                                   \
+    ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
+
+#define socket_timed_out() (errno == ETIMEDOUT)
+
 #else
+typedef SOCKET pb_socket_t;
 
 #define SOCKET_INVALID INVALID_SOCKET
 
 #define socket_close(socket) closesocket(socket)
+
+#define socket_would_block()                                                   \
+    ((WSAGetLastError() == WSAEWOULDBLOCK)                                     \
+     || (WSAGetLastError() == WSAEINPROGRESS))
+
+#define socket_timed_out() (WSAGetLastError() == WSAETIMEDOUT)
+
+/* Winsock never raises SIGPIPE, so, we're good. */
+#define socket_disable_SIGPIPE(socket)
 
 #endif
 
