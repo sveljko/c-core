@@ -12,7 +12,7 @@ build_script:
   - nmake /f windows.mk
 
 test_script:
-  - windows/pubnub_fntest
-  - openssl/pubnub_fntest
+  - windows\pubnub_fntest
+  - openssl\pubnub_fntest
 
 deploy: off
