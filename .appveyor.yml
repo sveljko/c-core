@@ -10,6 +10,8 @@ environment:
 build_script:
   - call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat"
   - nmake /f windows.mk
+
+test_script:
   - windows/pubnub_fntest
   - openssl/pubnub_fntest
 
