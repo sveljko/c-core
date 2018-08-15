@@ -42,9 +42,14 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
 {
     int error;
     uint16_t port = HTTP_PORT;
-    char const* origin = PUBNUB_ORIGIN_SETTABLE ? pb->origin : PUBNUB_ORIGIN;
+    char const* origin;
+
+    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+    PUBNUB_ASSERT_OPT((pb->state == PBS_READY) || (pb->state == PBS_WAIT_DNS_SEND));
+    origin = PUBNUB_ORIGIN_SETTABLE ? pb->origin : PUBNUB_ORIGIN;
 #if PUBNUB_USE_SSL
-    if (pb->options.trySSL && pb->options.useSSL) {
+    if (pb->options.trySSL) {
+        PUBNUB_ASSERT(pb->options.useSSL);
         port = TLS_PORT;
     }
 #endif
@@ -65,82 +70,78 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
         break;
     }
 #endif
-
-    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
-    PUBNUB_ASSERT_OPT((pb->state == PBS_READY) || (pb->state == PBS_WAIT_DNS_SEND));
-
 #ifdef PUBNUB_CALLBACK_API
-        struct sockaddr_in dest;
+    struct sockaddr_in dest;
 
-        if (SOCKET_INVALID == pb->pal.socket) {
-            pb->pal.socket  = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        }
-        if (SOCKET_INVALID == pb->pal.socket) {
-            return pbpal_resolv_resource_failure;
-        }
-        pb->options.use_blocking_io = false;
-        pbpal_set_blocking_io(pb);
-        dest.sin_family = AF_INET;
-        dest.sin_port = htons(DNS_PORT);
-        get_dns_ip(&dest);
-        error = send_dns_query(pb->pal.socket, (struct sockaddr*)&dest, (unsigned char*)origin);
-        if (error < 0) {
-            return pbpal_resolv_failed_send;
-        }
-        else if (error > 0) {
-            return pbpal_resolv_send_wouldblock;
-        }
-        return pbpal_resolv_sent;
+    if (SOCKET_INVALID == pb->pal.socket) {
+        pb->pal.socket  = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    }
+    if (SOCKET_INVALID == pb->pal.socket) {
+        return pbpal_resolv_resource_failure;
+    }
+    pb->options.use_blocking_io = false;
+    pbpal_set_blocking_io(pb);
+    dest.sin_family = AF_INET;
+    dest.sin_port = htons(DNS_PORT);
+    get_dns_ip(&dest);
+    error = send_dns_query(pb->pal.socket, (struct sockaddr*)&dest, (unsigned char*)origin);
+    if (error < 0) {
+        return pbpal_resolv_failed_send;
+    }
+    else if (error > 0) {
+        return pbpal_resolv_send_wouldblock;
+    }
+    return pbpal_resolv_sent;
 
 #else
-        char port_string[20];
-        struct addrinfo *result;
-        struct addrinfo *it;
-        struct addrinfo hint;
+    char port_string[20];
+    struct addrinfo *result;
+    struct addrinfo *it;
+    struct addrinfo hint;
 
-        hint.ai_socktype = SOCK_STREAM;
-        hint.ai_family = AF_UNSPEC;
-        hint.ai_protocol = hint.ai_flags = hint.ai_addrlen = 0;
-        hint.ai_addr = NULL;
-        hint.ai_canonname = NULL;
-        hint.ai_next = NULL;
+    hint.ai_socktype = SOCK_STREAM;
+    hint.ai_family = AF_UNSPEC;
+    hint.ai_protocol = hint.ai_flags = hint.ai_addrlen = 0;
+    hint.ai_addr = NULL;
+    hint.ai_canonname = NULL;
+    hint.ai_next = NULL;
 
-        snprintf(port_string, sizeof port_string, "%hu", port);
-        error = getaddrinfo(origin, port_string, &hint, &result);
-        if (error != 0) {
-            return pbpal_resolv_failed_processing;
+    snprintf(port_string, sizeof port_string, "%hu", port);
+    error = getaddrinfo(origin, port_string, &hint, &result);
+    if (error != 0) {
+        return pbpal_resolv_failed_processing;
+    }
+
+    for (it = result; it != NULL; it = it->ai_next) {
+        pb->pal.socket = socket(it->ai_family, it->ai_socktype, it->ai_protocol);
+        if (pb->pal.socket == SOCKET_INVALID) {
+            continue;
         }
-
-        for (it = result; it != NULL; it = it->ai_next) {
-            pb->pal.socket = socket(it->ai_family, it->ai_socktype, it->ai_protocol);
-            if (pb->pal.socket == SOCKET_INVALID) {
+        pbpal_set_blocking_io(pb);
+        if (connect(pb->pal.socket, it->ai_addr, it->ai_addrlen) == SOCKET_ERROR) {
+            if (socket_would_block()) {
+                error = 1;
+                break;
+            }
+            else {
+                PUBNUB_LOG_WARNING("socket connect() failed, will try another IP address, if available\n");
+                socket_close(pb->pal.socket);
+                pb->pal.socket = SOCKET_INVALID;
                 continue;
             }
-            pbpal_set_blocking_io(pb);
-            if (connect(pb->pal.socket, it->ai_addr, it->ai_addrlen) == SOCKET_ERROR) {
-                if (socket_would_block()) {
-                    error = 1;
-                    break;
-                }
-                else {
-                    PUBNUB_LOG_WARNING("socket connect() failed, will try another IP address, if available\n");
-                    socket_close(pb->pal.socket);
-                    pb->pal.socket = SOCKET_INVALID;
-                    continue;
-                }
-            }
-            break;
         }
-        freeaddrinfo(result);
+        break;
+    }
+    freeaddrinfo(result);
 
-        if (NULL == it) {
-            return pbpal_connect_failed;
-        }
+    if (NULL == it) {
+        return pbpal_connect_failed;
+    }
 
-        socket_set_rcv_timeout(pb->pal.socket, pb->transaction_timeout_ms);
-        socket_disable_SIGPIPE(pb->pal.socket);
+    socket_set_rcv_timeout(pb->pal.socket, pb->transaction_timeout_ms);
+    socket_disable_SIGPIPE(pb->pal.socket);
 
-        return error ? pbpal_connect_wouldblock : pbpal_connect_success;
+    return error ? pbpal_connect_wouldblock : pbpal_connect_success;
 #endif /* PUBNUB_CALLBACK_API */
 }
 
@@ -152,10 +153,13 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
     struct sockaddr_in dns_server;
     struct sockaddr_in dest;
     uint16_t port = HTTP_PORT;
-    pbpal_native_socket_t skt = pb->pal.socket;
+    pbpal_native_socket_t skt;
 
+    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+    PUBNUB_ASSERT_OPT(pb->state == PBS_WAIT_DNS_RCV);
 #if PUBNUB_USE_SSL
-    if (pb->options.trySSL && pb->options.useSSL) {
+    if (pb->options.trySSL) {
+        PUBNUB_ASSERT(pb->options.useSSL);
         port = TLS_PORT;
     }
 #endif
@@ -164,9 +168,8 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
         port = pb->proxy_port;
     }
 #endif
-    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+    skt = pb->pal.socket;
     PUBNUB_ASSERT(SOCKET_INVALID != skt);
-    PUBNUB_ASSERT_OPT(pb->state == PBS_WAIT_DNS_RCV);
 
     dns_server.sin_family = AF_INET;
     dns_server.sin_port = htons(DNS_PORT);
@@ -193,7 +196,7 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
     socket_disable_SIGPIPE(pb->pal.socket);
     dest.sin_port = htons(port);
     if (SOCKET_ERROR == connect(skt, (struct sockaddr*)&dest, sizeof dest)) {
-            return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
+        return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
     }
 
     return pbpal_connect_success;

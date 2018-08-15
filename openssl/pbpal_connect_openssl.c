@@ -22,7 +22,6 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <openssl/x509v3.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -165,11 +164,12 @@ static void add_certs(pubnub_t* pb)
 
 enum pbpal_tls_result pbpal_start_tls(pubnub_t* pb)
 {
-    SSL* ssl  = pb->pal.ssl;
+    SSL* ssl;
 
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     PUBNUB_ASSERT_OPT(PBS_CONNECTED == pb->state);
     PUBNUB_ASSERT(SOCKET_INVALID != pb->pal.socket);
+    ssl = pb->pal.ssl;
     PUBNUB_ASSERT(NULL == ssl);
 
     if (NULL == pb->pal.ctx) {
@@ -209,12 +209,13 @@ enum pbpal_tls_result pbpal_start_tls(pubnub_t* pb)
 */
 enum pbpal_tls_result pbpal_check_tls(pubnub_t* pb)
 {
-    SSL* ssl = pb->pal.ssl;
+    SSL* ssl;
     int rslt;
 
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
-    PUBNUB_ASSERT_OPT((PBS_CONNECTED == pb->state) || (PBS_WAIT_PAL_CONNECT == pb->state));
+    PUBNUB_ASSERT_OPT((PBS_CONNECTED == pb->state) || (PBS_WAIT_TLS_CONNECT == pb->state));
     PUBNUB_ASSERT(SOCKET_INVALID != pb->pal.socket);
+    ssl = pb->pal.ssl;
     PUBNUB_ASSERT(NULL != ssl);
 
     rslt = SSL_connect(ssl);

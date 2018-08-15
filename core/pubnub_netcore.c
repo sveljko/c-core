@@ -244,8 +244,8 @@ static char const* pbnc_state2str(enum pubnub_state e)
     case PBS_CONNECTED:
         return "PBS_CONNECTED";
 #if PUBNUB_USE_SSL
-    case PBS_WAIT_PAL_CONNECT:
-        return "PBS_WAIT_PAL_CONNECT";
+    case PBS_WAIT_TLS_CONNECT:
+        return "PBS_WAIT_TLS_CONNECT";
 #endif
     case PBS_TX_GET:
         return "PBS_TX_GET";
@@ -300,44 +300,6 @@ static char const* pbnc_state2str(enum pubnub_state e)
     }
 }
 
-
-static int send_init_GET_or_CONNECT(struct pubnub_* pb)
-{
-    PUBNUB_LOG_TRACE("send_init_GET_or_CONNECT(pb=%p): pb->trans = %d\n",
-                     pb,
-                     pb->trans);
-#if PUBNUB_PROXY_API
-    if ((pb->proxy_type == pbproxyHTTP_CONNECT) && (!pb->proxy_tunnel_established)) {
-        pb->state = PBS_TX_GET;
-        return pbpal_send_literal_str(pb, "CONNECT ");
-    }
-#endif
-#if PUBNUB_USE_SSL
-    if(pb->options.trySSL && pb->options.useSSL && (NULL == pb->pal.ssl)) {
-        enum pbpal_tls_result res = pbpal_start_tls(pb);
-        switch(res) {
-        case pbtlsEstablished:
-            break;
-        case pbtlsStarted:
-            pb->state = PBS_WAIT_PAL_CONNECT;
-            return +1;
-        case pbtlsFailed:
-            if(pb->options.fallbackSSL){
-                pb->options.trySSL = false;
-                pb->retry_after_close = true;
-            }
-            outcome_detected(pb, PNR_CONNECT_FAILED);
-            return +1;
-        default:
-            PUBNUB_LOG_ERROR("Unexpected result: pbpal_start_tls()=%d\n", res);
-            outcome_detected(pb, PNR_INTERNAL_ERROR);
-            return +1;
-        }
-    }
-#endif
-    pb->state = PBS_TX_GET;
-    return pbpal_send_literal_str(pb, "GET ");
-}
 
 int pbnc_fsm(struct pubnub_* pb)
 {
@@ -489,19 +451,52 @@ next_state:
         pb->keep_alive.t_connect = time(NULL);
         pb->keep_alive.count     = 0;
 #endif
-        i = send_init_GET_or_CONNECT(pb);
+#if PUBNUB_PROXY_API
+        if ((pbproxyHTTP_CONNECT == pb->proxy_type) && (!pb->proxy_tunnel_established)) {
+            pb->state = PBS_TX_GET;
+            i = pbpal_send_literal_str(pb, "CONNECT ");
+            if (i < 0) {
+                outcome_detected(pb, PNR_IO_ERROR);
+                break;
+            }
+            pb->state = PBS_TX_GET;
+            goto next_state;
+        }
+#endif
+#if PUBNUB_USE_SSL
+        if(pb->options.trySSL && (NULL == pb->pal.ssl)) {
+            enum pbpal_tls_result res;
+            PUBNUB_ASSERT(pb->options.useSSL);
+            res = pbpal_start_tls(pb);
+            switch(res) {
+            case pbtlsEstablished:
+                break;
+            case pbtlsStarted:
+                pb->state = PBS_WAIT_TLS_CONNECT;
+                return 0;
+            case pbtlsFailed:
+                if(pb->options.fallbackSSL){
+                    pb->options.trySSL = false;
+                    pb->retry_after_close = true;
+                }
+                outcome_detected(pb, PNR_CONNECT_FAILED);
+                return 0;
+            default:
+                PUBNUB_LOG_ERROR("Unexpected result: pbpal_start_tls()=%d\n", res);
+                outcome_detected(pb, PNR_INTERNAL_ERROR);
+                return 0;
+            }
+        }
+#endif
+        i = pbpal_send_literal_str(pb, "GET ");
         if (i < 0) {
             outcome_detected(pb, PNR_IO_ERROR);
             break;
         }
-#if PUBNUB_USE_SSL
-        if (PBS_TX_GET != pb->state) {
-            break;
-        }
-#endif
+        pb->state = PBS_TX_GET;
         goto next_state;
 #if PUBNUB_USE_SSL
-    case PBS_WAIT_PAL_CONNECT: {
+    case PBS_WAIT_TLS_CONNECT: {
         enum pbpal_tls_result res = pbpal_check_tls(pb);
         switch(res) {
         case pbtlsEstablished:
@@ -535,7 +530,7 @@ next_state:
 #if PUBNUB_PROXY_API
             switch (pb->proxy_type) {
             case pbproxyHTTP_GET: {
-                char http[9] = "http://";
+                char const* http = "http://";
                 pb->state = PBS_TX_SCHEME;
                 if (i < 0) {
                     outcome_detected(pb, PNR_IO_ERROR);
@@ -556,8 +551,9 @@ next_state:
                     pb->core.http_buf_len = pb->proxy_saved_path_len;
                 }
 #if PUBNUB_USE_SSL
-                if(pb->options.trySSL && pb->options.useSSL) {
-                    strcpy(http, "https://");
+                if(pb->options.trySSL) {
+                    PUBNUB_ASSERT(pb->options.useSSL);
+                    http = "https://";
                 }    
 #endif
                 if (0 > pbpal_send_literal_str(pb, http)) {
@@ -636,10 +632,11 @@ next_state:
         else if (0 == i) {
             if ((pb->proxy_type == pbproxyHTTP_CONNECT)
                 && !pb->proxy_tunnel_established) {
-                char port_toward_origin[5] = ":80";
+                char const* port_toward_origin = ":80";
 #if PUBNUB_USE_SSL
-                if(pb->options.trySSL && pb->options.useSSL) {
-                    strcpy(port_toward_origin, ":443");
+                if(pb->options.trySSL) {
+                    PUBNUB_ASSERT(pb->options.useSSL);
+                    port_toward_origin = ":443";
                 }    
 #endif
                 if (0 > pbpal_send_literal_str(pb, port_toward_origin)) {
@@ -1041,7 +1038,8 @@ next_state:
             pbntf_trans_outcome(pb, PBS_IDLE);
             break;
         }
-        i = send_init_GET_or_CONNECT(pb);
+        pb->state = PBS_TX_GET;
+        i = pbpal_send_literal_str(pb, "GET ");
         if (i < 0) {
             pb->state = close_kept_alive_connection(pb);
         }

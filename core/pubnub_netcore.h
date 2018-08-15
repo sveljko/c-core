@@ -32,8 +32,8 @@ enum pubnub_state {
     /** TCP connected */
     PBS_CONNECTED,
 #if PUBNUB_USE_SSL
-    /** Waiting for platform connection establishment */
-    PBS_WAIT_PAL_CONNECT,
+    /** Waiting for TLS connection establishment */
+    PBS_WAIT_TLS_CONNECT,
 #endif
     /** Sending HTTP "GET" */
     PBS_TX_GET,

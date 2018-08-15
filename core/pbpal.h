@@ -31,7 +31,7 @@ enum pbpal_resolv_n_connect_result {
     pbpal_connect_success
 };
 
-/** Results that functions for establishing platform connection
+/** Results that functions for establishing TLS connection
     can return.
 */
 enum pbpal_tls_result {
