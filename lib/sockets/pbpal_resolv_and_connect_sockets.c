@@ -38,40 +38,50 @@ static void get_dns_ip(struct sockaddr_in* addr)
 }
 #endif
 
-enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
+static void prepare_port_and_hostname(pubnub_t *pb, uint16_t* p_port, char const** p_origin)
 {
-    int error;
-    uint16_t port = HTTP_PORT;
-    char const* origin;
-
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     PUBNUB_ASSERT_OPT((pb->state == PBS_READY) || (pb->state == PBS_WAIT_DNS_SEND));
-    origin = PUBNUB_ORIGIN_SETTABLE ? pb->origin : PUBNUB_ORIGIN;
+    *p_origin = PUBNUB_ORIGIN_SETTABLE ? pb->origin : PUBNUB_ORIGIN;
 #if PUBNUB_USE_SSL
     if (pb->options.trySSL) {
         PUBNUB_ASSERT(pb->options.useSSL);
-        port = TLS_PORT;
+        *p_port = TLS_PORT;
     }
 #endif
 #if PUBNUB_PROXY_API
     switch (pb->proxy_type) {
     case pbproxyHTTP_CONNECT:
         if (!pb->proxy_tunnel_established) {
-            origin = pb->proxy_hostname;
+            *p_origin = pb->proxy_hostname;
         }
-        port = pb->proxy_port;
+        *p_port = pb->proxy_port;
         break;
     case pbproxyHTTP_GET:
-        origin = pb->proxy_hostname;
-        port = pb->proxy_port;
-        PUBNUB_LOG_TRACE("Using proxy: %s : %hu\n", origin, port);
+        *p_origin = pb->proxy_hostname;
+        *p_port = pb->proxy_port;
+        PUBNUB_LOG_TRACE("Using proxy: %s : %hu\n", *p_origin, *p_port);
         break;
     default:
         break;
     }
 #endif
+    return;
+}
+
+enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
+{
+    int error;
+    uint16_t port = HTTP_PORT;
+    char const* origin;
+
 #ifdef PUBNUB_CALLBACK_API
     struct sockaddr_in dest;
+
+    /* At this point, port is of no importance in callback environment.
+       It becomes relevant at 'SOCK_STREAM' socket connection time.
+     */
+    prepare_port_and_hostname(pb, &port, &origin);
 
     if (SOCKET_INVALID == pb->pal.socket) {
         pb->pal.socket  = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -106,6 +116,7 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
     hint.ai_canonname = NULL;
     hint.ai_next = NULL;
 
+    prepare_port_and_hostname(pb, &port, &origin);
     snprintf(port_string, sizeof port_string, "%hu", port);
     error = getaddrinfo(origin, port_string, &hint, &result);
     if (error != 0) {
