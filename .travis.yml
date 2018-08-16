@@ -11,7 +11,7 @@ script:
   - git clone https://github.com/cgreen-devs/cgreen.git
   - cd cgreen
   - make
-  - find . -name '*.so'
+  - find . -name '*cgreen_runner*'
   - cd ..
   - cd core
   - make
