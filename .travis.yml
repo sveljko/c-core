@@ -8,7 +8,7 @@ compiler:
   - clang
   - gcc
 install:
-  - pip install --user -r gcovr
+  - pip install --user gcovr
 script:
   - git clone https://github.com/cgreen-devs/cgreen.git
   - cd cgreen
