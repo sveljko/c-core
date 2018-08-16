@@ -10,7 +10,7 @@ compiler:
 script:
   - git clone https://github.com/cgreen-devs/cgreen.git
   - cd cgreen
-  - cmake
+  - make
   - cd ..
   - make -f posix.mk
   - posix/pubnub_fntest
