@@ -7,11 +7,12 @@ sudo: false
 compiler:
   - clang
   - gcc
+install:
+  - pip install gcovr
 script:
   - git clone https://github.com/cgreen-devs/cgreen.git
   - cd cgreen
   - make
-  - find . -name '*cgreen-runner*'
   - cd ..
   - cd core
   - make
