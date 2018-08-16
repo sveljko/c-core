@@ -683,6 +683,9 @@ Ensure(/*pbjson_parse, */ incomplete_json)
     attest(pbjson_get_object_value(&elem, "service", &parsed), equals(jonmpOK));
     attest(pbjson_elem_equals_string(&parsed, "\"xxx\""), is_true);
     attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpOK));
+    //
+    printf("parsed=%s_\n", parsed.start);
+    //
     attest(pbjson_elem_equals_string(
                &parsed,
                "{\"group\":\"gr\", \"some\\key\": value,\"chan\":[1," /*2,3]}"*/),
