@@ -35,7 +35,7 @@ PROXY_PROJECT_SOURCEFILES = pubnub_proxy_core.c pubnub_proxy.c pbhttp_digest.c p
 
 pubnub_proxy_unittest: $(PROJECT_SOURCEFILES) $(PROXY_PROJECT_SOURCEFILES) pubnub_proxy_unit_test.c
 	gcc -o pubnub_proxy_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_PROXY_API=1 -Wall -fprofile-arcs -ftest-coverage -fPIC $(PROJECT_SOURCEFILES) $(PROXY_PROJECT_SOURCEFILES) pubnub_proxy_unit_test.c -lcgreen -lm
-	../cgreen/build/src/cgreen-runner ./pubnub_proxy_unit_test.so
+	../cgreen/build/tools/cgreen-runner ./pubnub_proxy_unit_test.so
 	gcovr -r . --html --html-details -o coverage.html
 
 clean:
