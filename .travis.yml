@@ -12,6 +12,9 @@ script:
   - cd cgreen
   - make
   - cd ..
+  - cd core
+  - make
+  - cd ..
   - make -f posix.mk
   - posix/pubnub_fntest
   - openssl/pubnub_fntest
