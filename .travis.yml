@@ -7,9 +7,8 @@ sudo: false
 compiler:
   - clang
   - gcc
-# Installing `gcovr` fails, reporting some TLS-related errros...
-#install:
-#  - pip install gcovr
+install:
+  - pip install --user -r gcovr
 script:
   - git clone https://github.com/cgreen-devs/cgreen.git
   - cd cgreen
