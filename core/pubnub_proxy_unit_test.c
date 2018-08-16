@@ -44,7 +44,7 @@ static char *m_msg_array[20] = {NULL,};
 static int m_i;
 
 /* Awaits given amount of time in seconds */
-static void wait(time_t time_in_seconds) {
+static void wait4it(time_t time_in_seconds) {
     time_t time_start = time(NULL);
     do{
     }while((time(NULL) - time_start) < time_in_seconds);
@@ -720,7 +720,7 @@ Ensure(single_context_pubnub, proxy_GET_Basic_client_sets_timeout_and_max_operat
     attest(pbnc_fsm(pbp), equals(0));
     /* Wait */
     await_time=0;
-    wait(await_time);
+    wait4it(await_time);
 
     attest(pubnub_get(pbp), equals(NULL));
     attest(pubnub_last_http_code(pbp), equals(200));
@@ -741,7 +741,7 @@ Ensure(single_context_pubnub, proxy_GET_Basic_client_sets_timeout_and_max_operat
 
     /* Wait */
 //    await_time=0;
-//    wait(await_time);
+//    wait4it(await_time);
 
     attest(pubnub_last_http_code(pbp), equals(200));
 
