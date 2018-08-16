@@ -22,7 +22,7 @@ unittest: $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c
 	gcc -o pubnub_core_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_ORIGIN_SETTABLE=1 -Wall -fprofile-arcs -ftest-coverage -fPIC $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_core_unit_testo  $(CFLAGS) -Wall -fprofile-arcs -ftest-coverage $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_core_unit_test.so
-	gcovr -r . --html --html-details -o coverage.html
+	#gcovr -r . --html --html-details -o coverage.html
 
 TIMER_LIST_SOURCEFILES = pubnub_alloc_static.c pubnub_assert_std.c pubnub_timers.c
 
@@ -30,7 +30,7 @@ pubnub_timer_list_unittest: pubnub_timer_list.c pubnub_timer_list_unit_test.c
 	gcc -o pubnub_timer_list_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_CALLBACK_API -D PUBNUB_ASSERT_LEVEL_NONE -Wall -fprofile-arcs -ftest-coverage -fPIC $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_timer_list_unit_testo  $(CFLAGS) -D PUBNUB_CALLBACK_API -Wall -fprofile-arcs -ftest-coverage $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_timer_list_unit_test.so
-	gcovr -r . --html --html-details -o coverage.html
+	#gcovr -r . --html --html-details -o coverage.html
 
 PROXY_PROJECT_SOURCEFILES = pubnub_proxy_core.c pubnub_proxy.c pbhttp_digest.c pbntlm_core.c pbntlm_packer_std.c pubnub_generate_uuid_v4_random_std.c ../lib/base64/pbbase64.c ../lib/md5/md5.c
 
