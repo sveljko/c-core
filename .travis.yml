@@ -21,7 +21,6 @@ script:
   - cd core
   - make generate_report
   - wget https://github.com/codacy/codacy-coverage-reporter/releases/latest
-  660523bee9994259bf967026a31aa320
   - cd ..
   - make -f posix.mk
   - posix/pubnub_fntest
