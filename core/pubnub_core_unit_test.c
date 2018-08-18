@@ -669,7 +669,7 @@ Ensure(/*pbjson_parse, */ incomplete_json)
 {
     char const* json = "{\"some\\key\": \"some\\value\",\"service\": \"xxx\", "
                        "\"error\": true, \"payload\":{\"group\":\"gr\", "
-                       "\"some\\key\": value,\"chan\":[1," /*2,3]}, \"message\":0}"*/;
+                       "\"some\\\\key\": value,\"chan\":[1," /*2,3]}, \"message\":0}"*/;
     struct pbjson_elem elem = { json, json + strlen(json) };
     struct pbjson_elem parsed;
 
@@ -683,14 +683,13 @@ Ensure(/*pbjson_parse, */ incomplete_json)
     attest(pbjson_get_object_value(&elem, "service", &parsed), equals(jonmpOK));
     attest(pbjson_elem_equals_string(&parsed, "\"xxx\""), is_true);
     attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpOK));
-    //
-    printf("parsed=%s_\n", parsed.start);
-    //
+    /* Compared string has repeted string end. That's because this is irregular situation
+       and we are playing with module ability limits
+    */
     attest(pbjson_elem_equals_string(
                &parsed,
-               "{\"group\":\"gr\", \"some\\key\": value,\"chan\":[1," /*2,3]}"*/),
+               "{\"group\":\"gr\", \"some\\\\key\": value,\"chan\":[1,\0" /*2,3]}"*/),
            is_true);
-
     char const* json_2 =
         "{\"some\\key\": \"some\\value\",\"service\": \"xxx\", \"erro";
     elem.start = json_2;
@@ -708,10 +707,7 @@ Ensure(/*pbjson_parse, */ incomplete_json)
     elem.start = json_3;
     elem.end   = json_3 + strlen(json_3) + 3;
     attest(pbjson_get_object_value(&elem, "error", &parsed), equals(jonmpOK));
-    //
-    printf("parsed=%s_\n", parsed.start);
-    //
-    attest(pbjson_elem_equals_string(&parsed, "tru"), is_true);
+    attest(pbjson_elem_equals_string(&parsed, "tru\0"), is_true);
 
     char const* json_4 =
         "{\"some\\key\": \"some\\value\",\"ser\0ice\": \"xxx\"";
@@ -734,9 +730,6 @@ Ensure(/*pbjson_parse, */ gibberish_json)
     attest(pbjson_elem_equals_string(&parsed, "\"some\\value\""), is_true);
 
     attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpOK));
-    //
-    printf("parsed=%s_\n", parsed.start);
-    //
     attest(pbjson_elem_equals_string(
                &parsed, "{\"group\":\"gr\", \"some\\key\": [{\"chan\":[1,2]}}]"),
            is_true);

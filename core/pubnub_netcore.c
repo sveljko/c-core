@@ -201,7 +201,11 @@ static void finish(struct pubnub_* pb)
         break;
     }
 #endif
-
+    /* Allocates memory for 'string end' caracter */
+    if (0 != pbcc_realloc_reply_buffer(&pb->core, pb->core.http_buf_len + 1)) {
+        outcome_detected(pb, PNR_REPLY_TOO_BIG);
+        return;
+    }
 #if PUBNUB_RECEIVE_GZIP_RESPONSE
     if (pb->data_compressed == compressionGZIP) {
         pbres               = pbgzip_decompress(pb);
@@ -464,7 +468,11 @@ next_state:
         }
 #endif
 #if PUBNUB_USE_SSL
-        if(pb->options.trySSL && (NULL == pb->pal.ssl)) {
+        if((NULL == pb->pal.ssl) && pb->options.trySSL
+#if PUBNUB_PROXY_API
+           && (pbproxyHTTP_GET != pb->proxy_type)
+#endif
+            ) {
             enum pbpal_tls_result res;
             PUBNUB_ASSERT(pb->options.useSSL);
             res = pbpal_start_tls(pb);
@@ -556,7 +564,7 @@ next_state:
                     http = "https://";
                 }    
 #endif
-                if (0 > pbpal_send_literal_str(pb, http)) {
+                if (0 > pbpal_send_str(pb, http)) {
                     outcome_detected(pb, PNR_IO_ERROR);
                 }
                 break;
@@ -639,7 +647,7 @@ next_state:
                     port_toward_origin = ":443";
                 }    
 #endif
-                if (0 > pbpal_send_literal_str(pb, port_toward_origin)) {
+                if (0 > pbpal_send_str(pb, port_toward_origin)) {
                     outcome_detected(pb, PNR_IO_ERROR);
                     break;
                 }

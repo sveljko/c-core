@@ -447,7 +447,7 @@ static inline void expect_first_outgoing_GET(const char* url)
 {
     expect(pbpal_send, when(data, streqs("GET ")), returns(0));
     expect(pbpal_send_status, returns(0));
-	expect(pbpal_send, when(data, streqs("http://")), returns(0));
+	expect(pbpal_send_str, when(s, streqs("http://")), returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
 	expect(pbpal_send_status, returns(0));
@@ -473,7 +473,7 @@ static inline void expect_first_outgoing_CONNECT(void)
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, when(data, streqs(":80")), returns(0));
+    expect(pbpal_send_str, when(s, streqs(":80")), returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send, when(data, streqs(" HTTP/1.1\r\nHost: ")), returns(0));
     expect(pbpal_send_status, returns(0));
@@ -493,7 +493,7 @@ static inline void expect_outgoing_with_encoded_credentials_GET(char const *url,
 {
     expect(pbpal_send, when(data, streqs("GET ")), returns(0));
     expect(pbpal_send_status, returns(0));
-	expect(pbpal_send, when(data, streqs("http://")), returns(0));
+	expect(pbpal_send_str, when(s, streqs("http://")), returns(0));
     expect(pbpal_send_status, returns(0));
 	expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
     expect(pbpal_send_status, returns(0));
@@ -522,7 +522,7 @@ static inline void expect_outgoing_with_encoded_credentials_CONNECT(char const *
     expect(pbpal_send_status, returns(0));
 	expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, when(data, streqs(":80")), returns(0));
+    expect(pbpal_send_str, when(s, streqs(":80")), returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send, when(data, streqs(" HTTP/1.1\r\nHost: ")), returns(0));
     expect(pbpal_send_status, returns(0));
