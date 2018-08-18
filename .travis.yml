@@ -7,16 +7,24 @@ sudo: false
 compiler:
   - clang
   - gcc
+before_install:
+  - sudo apt-get install jq
+  - wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url)
 install:
   - pip install --user gcovr
 script:
   - git clone https://github.com/cgreen-devs/cgreen.git
   - cd cgreen
-  - make
+  - cmake -DCGREEN_INTERNAL_WITH_GCOV:BOOL=ON ..
+  - make -j2
   - cd ..
   - cd core
-  - make
+  - make generate_report
+  - wget https://github.com/codacy/codacy-coverage-reporter/releases/latest
+  660523bee9994259bf967026a31aa320
   - cd ..
   - make -f posix.mk
   - posix/pubnub_fntest
   - openssl/pubnub_fntest
+after_success:
+  - java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l C -r coverage.xml

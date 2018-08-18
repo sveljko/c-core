@@ -1,9 +1,10 @@
 PROJECT_SOURCEFILES = pubnub_pubsubapi.c pubnub_coreapi.c pubnub_ccore_pubsub.c pubnub_ccore.c pubnub_netcore.c pubnub_alloc_static.c pubnub_assert_std.c pubnub_json_parse.c pubnub_keep_alive.c pubnub_helper.c
 
-all: pubnub_proxy_unittest pubnub_timer_list_unittest unittest #generate_report
+all: pubnub_proxy_unittest pubnub_timer_list_unittest unittest
 
-#generate_report:
-#	gcovr -r . --html --html-details -o coverage.html
+generate_report: all
+	#gcovr -r . --html --html-details -o coverage.html
+	gcovr -r . --xml -o coverage.xml
 
 ifndef RECEIVE_GZIP_RESPONSE
 RECEIVE_GZIP_RESPONSE = 1
@@ -22,7 +23,7 @@ unittest: $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c
 	gcc -o pubnub_core_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_ORIGIN_SETTABLE=1 -Wall -fprofile-arcs -ftest-coverage -fPIC $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_core_unit_testo  $(CFLAGS) -Wall -fprofile-arcs -ftest-coverage $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_core_unit_test.so
-	#gcovr -r . --html --html-details -o coverage.html
+#	gcovr -r . --html --html-details -o coverage.html
 
 TIMER_LIST_SOURCEFILES = pubnub_alloc_static.c pubnub_assert_std.c pubnub_timers.c
 
