@@ -291,9 +291,6 @@ static int my_recv(void* p, size_t n)
     }
     memcpy(p, m_read, to_read);
     m_read += to_read;
-    //
-    printf("\n to_read = %d\n", to_read);
-    //
     return to_read;
 }
 
@@ -584,7 +581,7 @@ Ensure(/*pbjson_parse, */ get_object_value_invalid)
 
     elem.end = elem.start + 17;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
-           equals(jonmpObjectIncomplete));
+           equals(jonmpValueIncomplete));
 
     elem.end = elem.start + 18;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
@@ -760,9 +757,6 @@ void free_m_msgs(char** msg_array)
         assert(m_string_msg_array[i] != NULL);
         free(m_string_msg_array[i]);
         m_string_msg_array[i] = NULL;
-        //
-        printf("\n free(m_string_msg_array[%d])\n", i);
-        //
     }
 }
 
