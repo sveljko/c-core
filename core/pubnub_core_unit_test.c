@@ -573,11 +573,11 @@ Ensure(/*pbjson_parse, */ get_object_value_invalid)
 
     elem.end = elem.start + 13;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
-           equals(jonmpObjectIncomplete));
+           equals(jonmpValueIncomplete));
 
     elem.end = elem.start + 17;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
-           equals(jonmpValueIncomplete));
+           equals(jonmpObjectIncomplete));
 
     elem.end = elem.start + 18;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
