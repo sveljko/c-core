@@ -74,10 +74,6 @@ static void buf_setup(pubnub_t* pb)
 {
     pb->ptr  = (uint8_t*)pb->core.http_buf;
     pb->left = sizeof pb->core.http_buf;
-    //
-    printf("\n PUBNUB_BUF_MAXLEN= %d\n", PUBNUB_BUF_MAXLEN);
-    printf(" sizeof pb->core.http_buf= %d\n\n", pb->left);
-    //
 }
 
 void pbpal_init(pubnub_t* pb)
@@ -720,9 +716,6 @@ Ensure(/*pbjson_parse, */ gibberish_json)
     attest(pbjson_elem_equals_string(&parsed, "\"some\\value\""), is_true);
 
     attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpOK));
-    //
-    printf("parsed=%s_\n", parsed.start);
-    //
     attest(pbjson_elem_equals_string(
                &parsed, "{\"group\":\"gr\", \"some\\key\": [{\"chan\":[1,2]}}]"),
            is_true);
