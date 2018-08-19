@@ -682,11 +682,7 @@ Ensure(/*pbjson_parse, */ incomplete_json)
 
     attest(pbjson_get_object_value(&elem, "service", &parsed), equals(jonmpOK));
     attest(pbjson_elem_equals_string(&parsed, "\"xxx\""), is_true);
-    attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpOK));
-    attest(pbjson_elem_equals_string(
-               &parsed,
-               "{\"group\":\"gr\", \"some\\key\": value,\"chan\":[1," /*2,3]}"*/),
-           is_true);
+    attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpValueIncomplete));
 
     char const* json_2 =
         "{\"some\\key\": \"some\\value\",\"service\": \"xxx\", \"erro";
@@ -704,11 +700,7 @@ Ensure(/*pbjson_parse, */ incomplete_json)
                          "\"xxx\", \"error\":tru\0 }";
     elem.start = json_3;
     elem.end   = json_3 + strlen(json_3) + 3;
-    attest(pbjson_get_object_value(&elem, "error", &parsed), equals(jonmpOK));
-    //
-    printf("parsed=%s_\n", parsed.start);
-    //
-    attest(pbjson_elem_equals_string(&parsed, "tru"), is_true);
+    attest(pbjson_get_object_value(&elem, "error", &parsed), equals(jonmpValueIncomplete));
 
     char const* json_4 =
         "{\"some\\key\": \"some\\value\",\"ser\0ice\": \"xxx\"";
