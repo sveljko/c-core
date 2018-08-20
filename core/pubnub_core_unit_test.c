@@ -74,10 +74,6 @@ static void buf_setup(pubnub_t* pb)
 {
     pb->ptr  = (uint8_t*)pb->core.http_buf;
     pb->left = sizeof pb->core.http_buf;
-    //
-    printf("\n PUBNUB_BUF_MAXLEN= %d\n", PUBNUB_BUF_MAXLEN);
-    printf(" sizeof pb->core.http_buf= %d\n\n", pb->left);
-    //
 }
 
 void pbpal_init(pubnub_t* pb)
@@ -291,9 +287,6 @@ static int my_recv(void* p, size_t n)
     }
     memcpy(p, m_read, to_read);
     m_read += to_read;
-    //
-    printf("\n to_read = %d\n", to_read);
-    //
     return to_read;
 }
 
@@ -580,7 +573,7 @@ Ensure(/*pbjson_parse, */ get_object_value_invalid)
 
     elem.end = elem.start + 13;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
-           equals(jonmpMissingValueSeparator));
+           equals(jonmpValueIncomplete));
 
     elem.end = elem.start + 17;
     attest(pbjson_get_object_value(&elem, "payload", &parsed),
@@ -682,14 +675,8 @@ Ensure(/*pbjson_parse, */ incomplete_json)
 
     attest(pbjson_get_object_value(&elem, "service", &parsed), equals(jonmpOK));
     attest(pbjson_elem_equals_string(&parsed, "\"xxx\""), is_true);
-    attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpOK));
-    /* Compared string has repeted string end. That's because this is irregular situation
-       and we are playing with module ability limits
-    */
-    attest(pbjson_elem_equals_string(
-               &parsed,
-               "{\"group\":\"gr\", \"some\\\\key\": value,\"chan\":[1,\0" /*2,3]}"*/),
-           is_true);
+    attest(pbjson_get_object_value(&elem, "payload", &parsed), equals(jonmpValueIncomplete));
+
     char const* json_2 =
         "{\"some\\key\": \"some\\value\",\"service\": \"xxx\", \"erro";
     elem.start = json_2;
@@ -706,8 +693,7 @@ Ensure(/*pbjson_parse, */ incomplete_json)
                          "\"xxx\", \"error\":tru\0 }";
     elem.start = json_3;
     elem.end   = json_3 + strlen(json_3) + 3;
-    attest(pbjson_get_object_value(&elem, "error", &parsed), equals(jonmpOK));
-    attest(pbjson_elem_equals_string(&parsed, "tru\0"), is_true);
+    attest(pbjson_get_object_value(&elem, "error", &parsed), equals(jonmpValueIncomplete));
 
     char const* json_4 =
         "{\"some\\key\": \"some\\value\",\"ser\0ice\": \"xxx\"";
@@ -764,9 +750,6 @@ void free_m_msgs(char** msg_array)
         assert(m_string_msg_array[i] != NULL);
         free(m_string_msg_array[i]);
         m_string_msg_array[i] = NULL;
-        //
-        printf("\n free(m_string_msg_array[%d])\n", i);
-        //
     }
 }
 

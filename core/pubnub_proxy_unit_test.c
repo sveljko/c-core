@@ -44,7 +44,7 @@ static char *m_msg_array[20] = {NULL,};
 static int m_i;
 
 /* Awaits given amount of time in seconds */
-static void wait(time_t time_in_seconds) {
+static void wait4it(time_t time_in_seconds) {
     time_t time_start = time(NULL);
     do{
     }while((time(NULL) - time_start) < time_in_seconds);
@@ -57,10 +57,6 @@ static void buf_setup(pubnub_t *pb)
 {
     pb->ptr = (uint8_t*)pb->core.http_buf;
     pb->left = sizeof pb->core.http_buf;
-//
-    printf("\n PUBNUB_BUF_MAXLEN= %d\n", PUBNUB_BUF_MAXLEN);  
-    printf(" sizeof pb->core.http_buf= %d\n\n", pb->left);
-//
 }
 
 void pbpal_init(pubnub_t *pb)
@@ -213,9 +209,6 @@ static int my_recv(void *p, size_t n)
     }
     memcpy(p, m_read, to_read);
     m_read += to_read;
-//
-    printf("\n to_read = %d\n", to_read);
-//
     return to_read;
 }
 
@@ -416,9 +409,6 @@ void free_m_msgs(char ** msg_array) {
     for(i = 0; i < m_num_msgrcvd; i++) {
         attest(m_msg_array[i], differs(NULL));
         free(m_msg_array[i]);
-//
-        printf("\n free(m_msg_array[%d])\n", i);
-//
     }
 }
 
@@ -567,9 +557,6 @@ static inline void incoming(char const *str) {
 
     strcpy(pmsg, str);
     m_msg_array[m_num_msgrcvd++] = pmsg;
-//
-    printf("incoming:'%s'\n", pmsg);
-//
     if(m_num_msgrcvd == 1) {
         m_read = pmsg;
     }
@@ -720,7 +707,7 @@ Ensure(single_context_pubnub, proxy_GET_Basic_client_sets_timeout_and_max_operat
     attest(pbnc_fsm(pbp), equals(0));
     /* Wait */
     await_time=0;
-    wait(await_time);
+    wait4it(await_time);
 
     attest(pubnub_get(pbp), equals(NULL));
     attest(pubnub_last_http_code(pbp), equals(200));
@@ -741,7 +728,7 @@ Ensure(single_context_pubnub, proxy_GET_Basic_client_sets_timeout_and_max_operat
 
     /* Wait */
 //    await_time=0;
-//    wait(await_time);
+//    wait4it(await_time);
 
     attest(pubnub_last_http_code(pbp), equals(200));
 
