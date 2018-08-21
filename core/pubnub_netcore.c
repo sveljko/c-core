@@ -819,6 +819,10 @@ next_state:
                 pb->core.http_buf_len = 0;
                 if (!pb->http_chunked) {
                     if (0 == pb->core.http_content_len) {
+                        if (pb->http_code/100 > 3) {
+                            outcome_detected(pb, PNR_IO_ERROR);
+                            break;
+                        }
 #if PUBNUB_PROXY_API
                         WATCH_ENUM(pb->proxy_type);
                         WATCH_INT(pb->proxy_tunnel_established);

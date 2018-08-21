@@ -16,6 +16,7 @@
 #elif PUBNUB_PROXY_API
 #include "core/pubnub_proxy.h"
 #include "core/pbhttp_digest.h"
+#include "core/pubnub_dns_servers.h"
 #endif
 
 #if !defined PUBNUB_RECEIVE_GZIP_RESPONSE
@@ -269,6 +270,12 @@ struct pubnub_ {
 
     /** Hostname (address) of the proxy server to use */
     char proxy_hostname[PUBNUB_MAX_PROXY_HOSTNAME_LENGTH + 1];
+
+    /** Proxy IP address, if and when available through hostname string in 'numbers
+        and dots' notation. If proxy IP address is not available structure array is
+        filled with zeros.
+     */
+    struct pubnub_ipv4_address proxy_ip_address;
 
     /** The (TCP) port to use on the proxy. */
     uint16_t proxy_port;

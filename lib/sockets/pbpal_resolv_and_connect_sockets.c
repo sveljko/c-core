@@ -27,16 +27,6 @@
 #define read_response(x,y,z,v) -1
 #endif
 
-#ifdef PUBNUB_CALLBACK_API
-static void get_dns_ip(struct sockaddr_in* addr)
-{
-    void* p = &(addr->sin_addr.s_addr);
-    if((pubnub_get_dns_primary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)
-       && (pubnub_get_dns_secondary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)) {
-        inet_pton(AF_INET, PUBNUB_DEFAULT_DNS_SERVER, p);
-    }
-}
-#endif
 
 static void prepare_port_and_hostname(pubnub_t *pb, uint16_t* p_port, char const** p_origin)
 {
@@ -69,6 +59,40 @@ static void prepare_port_and_hostname(pubnub_t *pb, uint16_t* p_port, char const
     return;
 }
 
+#ifdef PUBNUB_CALLBACK_API
+static void get_dns_ip(struct sockaddr_in* addr)
+{
+    void* p = &(addr->sin_addr.s_addr);
+    if((pubnub_get_dns_primary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)
+       && (pubnub_get_dns_secondary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)) {
+        inet_pton(AF_INET, PUBNUB_DEFAULT_DNS_SERVER, p);
+    }
+}
+
+static enum pbpal_resolv_n_connect_result connect_TCP_socket(pubnub_t *pb,
+                                                             struct sockaddr_in dest,
+                                                             const uint16_t port)
+{
+    pbpal_native_socket_t skt  = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    if (SOCKET_INVALID == skt) {
+        pb->pal.socket = SOCKET_INVALID;
+
+        return pbpal_connect_resource_failure;
+    }
+    pb->pal.socket = skt;
+    pb->options.use_blocking_io = false;
+    pbpal_set_blocking_io(pb);
+    socket_disable_SIGPIPE(pb->pal.socket);
+    dest.sin_port = htons(port);
+    if (SOCKET_ERROR == connect(skt, (struct sockaddr*)&dest, sizeof dest)) {
+        return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
+    }
+
+    return pbpal_connect_success;
+}
+#endif
+
 enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
 {
     int error;
@@ -78,10 +102,15 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
 #ifdef PUBNUB_CALLBACK_API
     struct sockaddr_in dest;
 
-    /* At this point, port is of no importance in callback environment.
-       It becomes relevant at 'SOCK_STREAM' socket connection time.
-     */
     prepare_port_and_hostname(pb, &port, &origin);
+#if PUBNUB_PROXY_API
+    if (0 != pb->proxy_ip_address.ipv4[0]) {
+        struct pubnub_ipv4_address* p_d_a = (struct pubnub_ipv4_address*)&(dest.sin_addr.s_addr);
+        memset(&dest, '\0', sizeof dest);
+        memcpy(p_d_a->ipv4, pb->proxy_ip_address.ipv4, sizeof p_d_a->ipv4);
+        return connect_TCP_socket(pb, dest, port);
+    }
+#endif
 
     if (SOCKET_INVALID == pb->pal.socket) {
         pb->pal.socket  = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -195,23 +224,8 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
         break;
     }
     socket_close(skt);
-    skt = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (SOCKET_INVALID == skt) {
-        pb->pal.socket = SOCKET_INVALID;
 
-        return pbpal_connect_resource_failure;
-    }
-    pb->pal.socket = skt;
-    pb->options.use_blocking_io = false;
-    pbpal_set_blocking_io(pb);
-    socket_disable_SIGPIPE(pb->pal.socket);
-    dest.sin_port = htons(port);
-    if (SOCKET_ERROR == connect(skt, (struct sockaddr*)&dest, sizeof dest)) {
-        return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
-    }
-
-    return pbpal_connect_success;
-
+    return connect_TCP_socket(pb, dest, port);
 #else
 
     PUBNUB_UNUSED(pb);
