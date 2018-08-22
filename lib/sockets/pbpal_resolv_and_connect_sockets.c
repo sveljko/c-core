@@ -83,7 +83,7 @@ static enum pbpal_resolv_n_connect_result connect_TCP_socket(pubnub_t *pb,
     pb->pal.socket = skt;
     pb->options.use_blocking_io = false;
     pbpal_set_blocking_io(pb);
-    socket_disable_SIGPIPE(pb->pal.socket);
+    socket_disable_SIGPIPE(skt);
     dest.sin_port = htons(port);
     if (SOCKET_ERROR == connect(skt, (struct sockaddr*)&dest, sizeof dest)) {
         return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
@@ -108,6 +108,8 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
         struct pubnub_ipv4_address* p_d_a = (struct pubnub_ipv4_address*)&(dest.sin_addr.s_addr);
         memset(&dest, '\0', sizeof dest);
         memcpy(p_d_a->ipv4, pb->proxy_ip_address.ipv4, sizeof p_d_a->ipv4);
+        dest.sin_family = AF_INET;
+
         return connect_TCP_socket(pb, dest, port);
     }
 #endif

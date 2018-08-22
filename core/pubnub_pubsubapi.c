@@ -10,7 +10,7 @@
 #include "core/pbpal.h"
 
 #include <ctype.h>
-
+#include <string.h>
 
 pubnub_t* pubnub_init(pubnub_t* p, const char* publish_key, const char* subscribe_key)
 {
