@@ -34,7 +34,7 @@ static void prepare_port_and_hostname(pubnub_t *pb, uint16_t* p_port, char const
     PUBNUB_ASSERT_OPT((pb->state == PBS_READY) || (pb->state == PBS_WAIT_DNS_SEND));
     *p_origin = PUBNUB_ORIGIN_SETTABLE ? pb->origin : PUBNUB_ORIGIN;
 #if PUBNUB_USE_SSL
-    if (pb->options.trySSL) {
+    if (pb->flags.trySSL) {
         PUBNUB_ASSERT(pb->options.useSSL);
         *p_port = TLS_PORT;
     }
@@ -73,19 +73,16 @@ static enum pbpal_resolv_n_connect_result connect_TCP_socket(pubnub_t *pb,
                                                              struct sockaddr_in dest,
                                                              const uint16_t port)
 {
-    pbpal_native_socket_t skt  = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-    if (SOCKET_INVALID == skt) {
-        pb->pal.socket = SOCKET_INVALID;
+    pb->pal.socket  = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (SOCKET_INVALID == pb->pal.socket) {
 
         return pbpal_connect_resource_failure;
     }
-    pb->pal.socket = skt;
     pb->options.use_blocking_io = false;
     pbpal_set_blocking_io(pb);
-    socket_disable_SIGPIPE(skt);
+    socket_disable_SIGPIPE(pb->pal.socket);
     dest.sin_port = htons(port);
-    if (SOCKET_ERROR == connect(skt, (struct sockaddr*)&dest, sizeof dest)) {
+    if (SOCKET_ERROR == connect(pb->pal.socket, (struct sockaddr*)&dest, sizeof dest)) {
         return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
     }
 
@@ -105,9 +102,9 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
     prepare_port_and_hostname(pb, &port, &origin);
 #if PUBNUB_PROXY_API
     if (0 != pb->proxy_ip_address.ipv4[0]) {
-        struct pubnub_ipv4_address* p_d_a = (struct pubnub_ipv4_address*)&(dest.sin_addr.s_addr);
+        struct pubnub_ipv4_address* p_dest_addr = (struct pubnub_ipv4_address*)&(dest.sin_addr.s_addr);
         memset(&dest, '\0', sizeof dest);
-        memcpy(p_d_a->ipv4, pb->proxy_ip_address.ipv4, sizeof p_d_a->ipv4);
+        memcpy(p_dest_addr->ipv4, pb->proxy_ip_address.ipv4, sizeof p_dest_addr->ipv4);
         dest.sin_family = AF_INET;
 
         return connect_TCP_socket(pb, dest, port);
@@ -200,7 +197,7 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     PUBNUB_ASSERT_OPT(pb->state == PBS_WAIT_DNS_RCV);
 #if PUBNUB_USE_SSL
-    if (pb->options.trySSL) {
+    if (pb->flags.trySSL) {
         PUBNUB_ASSERT(pb->options.useSSL);
         port = TLS_PORT;
     }

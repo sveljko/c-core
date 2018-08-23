@@ -24,16 +24,25 @@
 #if PUBNUB_RECEIVE_GZIP_RESPONSE
 /* 'Accept-Encoding' header line */
 #define ACCEPT_ENCODING "Accept-Encoding: gzip\r\n"
+#define possible_gzip_response(pb)                    \
+    if ((pb)->data_compressed == compressionGZIP) {   \
+        pbres                 = pbgzip_decompress(pb);\
+        (pb)->data_compressed = compressionNONE;      \
+        if (PNR_OK != pbres) {                        \
+            outcome_detected((pb), pbres);            \
+            return pbres;                             \
+        }                                             \
+    }                                                 
 #else
 #define ACCEPT_ENCODING ""
+#define possible_gzip_response(pb)
 #endif /* PUBNUB_RECEIVE_GZIP_RESPONSE */
 
 static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)
 {
-    if (pb->options.use_http_keep_alive) {
+    if (!pb->flags.should_close) {
 #if PUBNUB_ADVANCED_KEEP_ALIVE
-        if (pb->keep_alive.should_close
-            || (++pb->keep_alive.count >= pb->keep_alive.max)
+        if ((++pb->keep_alive.count >= pb->keep_alive.max)
             || ((time(NULL) - pb->keep_alive.t_connect) > pb->keep_alive.timeout)) {
             return false;
         }
@@ -60,9 +69,9 @@ static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)
 static void close_connection(struct pubnub_* pb)
 {
     if (pbpal_close(pb) <= 0) {
-        PUBNUB_LOG_TRACE("close_connection(): pb->retry_after_close=%d\n",
-                         pb->retry_after_close);
-        if (pb->retry_after_close) {
+        PUBNUB_LOG_TRACE("close_connection(): pb->flags.retry_after_close=%d\n",
+                         pb->flags.retry_after_close);
+        if (pb->flags.retry_after_close) {
             pb->state = PBS_RETRY;
             return;
         }
@@ -79,9 +88,9 @@ static enum pubnub_state close_kept_alive_connection(struct pubnub_* pb)
 {
     if (pbpal_close(pb) <= 0) {
         PUBNUB_LOG_TRACE(
-            "close_kept_alive_connection(): pb->retry_after_close=%d\n",
-            pb->retry_after_close);
-        if (pb->retry_after_close) {
+            "close_kept_alive_connection(): pb->flags.retry_after_close=%d\n",
+            pb->flags.retry_after_close);
+        if (pb->flags.retry_after_close) {
             return PBS_RETRY;
         }
         pbpal_forget(pb);
@@ -105,7 +114,7 @@ static void outcome_detected(struct pubnub_* pb, enum pubnub_res rslt)
         PUBNUB_LOG_TRACE("outcome_detected(pb=%p): Keepin' it alive\n", pb);
         pbntf_lost_socket(pb);
         pbntf_trans_outcome(pb, PBS_KEEP_ALIVE_IDLE);
-        pb->retry_after_close = 0;
+        pb->flags.retry_after_close = false;
     }
     else {
         close_connection(pb);
@@ -176,7 +185,7 @@ static enum pubnub_res parse_pubnub_result(struct pubnub_* pb)
 }
 
 
-static void finish(struct pubnub_* pb)
+static enum pubnub_res finish(struct pubnub_* pb)
 {
     enum pubnub_res pbres;
 
@@ -184,38 +193,31 @@ static void finish(struct pubnub_* pb)
     switch (pbproxy_handle_finish(pb)) {
     case pbproxyFinError:
         PUBNUB_LOG_TRACE("Proxy: Error, close connection\n");
+        pb->flags.should_close = true;
         outcome_detected(pb, PNR_HTTP_ERROR);
-        return;
+        return PNR_HTTP_ERROR;
     case pbproxyFinRetry:
         PUBNUB_LOG_TRACE("Proxy: retry in current connection\n");
-        pb->retry_after_close = true;
-#if PUBNUB_ADVANCED_KEEP_ALIVE
-        if (pb->keep_alive.should_close) {
+        pb->flags.retry_after_close = true;
+        if (pb->flags.should_close) {
             close_connection(pb);
-            return;
+            return PNR_OK;
         }
-#endif
         pb->state = PBS_CONNECTED;
-        return;
+        return PNR_OK;
     default:
         break;
     }
 #endif
-    /* Allocates memory for 'string end' caracter */
-    if (0 != pbcc_realloc_reply_buffer(&pb->core, pb->core.http_buf_len + 1)) {
+    /* Ensures existence of the reply buffer in case no:
+       'Content-Length:', nor 'Transfer-Encoding: chunked'
+       header line has been received       
+    */
+    if (!pbcc_ensure_reply_buffer(&pb->core)) {
         outcome_detected(pb, PNR_REPLY_TOO_BIG);
-        return;
+        return PNR_REPLY_TOO_BIG;
     }
-#if PUBNUB_RECEIVE_GZIP_RESPONSE
-    if (pb->data_compressed == compressionGZIP) {
-        pbres               = pbgzip_decompress(pb);
-        pb->data_compressed = compressionNONE;
-        if (PNR_OK != pbres) {
-            outcome_detected(pb, pbres);
-            return;
-        }
-    }
-#endif
+    possible_gzip_response(pb);
     pb->core.http_reply[pb->core.http_buf_len] = '\0';
     PUBNUB_LOG_TRACE("finish(pb=%p, '%s')\n", pb, pb->core.http_reply);
 
@@ -225,6 +227,7 @@ static void finish(struct pubnub_* pb)
     }
 
     outcome_detected(pb, pbres);
+    return pbres;
 }
 
 
@@ -318,7 +321,7 @@ next_state:
     case PBS_NULL:
         break;
     case PBS_IDLE:
-        pb->retry_after_close        = false;
+        pb->flags.retry_after_close  = false;
 #if PUBNUB_PROXY_API
         pb->proxy_tunnel_established = false;
         pb->proxy_saved_path_len     = 0;
@@ -336,7 +339,7 @@ next_state:
         }
         break;
     case PBS_RETRY:
-        pb->retry_after_close = false;
+        pb->flags.retry_after_close = false;
         pb->state             = PBS_READY;
         goto next_state;
     case PBS_READY: {
@@ -451,6 +454,7 @@ next_state:
         break;
     }
     case PBS_CONNECTED:
+        pb->flags.should_close = !pb->options.use_http_keep_alive;
 #if PUBNUB_ADVANCED_KEEP_ALIVE
         pb->keep_alive.t_connect = time(NULL);
         pb->keep_alive.count     = 0;
@@ -468,7 +472,7 @@ next_state:
         }
 #endif
 #if PUBNUB_USE_SSL
-        if((NULL == pb->pal.ssl) && pb->options.trySSL
+        if((NULL == pb->pal.ssl) && pb->flags.trySSL
 #if PUBNUB_PROXY_API
            && (pbproxyHTTP_GET != pb->proxy_type)
 #endif
@@ -484,8 +488,8 @@ next_state:
                 return 0;
             case pbtlsFailed:
                 if(pb->options.fallbackSSL){
-                    pb->options.trySSL = false;
-                    pb->retry_after_close = true;
+                    pb->flags.trySSL = false;
+                    pb->flags.retry_after_close = true;
                 }
                 outcome_detected(pb, PNR_CONNECT_FAILED);
                 return 0;
@@ -519,8 +523,8 @@ next_state:
             break;
         case pbtlsFailed:
             if(pb->options.fallbackSSL){
-                pb->options.trySSL = false;
-                pb->retry_after_close = true;
+                pb->flags.trySSL = false;
+                pb->flags.retry_after_close = true;
             }
             outcome_detected(pb, PNR_CONNECT_FAILED);
             break;
@@ -559,7 +563,7 @@ next_state:
                     pb->core.http_buf_len = pb->proxy_saved_path_len;
                 }
 #if PUBNUB_USE_SSL
-                if(pb->options.trySSL) {
+                if(pb->flags.trySSL) {
                     PUBNUB_ASSERT(pb->options.useSSL);
                     http = "https://";
                 }    
@@ -642,7 +646,7 @@ next_state:
                 && !pb->proxy_tunnel_established) {
                 char const* port_toward_origin = ":80";
 #if PUBNUB_USE_SSL
-                if(pb->options.trySSL) {
+                if(pb->flags.trySSL) {
                     PUBNUB_ASSERT(pb->options.useSSL);
                     port_toward_origin = ":443";
                 }    
@@ -772,9 +776,6 @@ next_state:
             WATCH_USHORT(pb->http_code);
             pb->core.http_content_len = 0;
             pb->http_chunked          = false;
-#if PUBNUB_ADVANCED_KEEP_ALIVE
-            pb->keep_alive.should_close = !pb->options.use_http_keep_alive;
-#endif
             pb->state = PBS_RX_HEADERS;
             goto next_state;
         default:
@@ -803,9 +804,7 @@ next_state:
             */
             char h_chunked[] = "Transfer-Encoding: chunked";
             char h_length[]  = "Content-Length: ";
-#if PUBNUB_ADVANCED_KEEP_ALIVE
-            char h_close[] = "Connection: close";
-#endif
+            char h_close[]   = "Connection: close";
 #if PUBNUB_RECEIVE_GZIP_RESPONSE
             char h_encoding[] = "Content-Encoding: gzip";
 #endif
@@ -819,16 +818,14 @@ next_state:
                 pb->core.http_buf_len = 0;
                 if (!pb->http_chunked) {
                     if (0 == pb->core.http_content_len) {
-                        if (pb->http_code/100 > 3) {
-                            outcome_detected(pb, PNR_IO_ERROR);
-                            break;
-                        }
 #if PUBNUB_PROXY_API
                         WATCH_ENUM(pb->proxy_type);
                         WATCH_INT(pb->proxy_tunnel_established);
                         if ((pb->proxy_type == pbproxyHTTP_CONNECT)
                             && !pb->proxy_tunnel_established) {
-                            finish(pb);
+                            if(PNR_OK != finish(pb)) {
+                                break;
+                            }
                             goto next_state;
                         }
 #endif
@@ -853,11 +850,9 @@ next_state:
                 }
                 pb->core.http_content_len = len;
             }
-#if PUBNUB_ADVANCED_KEEP_ALIVE
             else if (strncmp(pb->core.http_buf, h_close, sizeof h_close - 1) == 0) {
-                pb->keep_alive.should_close = true;
+                pb->flags.should_close = true;
             }
-#endif
 #if PUBNUB_RECEIVE_GZIP_RESPONSE
             else if (strncmp(pb->core.http_buf, h_encoding, sizeof h_encoding - 1)
                      == 0) {
@@ -893,7 +888,7 @@ next_state:
         else {
             finish(pb);
 #if PUBNUB_PROXY_API
-            if (pb->retry_after_close) {
+            if (pb->flags.retry_after_close) {
                 goto next_state;
             }
 #endif
@@ -938,7 +933,7 @@ next_state:
             if (chunk_length == 0) {
                 finish(pb);
 #if PUBNUB_PROXY_API
-                if (pb->retry_after_close) {
+                if (pb->flags.retry_after_close) {
                     goto next_state;
                 }
 #endif
@@ -1002,7 +997,7 @@ next_state:
         break;
     case PBS_WAIT_CLOSE:
         if (pbpal_closed(pb)) {
-            if (pb->retry_after_close) {
+            if (pb->flags.retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
@@ -1018,7 +1013,7 @@ next_state:
         break;
     case PBS_WAIT_CANCEL_CLOSE:
         if (pbpal_closed(pb)) {
-            if (pb->retry_after_close) {
+            if (pb->flags.retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
@@ -1058,7 +1053,7 @@ next_state:
         goto next_state;
     case PBS_KEEP_ALIVE_WAIT_CLOSE:
         if (pbpal_closed(pb)) {
-            if (pb->retry_after_close) {
+            if (pb->flags.retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }

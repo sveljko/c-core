@@ -194,8 +194,6 @@ struct pubnub_ {
 
          * PubNub using SSL? */
         bool useSSL : 1;
-        /** Try to establish TLS/SSL over existing TCP/IP connection: yes/no */
-        bool trySSL : 1;
         /** When SSL is enabled, should PubNub client ignore all SSL
          * certificate-handshake issues and still continue in SSL mode
          * if it experiences issues handshaking across local proxies,
@@ -214,13 +212,26 @@ struct pubnub_ {
 #endif
     } options;
 
+    struct pubnub_flags {
+#if PUBNUB_USE_SSL
+        /** Try to establish TLS/SSL over existing TCP/IP connection: yes/no */
+        bool trySSL : 1;
+#endif
+        /** Should close connection */
+        bool should_close : 1;
+        
+        /** Retry the same Pubnub request after closing current TCP
+            connection.
+        */
+        bool retry_after_close : 1;
+    } flags;
+
 #if PUBNUB_ADVANCED_KEEP_ALIVE
     struct pubnub_keep_alive_data {
         time_t   timeout;
         time_t   t_connect;
         unsigned max;
         unsigned count;
-        bool     should_close;
     } keep_alive;
 #endif
 
@@ -257,11 +268,6 @@ struct pubnub_ {
     pubnub_callback_t cb;
     void*             user_data;
 #endif
-
-    /** Retry the same Pubnub request after closing current TCP
-        connection.
-    */
-    int retry_after_close;
 
 #if PUBNUB_PROXY_API
 

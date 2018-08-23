@@ -1275,7 +1275,7 @@ Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_No_response)
     attest(pubnub_subscribe(pbp, "music", NULL), equals(PNR_TIMEOUT));
 }
 
-Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_unsoported_proxy_authentication)
+Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_unsupported_proxy_authentication)
 {
     uint16_t port = 500;
     pubnub_init(pbp, "publ-key", "sub-key");
@@ -1283,7 +1283,7 @@ Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_unsoported_p
     attest(pubnub_set_proxy_authentication_username_password(pbp, "average_user", "password"), equals(0));
     expect_have_dns_for_proxy_server();
     expect_first_outgoing_GET("/subscribe/sub-key/music/0/0?pnsdk=unit-test-0.1");
- 	incoming("HTTP/1.1 407 ProxyAuthentication Required ( The ISA Server requires authorization to fulfill the request. Access to the Web proxy service is denied. )\r\n" 
+ 	incoming_and_close("HTTP/1.1 407 ProxyAuthentication Required ( The ISA Server requires authorization to fulfill the request. Access to the Web proxy service is denied. )\r\n" 
 			 "Via: 1.1 SPIRIT1B\r\n"
 			 "Proxy-Authenticate: Negotiate\r\n"
 		     "Proxy-Authenticate: Kerberos\r\n"
@@ -1307,8 +1307,6 @@ Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_unsoported_p
 
     attest(pbnc_fsm(pbp), equals(0));
 
-    expect(pbntf_lost_socket, when(pb, equals(pbp)));
-    expect(pbntf_trans_outcome, when(pb, equals(pbp)));
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyHTTP_GET)); 
     attest(pbnc_fsm(pbp), equals(0));
 }
