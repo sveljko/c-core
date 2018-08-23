@@ -60,7 +60,7 @@ static int m_j;
 uint8_t string_or_uint8block_mask[10];
 
 /* Awaits given amount of time in seconds */
-static void wait(time_t time_in_seconds)
+static void wait_time_in_seconds(time_t time_in_seconds)
 {
     time_t time_start = time(NULL);
     do {
@@ -662,7 +662,7 @@ Ensure(/*pbjson_parse, */ incomplete_json)
 {
     char const* json = "{\"some\\key\": \"some\\value\",\"service\": \"xxx\", "
                        "\"error\": true, \"payload\":{\"group\":\"gr\", "
-                       "\"some\\key\": value,\"chan\":[1," /*2,3]}, \"message\":0}"*/;
+                       "\"some\\\\key\": value,\"chan\":[1," /*2,3]}, \"message\":0}"*/;
     struct pbjson_elem elem = { json, json + strlen(json) };
     struct pbjson_elem parsed;
 
@@ -3235,7 +3235,7 @@ Ensure(single_context_pubnub, keeps_connection_alive_for_certain_number_of_opera
     attest(pubnub_subscribe(pbp, "civilization", NULL), equals(PNR_OK));
     /* Awaits given number of seconds. If changed to greater value test fails.
      */
-    wait(0);
+    wait_time_in_seconds(0);
 
     attest(pubnub_get(pbp), equals(NULL));
     attest(pubnub_last_http_code(pbp), equals(200));
@@ -3256,7 +3256,7 @@ Ensure(single_context_pubnub, keeps_connection_alive_for_certain_number_of_opera
 
     /* Same outcome for any delay between last two operations,
        if one before the last was accomplished within given time interval */
-    wait(0);
+    wait_time_in_seconds(0);
 
     attest(pubnub_last_time_token(pbp), streqs("1516014978925123459"));
 
@@ -3374,7 +3374,7 @@ Ensure(single_context_pubnub, keep_alive_connection_closes_time_runs_out)
     /* Not publish operation */
     attest(pubnub_last_publish_result(pbp), streqs(""));
     /* Time runs out. Connection closes after following operation */
-    wait(1);
+    wait_time_in_seconds(1);
 
     expect(pbntf_enqueue_for_processing, when(pb, equals(pbp)), returns(0));
     expect(pbntf_got_socket, when(pb, equals(pbp)), returns(0));
