@@ -780,8 +780,10 @@ next_state:
             pb->http_chunked          = false;
             pb->state = PBS_RX_HEADERS;
             goto next_state;
-        case PNR_TIMEOUT:
-            if (pb->flags.started_while_kept_alive) {
+        case PNR_CONNECTION_TIMEOUT:
+		case PNR_TIMEOUT:
+        case PNR_IO_ERROR:
+			if (pb->flags.started_while_kept_alive) {
                 pb->state = close_kept_alive_connection(pb);
                 goto next_state;
             }
