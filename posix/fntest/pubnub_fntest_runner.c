@@ -119,13 +119,13 @@ static int run_tests(struct TestData aTest[],
          */
         for (i = next_test; i < next_test + in_this_pass; ++i) {
             if (0 != pthread_join(aTest[i].pth, NULL)) {
-                printf("Failed to join thread for test %d ('%s'), errno=%d\n",
+                printf("Failed to join thread for test %u ('%s'), errno=%d\n",
                        i+1, aTest[i].name, errno);
             }
             switch (aTest[i].result) {
             case trFail:
                 printf(
-                    "\n\x1b[41m !!!!!!! The %d. test ('%s') failed!\x1b[m\n\n",
+                    "\n\x1b[41m !!!!!!! The %u. test ('%s') failed!\x1b[m\n\n",
                     i + 1,
                     aTest[i].name);
                 ++failed_count;
@@ -135,7 +135,7 @@ static int run_tests(struct TestData aTest[],
                 break;
             case trIndeterminate:
                 ++indete_count;
-                printf("\x1b[33m Indeterminate %d. test ('%s') of %d\x1b[m\t",
+                printf("\x1b[33m Indeterminate %u. test ('%s') of %u\x1b[m\t",
                        i + 1,
                        aTest[i].name,
                        test_count);
@@ -154,8 +154,8 @@ static int run_tests(struct TestData aTest[],
         return 0;
     }
     else {
-        printf("\x1b[32m %d tests passed\x1b[m, \x1b[41m %d tests "
-               "failed!\x1b[m, \x1b[33m %d tests indeterminate\x1b[m\n",
+        printf("\x1b[32m %u tests passed\x1b[m, \x1b[41m %u tests "
+               "failed!\x1b[m, \x1b[33m %u tests indeterminate\x1b[m\n",
                passed_count,
                failed_count,
                indete_count);
