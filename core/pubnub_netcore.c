@@ -783,7 +783,7 @@ next_state:
         case PNR_CONNECTION_TIMEOUT:
         case PNR_TIMEOUT:
         case PNR_IO_ERROR:
-			if (pb->flags.started_while_kept_alive) {
+            if (pb->flags.started_while_kept_alive) {
                 pb->state = close_kept_alive_connection(pb);
                 goto next_state;
             }
