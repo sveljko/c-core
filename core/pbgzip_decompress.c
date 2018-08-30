@@ -144,11 +144,10 @@ enum pubnub_res pbgzip_decompress(pubnub_t *pb)
     unpacked_size |= (uint32_t)data[size - 3] << 8;
     unpacked_size |= (uint32_t)data[size - 2] << 16;
     unpacked_size |= (uint32_t)data[size - 1] << 24;
-//  Should be erased at some point
-    printf("Length before:%lu and after decompresion:%lu\n",
-           (long unsigned)size,
-           (long unsigned)unpacked_size);
-//
+    PUBNUB_LOG_TRACE("pbgzip_decompress(pb=%p)-Length before:%lu and after decompresion:%lu\n",
+                     pb,
+                     (long unsigned)size,
+                     (long unsigned)unpacked_size);
     size -= (FIRST_TEN_RESERVED_BYTES + LAST_EIGHT_RESERVED_BYTES);
     return inflate_total(pb, data + FIRST_TEN_RESERVED_BYTES, size, (size_t)unpacked_size);
 }
