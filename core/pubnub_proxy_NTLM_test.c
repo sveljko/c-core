@@ -93,6 +93,7 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 {
     mock_node_t* node_mocked = m_list_head_mocked;
     int          return_value;
+    bool         rslt;
 
     while ((node_mocked != NULL)
            && (strcmp(node_mocked->function_name, function_name) != 0)) {
@@ -127,7 +128,8 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 
     printf("[%s][%s]\nexpected:[%s]\n", function_name, data, node_mocked->data);
     assert(node_mocked->pb == pbp);
-    attest(strlen(node_mocked->data) == strlen(data));
+    rslt = (strlen(node_mocked->data) == strlen(data));
+    attest(rslt);
 
     free(node_mocked);
     return return_value;
