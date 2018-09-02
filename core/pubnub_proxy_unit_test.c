@@ -330,6 +330,7 @@ void pbpal_forget(pubnub_t *pb)
 
 int pbpal_close(pubnub_t *pb)
 {
+    pb->sock_state = STATE_NONE;
     return mock(pb);
 }
 

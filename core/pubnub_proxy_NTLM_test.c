@@ -127,10 +127,6 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 
     printf("[%s][%s]\nexpected:[%s]\n", function_name, data, node_mocked->data);
     assert(node_mocked->pb == pbp);
-//
-    printf("strlen(node_mocked->data) == %u\n", strlen(node_mocked->data));
-    printf("strlen(data) == %u\n", strlen(data));
-//
     attest(strlen(node_mocked->data) == strlen(data));
 
     free(node_mocked);
@@ -279,9 +275,9 @@ static int my_recv(void* p, size_t n)
                  * 'APIs' should interpret as:
                  * ('recv_from_platform_result' < 0) which gives
                  * the oportunity to simulate and test
-                 * 'callback' interface in some degree.
+                 * 'callback' environment in some degree.
                  * NOTE: first string in the array must not be empty
-                 * string unless its ment to be the last
+                 * string unless it's ment to be the last
                  */
                 return -1;
             }
@@ -433,6 +429,7 @@ void pbpal_forget(pubnub_t* pb)
 
 int pbpal_close(pubnub_t* pb)
 {
+    pb->sock_state = STATE_NONE;
     return mock("pbpal_close", pb, "");
 }
 
