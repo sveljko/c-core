@@ -66,6 +66,15 @@ static int m_tests    = 0;
 static mock_node_t* m_list_head_mocked = NULL;
 static mock_node_t* m_list_tail_mocked = NULL;
 
+static void wait_milliseconds(unsigned time_in_milliseconds)
+{
+    clock_t  start = clock();
+    unsigned time_passed_in_milliseconds;
+    do {
+        time_passed_in_milliseconds = (clock() - start) / (CLOCKS_PER_SEC/1000);
+    } while (time_passed_in_milliseconds < time_in_milliseconds);
+}
+
 void expect(const char* function_name, pubnub_t* pb, const char* data, int return_value)
 {
     mock_node_t* new_node_mocked = (mock_node_t*)malloc(sizeof(mock_node_t));
@@ -136,6 +145,7 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 //
     printf("--->rslt = (strlen(node_mocked->data) == strlen(data))<->%u\n", rslt);
 //
+    wait_milliseconds(50);
     attest(rslt);
 
     free(node_mocked);
@@ -161,15 +171,6 @@ void check_residual_mocks(void)
     }
     printf("----------------(passes: %d)---------------->\n", m_passes);
     printf("(#Tests: %d)-----(failures: %d)!\n", ++m_tests, m_failures);
-}
-
-/* Awaits given amount of time in seconds */
-static void wait(time_t await_time)
-{
-    time_t time_start = time(NULL);
-    do {
-    } while ((time(NULL) - time_start) < await_time);
-    return;
 }
 
 /* The Pubnub PAL mocks and stubs */
@@ -777,7 +778,8 @@ static void proxy_establishes_GET_NTLM_connection(void)
     expect("pbpal_close", pbp, "", 0);
     expect_have_dns_for_proxy_server_without_enqueue_for_processing();
     expect_outgoing_with_encoded_credentials_GET(
-        "/subscribe/sub-key/health/0/0?pnsdk=unit-test-0.1", "\r\nProxy-Authorization: NTLM TlRMTVNTUAABAAAAB4IIogAAAAAAAAAAAAAAAAAAAAAKAKs/AAAADw==");
+        "/subscribe/sub-key/health/0/0?pnsdk=unit-test-0.1",
+        "\r\nProxy-Authorization: NTLM TlRMTVNTUAABAAAAB4IIogAAAAAAAAAAAAAAAAAAAAAKAKs/AAAADw==");
     incoming(
         "HTTP/1.1 407 ProxyAuthentication Required ( Access is denied. )\r\n"
         "Via: 1.1 SPIRIT1B\r\n"
@@ -1163,9 +1165,9 @@ static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_ali
     attest(pubnub_set_proxy_authentication_username_password(pbp, "serious", "password")
            == 0);
 
-    /* Has less than a second to finish up to 3 operations in 'keep_alive'
+    /* Has less than 3 seconds to finish up to 3 operations in 'keep_alive'
      * connection*/
-    pubnub_set_keep_alive_param(pbp, 0, 3);
+    pubnub_set_keep_alive_param(pbp, 2, 3);
 
     expect_have_dns_for_proxy_server();
     expect_first_outgoing_CONNECT();
@@ -1247,9 +1249,9 @@ static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_ali
     expect("pbntf_trans_outcome", pbp, "", 0);
     attest(pbnc_fsm(pbp) == 0);
 
-    /* awaits # of seconds */
+    /* awaits # of milliseconds */
     //	await_time = 0;
-    wait(0);
+    wait_milliseconds(0);
 
     attest(pubnub_get(pbp) == NULL);
     attest(pubnub_last_http_code(pbp) == 200);
