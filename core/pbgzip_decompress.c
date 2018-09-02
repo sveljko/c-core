@@ -161,7 +161,7 @@ enum pubnub_res pbgzip_decompress(pubnub_t* pb)
                      (long unsigned)size,
                      (long unsigned)unpacked_size);
     size -= (FIRST_TEN_RESERVED_BYTES + LAST_EIGHT_RESERVED_BYTES);
-    
+
     return inflate_total(
         pb, data + FIRST_TEN_RESERVED_BYTES, size, (size_t)unpacked_size);
 }
