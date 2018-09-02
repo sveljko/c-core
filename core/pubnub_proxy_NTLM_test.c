@@ -37,7 +37,7 @@ static pubnub_t* pbp;
     do {                                                                       \
         assert(rslt);                                                          \
         m_passes++;                                                            \
-    }  while (0)
+    } while (0)
 /*
 #define equals is_equal_to
 #define streqs is_equal_to_string
