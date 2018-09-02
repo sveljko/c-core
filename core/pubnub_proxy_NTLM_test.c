@@ -128,7 +128,14 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 
     printf("[%s][%s]\nexpected:[%s]\n", function_name, data, node_mocked->data);
     assert(node_mocked->pb == pbp);
+//
+    printf("----->strlen(data) == %u\n", strlen(data));
+    printf("----->strlen(node_mocked->data) == %u\n", strlen(node_mocked->data));
+//
     rslt = (strlen(node_mocked->data) == strlen(data));
+//
+    printf("--->rslt = (strlen(node_mocked->data) == strlen(data))<->%u\n", rslt);
+//
     attest(rslt);
 
     free(node_mocked);
