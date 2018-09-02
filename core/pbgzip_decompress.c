@@ -151,12 +151,8 @@ enum pubnub_res pbgzip_decompress(pubnub_t* pb)
     unpacked_size |= (uint32_t)data[size - 3] << 8;
     unpacked_size |= (uint32_t)data[size - 2] << 16;
     unpacked_size |= (uint32_t)data[size - 1] << 24;
-<<<<<<< HEAD
-    PUBNUB_LOG_TRACE("pbgzip_decompress(pb=%p)-Length before:%lu and after decompresion:%lu\n",
-=======
     PUBNUB_LOG_TRACE("pbgzip_decompress(pb=%p)-Length before:%lu and after "
                      "decompresion:%lu\n",
->>>>>>> upstream/develop
                      pb,
                      (long unsigned)size,
                      (long unsigned)unpacked_size);
