@@ -145,7 +145,7 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 //
     printf("--->rslt = (strlen(node_mocked->data) == strlen(data))<->%u\n", rslt);
 //
-    wait_milliseconds(1000);
+    wait_milliseconds(10000);
     attest(rslt);
 
     free(node_mocked);
@@ -1167,7 +1167,7 @@ static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_ali
 
     /* Has less than # of seconds to finish up to 3 operations in 'keep_alive'
      * connection*/
-    pubnub_set_keep_alive_param(pbp, 1000, 3);
+    pubnub_set_keep_alive_param(pbp, 10000, 3);
 
     expect_have_dns_for_proxy_server();
     expect_first_outgoing_CONNECT();
