@@ -479,7 +479,7 @@ void assert_handler(char const* s, const char* file, long i)
         attest(!m_expect_assert);                                              \
     }
 
-#if 0
+
 /* The tests themselves */
 Ensure(/*pbjson_parse, */ get_object_value_valid)
 {
@@ -721,7 +721,7 @@ Ensure(/*pbjson_parse, */ gibberish_json)
                &parsed, "{\"group\":\"gr\", \"some\\key\": [{\"chan\":[1,2]}}]"),
            is_true);
 }
-#endif
+
 
 Describe(single_context_pubnub);
 
@@ -826,17 +826,14 @@ static inline void incoming_and_close(char const* str, struct uint8_block* p_dat
 
 static void cancel_and_cleanup(pubnub_t* pbp)
 {
-    expect(pbntf_requeue_for_processing, when(pb, equals(pbp)), returns(0));
-    pubnub_cancel(pbp);
-
     expect(pbpal_close, when(pb, equals(pbp)), returns(0));
     expect(pbpal_closed, when(pb, equals(pbp)), returns(true));
     expect(pbpal_forget, when(pb, equals(pbp)));
     expect(pbntf_trans_outcome, when(pb, equals(pbp)));
-    attest(pbnc_fsm(pbp), equals(0));
+    pubnub_cancel(pbp);
     attest(pbp->core.last_result, equals(PNR_CANCELLED));
 }
-#if 0
+
 /* -- LEAVE operation -- */
 Ensure(single_context_pubnub, leave_have_dns)
 {
@@ -894,7 +891,7 @@ Ensure(single_context_pubnub, leave_wait_dns)
     attest(pubnub_last_http_code(pbp), equals(200));
     attest(pubnub_free(pbp), equals(-1));
 }
-#endif
+
 
 Ensure(single_context_pubnub, leave_wait_dns_cancel)
 {
@@ -912,7 +909,7 @@ Ensure(single_context_pubnub, leave_wait_dns_cancel)
     /* ... user is impatient... */
     cancel_and_cleanup(pbp);
 }
-#if 0
+
 /* This tests the TCP establishment code. Since we know for sure it is
    the same for all Pubnub operations/transactions, we shall test it
    only for "leave".
@@ -4631,7 +4628,7 @@ Ensure(single_context_pubnub, illegal_context_fires_assert)
     expect_assert_in(pubnub_free((pubnub_t*)((char*)pbp + 10000)),
                      "pubnub_alloc_static.c");
 }
-#endif
+
 #if 0
 int main(int argc, char *argv[])
 {
