@@ -136,7 +136,7 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
         node_mocked->previous->next = node_mocked->next;
     }
 
-    printf("[%s][%s]\nexpected:[%s]\n", function_name, data, node_mocked->data);
+    PUBNUB_LOG_TRACE("[%s][%s]\nexpected:[%s]\n", function_name, data, node_mocked->data);
     assert(node_mocked->pb == pbp);
     if (MIN_LEN_WITH_ENCODED_CREDENTIALS > strlen(node_mocked->data)) {
         attest(strlen(node_mocked->data) == strlen(data));
@@ -176,10 +176,8 @@ static void buf_setup(pubnub_t* pb)
 {
     pb->ptr  = (uint8_t*)pb->core.http_buf;
     pb->left = sizeof pb->core.http_buf;
-    //
-    printf("\n PUBNUB_BUF_MAXLEN= %d\n", PUBNUB_BUF_MAXLEN);
-    printf(" sizeof pb->core.http_buf= %d\n\n", pb->left);
-    //
+    PUBNUB_LOG_TRACE("\n PUBNUB_BUF_MAXLEN= %d\n", PUBNUB_BUF_MAXLEN);
+    PUBNUB_LOG_TRACE(" sizeof pb->core.http_buf= %d\n\n", pb->left);
 }
 
 void pbpal_init(pubnub_t* pb)
@@ -303,9 +301,8 @@ static int my_recv(void* p, size_t n)
     }
     memcpy(p, m_read, to_read);
     m_read += to_read;
-    //
-    printf("\n to_read = %d\n", to_read);
-    //
+    PUBNUB_LOG_TRACE("\n to_read = %d\n", to_read);
+
     return to_read;
 }
 
@@ -510,7 +507,7 @@ static char const* m_expect_assert_file;
 
 void assert_handler(char const* s, const char* file, long i)
 {
-    printf("%s:%ld: Pubnub assert failed '%s'\n", file, i, s);
+    PUBNUB_LOG_TRACE("%s:%ld: Pubnub assert failed '%s'\n", file, i, s);
 
     attest(m_expect_assert);
     attest(strcmp(m_expect_assert_file, file) == 0);
@@ -540,9 +537,7 @@ void free_m_msgs(char** msg_array)
     for (i = 0; i < m_num_msgrcvd; i++) {
         assert(m_msg_array[i] != NULL);
         free(m_msg_array[i]);
-        //
-        printf("\n free(m_msg_array[%d])\n", i);
-        //
+        PUBNUB_LOG_TRACE("\n free(m_msg_array[%d])\n", i);
     }
 }
 
@@ -704,15 +699,12 @@ static void incoming_and_close(char const* str)
 
 static void cancel_and_cleanup(pubnub_t* pbp)
 {
-    expect("pbntf_requeue_for_processing", pbp, "", 0);
-    pubnub_cancel(pbp);
     expect("pbpal_close", pbp, "", 0);
     expect("pbpal_closed", pbp, "", (int)true);
     expect("pbpal_forget", pbp, "", 0);
     expect("pbntf_trans_outcome", pbp, "", 0);
-    attest(pbnc_fsm(pbp) == 0);
+    pubnub_cancel(pbp);
     attest(pbp->core.last_result == PNR_CANCELLED);
-    m_passes++;
 }
 
 static void BeforeEach(void)
