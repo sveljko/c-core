@@ -144,7 +144,12 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
         printf("-->strlen(next_mocked->data) == %u\n", strlen(m_list_head_mocked->data));
     }    
     //
-    attest(strlen(node_mocked->data) == strlen(data));
+    if (500 > strlen(node_mocked->data)) {
+        attest(strlen(node_mocked->data) == strlen(data));
+    }
+    else {
+        attest(500 <= strlen(data));
+    }
 
     free(node_mocked);
     return return_value;
@@ -1163,9 +1168,9 @@ static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_ali
     attest(pubnub_set_proxy_authentication_username_password(pbp, "serious", "password")
            == 0);
 
-    /* Has less than one second to finish up to 3 operations in 'keep_alive'
+    /* Has less than two second to finish up to 3 operations in 'keep_alive'
      * connection*/
-    pubnub_set_keep_alive_param(pbp, 0, 3);
+    pubnub_set_keep_alive_param(pbp, 1, 3);
 
     expect_have_dns_for_proxy_server();
     expect_first_outgoing_CONNECT();
