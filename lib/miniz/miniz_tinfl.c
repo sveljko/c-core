@@ -637,7 +637,7 @@ common_exit:
         if ((status == TINFL_STATUS_DONE) && (decomp_flags & TINFL_FLAG_PARSE_ZLIB_HEADER) && (r->m_check_adler32 != r->m_z_adler32))
             status = TINFL_STATUS_ADLER32_MISMATCH;
     }
-	PUBNUB_LOG_TRACE("Decompression finished with state index: %d(status: %d)\n", r->m_state, status); 
+    PUBNUB_LOG_TRACE("Decompression finished with state index: %d(status: %d)\n", r->m_state, status); 
     return status;
 }
 
