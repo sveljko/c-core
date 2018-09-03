@@ -19,6 +19,7 @@
 #include <setjmp.h>
 
 #define MAX_LEN 5000
+#define MIN_LEN_WITH_ENCODED_CREDENTIALS 500
 
 typedef struct mock_node {
     char              function_name[50];
@@ -137,11 +138,11 @@ int mock(const char* function_name, pubnub_t* pb, const char* data)
 
     printf("[%s][%s]\nexpected:[%s]\n", function_name, data, node_mocked->data);
     assert(node_mocked->pb == pbp);
-    if (500 > strlen(node_mocked->data)) {
+    if (MIN_LEN_WITH_ENCODED_CREDENTIALS > strlen(node_mocked->data)) {
         attest(strlen(node_mocked->data) == strlen(data));
     }
     else {
-        attest(500 <= strlen(data));
+        attest(MIN_LEN_WITH_ENCODED_CREDENTIALS <= strlen(data));
     }
 
     free(node_mocked);
