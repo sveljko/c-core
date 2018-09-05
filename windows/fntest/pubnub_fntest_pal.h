@@ -54,6 +54,12 @@
     }                                                                          \
     _endthreadex(0);
 
+#define TEST_INDETERMINATE                                                     \
+    do {                                                                       \
+        *(enum PNFNTestResult*)pResult = trIndeterminate;                      \
+        TEST_EXIT;                                                             \
+    } while (0)
+
 #define expect(exp)                                                               \
     if (exp) {                                                                    \
     }                                                                             \

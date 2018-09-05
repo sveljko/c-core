@@ -47,6 +47,17 @@
 
 #define TEST_SLEEP_FOR(ms) vTaskDelay(pdMS_TO_TICKS(ms))
 
+#define TEST_EXIT                                                              \
+    while (iDeffered > 0) {                                                    \
+        TEST_POP_DEFERRED;                                                     \
+    }
+
+#define TEST_INDETERMINATE                                                     \
+    do {                                                                       \
+        TEST_EXIT;                                                             \
+        return trIndeterminate;                                                \
+    } while (0)
+
 #define expect(exp)                                                            \
     if (exp) {                                                                 \
     }                                                                          \
@@ -56,6 +67,7 @@
                          __FILE__,                                             \
                          __FUNCTION__,                                         \
                          __LINE__));                                           \
+        TEST_EXIT;                                                                \
         return trFail;                                                         \
     }
 
@@ -70,6 +82,7 @@
                          __FILE__,                                             \
                          __FUNCTION__,                                         \
                          __LINE__));                                           \
+        TEST_EXIT;                                                                \
         return trFail;                                                         \
     }
 

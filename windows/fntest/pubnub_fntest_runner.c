@@ -73,14 +73,21 @@ char const* g_keysub;
 char const* g_origin;
 
 
-static void srand_from_pubnub(void)
+static void srand_from_pubnub(char const* pubkey, char const* keysub)
 {
     pubnub_t* pbp = pubnub_alloc();
     if (pbp != NULL) {
-        pubnub_init(pbp, g_pubkey, g_keysub);
+        pubnub_init(pbp, pubkey, keysub);
         srand_from_pubnub_time(pbp);
         pubnub_free(pbp);
     }
+}
+
+
+static bool is_travis_pull_request_build(void)
+{
+    char const* tprb = getenv("TRAVIS_PULL_REQUEST");
+    return !((tprb == NULL) && (0 == strcmp(tprb, "false")));
 }
 
 
@@ -98,16 +105,15 @@ static int run_tests(struct TestData aTest[],
     HANDLE                     hstdout      = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
     WORD                       wOldColorAttrs = FOREGROUND_INTENSITY;
+    struct PNTestParameters tstpar = { pubkey, keysub, origin };
 
     PUBNUB_ASSERT_OPT(max_conc_thread <= TEST_MAX_HANDLES);
     PUBNUB_ASSERT_OPT(hstdout != INVALID_HANDLE_VALUE);
 
-    g_pubkey = pubkey;
-    g_keysub = keysub;
-    g_origin = origin;
+    tstpar.candochangroup = !is_travis_pull_request_build();
 
     printf("Starting Run of %u tests\n", test_count);
-    srand_from_pubnub();
+    srand_from_pubnub(pubkey, keysub);
     if (GetConsoleScreenBufferInfo(hstdout, &csbiInfo)) {
         wOldColorAttrs = csbiInfo.wAttributes;
     }

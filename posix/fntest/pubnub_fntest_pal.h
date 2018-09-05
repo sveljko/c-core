@@ -43,6 +43,12 @@
             continue;                                                          \
     } while (0)
 
+#define TEST_INDETERMINATE                                                     \
+    do {                                                                       \
+        *(enum PNFNTestResult*)pResult = trIndeterminate;                      \
+        pthread_exit(NULL);                                                    \
+    } while (0)
+
 #define expect(exp)                                                            \
     if (exp) {                                                                 \
     }                                                                          \
