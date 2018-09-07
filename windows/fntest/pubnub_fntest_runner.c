@@ -84,10 +84,9 @@ static void srand_from_pubnub(char const* pubkey, char const* keysub)
 }
 
 
-static bool is_travis_pull_request_build(void)
+static bool is_appveyor_pull_request_build(void)
 {
-    char const* tprb = getenv("TRAVIS_PULL_REQUEST");
-    return (tprb != NULL) && (0 != strcmp(tprb, "false")) ;
+    return NULL != getenv("APPVEYOR_PULL_REQUEST_NUMBER");
 }
 
 
@@ -105,12 +104,12 @@ static int run_tests(struct TestData aTest[],
     HANDLE                     hstdout      = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
     WORD                       wOldColorAttrs = FOREGROUND_INTENSITY;
-    struct PNTestParameters tstpar = { pubkey, keysub, origin };
+    struct PNTestParameters    tstpar         = { pubkey, keysub, origin };
 
     PUBNUB_ASSERT_OPT(max_conc_thread <= TEST_MAX_HANDLES);
     PUBNUB_ASSERT_OPT(hstdout != INVALID_HANDLE_VALUE);
 
-    tstpar.candochangroup = !is_travis_pull_request_build();
+    tstpar.candochangroup = !is_appveyor_pull_request_build();
     pnfntst_set_params(&tstpar);
 
     printf("Starting Run of %u tests\n", test_count);
@@ -149,9 +148,10 @@ static int run_tests(struct TestData aTest[],
             case trFail:
                 SetConsoleTextAttribute(hstdout,
                                         FOREGROUND_RED | FOREGROUND_INTENSITY);
-                printf("\n\x1b[41m!!!!!!! The %u. test ('%s') failed!\x1b[m\n\n",
-                       i + 1,
-                       aTest[i].name);
+                printf(
+                    "\n\x1b[41m!!!!!!! The %u. test ('%s') failed!\x1b[m\n\n",
+                    i + 1,
+                    aTest[i].name);
                 ++failed_count;
                 SetConsoleTextAttribute(hstdout, wOldColorAttrs);
                 break;
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
     char const* keysub = getenv_ex("PUBNUB_KEYSUB", (argc > 2) ? argv[2] : "demo");
     char const* origin =
         getenv_ex("PUBNUB_ORIGIN", (argc > 3) ? argv[3] : "pubsub.pubnub.com");
-    unsigned    max_conc_thread = (argc > 4) ? atoi(argv[4]) : 1;
+    unsigned max_conc_thread = (argc > 4) ? atoi(argv[4]) : 1;
 
     return run_tests(m_aTest, TEST_COUNT, max_conc_thread, pubkey, keysub, origin);
 }
