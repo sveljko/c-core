@@ -87,7 +87,7 @@ static void srand_from_pubnub(char const* pubkey, char const* keysub)
 static bool is_travis_pull_request_build(void)
 {
     char const* tprb = getenv("TRAVIS_PULL_REQUEST");
-    return !((tprb == NULL) && (0 == strcmp(tprb, "false")));
+    return (tprb != NULL) && (0 != strcmp(tprb, "false")) ;
 }
 
 
@@ -111,6 +111,7 @@ static int run_tests(struct TestData aTest[],
     PUBNUB_ASSERT_OPT(hstdout != INVALID_HANDLE_VALUE);
 
     tstpar.candochangroup = !is_travis_pull_request_build();
+    pnfntst_set_params(&tstpar);
 
     printf("Starting Run of %u tests\n", test_count);
     srand_from_pubnub(pubkey, keysub);
