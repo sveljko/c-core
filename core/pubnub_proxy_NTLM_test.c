@@ -720,8 +720,6 @@ static void AfterEach(void)
 {
     check_residual_mocks();
     free_m_msgs(m_msg_array);
-    //    expect(pbpal_free, when(pb, equals(pbp)));
-    //    attest(pubnub_free(pbp), equals(0));
 }
 
 /* Tests */
@@ -1146,7 +1144,7 @@ static void CONNECT_NTLM_proxy_closes_connection_on_407_dialogue_continues(void)
 static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_alive(void)
 {
     int    proxy_port = 500;
-    time_t await_time;
+
     BeforeEach();
     pubnub_init(pbp, "publ-key", "sub-key");
     attest(pubnub_set_proxy_manual(pbp, pbproxyHTTP_CONNECT, "proxy_server_url", proxy_port)
@@ -1154,7 +1152,7 @@ static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_ali
     attest(pubnub_set_proxy_authentication_username_password(pbp, "serious", "password")
            == 0);
 
-    /* Has less than one second to finish up to 3 operations in 'keep_alive'
+    /* Has less than a second to finish up to 3 operations in 'keep_alive'
      * connection*/
     pubnub_set_keep_alive_param(pbp, 0, 3);
 
@@ -1239,7 +1237,6 @@ static void proxy_CONNECT_NTLM_sets_timeout_and_max_operation_count_for_keep_ali
     attest(pbnc_fsm(pbp) == 0);
 
     /* awaits # of milliseconds */
-    //	await_time = 0;
     wait_milliseconds(0);
 
     attest(pubnub_get(pbp) == NULL);
