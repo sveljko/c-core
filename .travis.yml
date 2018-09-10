@@ -8,8 +8,10 @@ compiler:
   - clang
   - gcc
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install jq ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url) ; fi 
+# Getting the latest version of "Codacy coverage reporter" often fails.
+# Until we figure out why and how to handle it, it's commented out
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install jq ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url) ; fi 
 install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install --user gcovr ; fi
 script:
@@ -26,4 +28,4 @@ script:
   - posix/pubnub_fntest
   - openssl/pubnub_fntest
 after_success:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l c --force-language -r core/coverage.xml ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l c --force-language -r core/coverage.xml ; fi
