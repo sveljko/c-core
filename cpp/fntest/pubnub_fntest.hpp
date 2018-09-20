@@ -48,7 +48,22 @@ namespace pubnub {
     
     /// Returns whether the given messages have been received on the context
     inline bool got_messages(context const&pb, std::vector<std::string> const &msg) {
-        return pb.get_all() == msg;
+        auto all_sorted(pb.get_all());
+        auto sz(all_sorted.size());
+        if(1 < sz) {
+            unsigned i;
+            for(i = sz - 1; i > 0; i--) {
+                unsigned j;
+                for(j = 0; j < i; j++) {
+                    if(strcmp(all_sorted[j].c_str(), all_sorted[j+1].c_str()) > 0) {
+                        std::string temp = all_sorted[j];
+                        all_sorted[j] = all_sorted[j+1];
+                        all_sorted[j+1] = temp;
+                    }
+                }
+            }
+        }
+        return all_sorted == msg;
     }
     
 
@@ -189,6 +204,40 @@ namespace pubnub {
         }
     };
 
+#define TEST_DECL(tst)                                                  \
+    void pnfn_test_##tst(std::string const &pubkey,                     \
+                         std::string const &keysub,                     \
+                         std::string const &origin,                     \
+                         bool const &cannot_do)                        
+
+#define TEST_DEF(tst)                                                   \
+    TEST_DECL(tst)                                                      \
+    {                                                                   \
+        char const* const this_test_name_ = #tst;                       
+
+#define TEST_ENDDEF }
+
+#define TEST_INDETE "test indeterminate!"
+
+/** Declare a test that needs support for channel groups API (add,
+    remove, list: channel groups). IOW, can only be run on an account
+    that has this API enabled.
+*/
+#define TEST_DEF_NEED_CHGROUP(tst)                                      \
+    TEST_DEF(tst)                                                       \
+    {                                                                   \
+        if (cannot_do) {                                                \
+            std::string str(TEST_INDETE);                               \
+            throw std::runtime_error(str);                              \
+        }                                                               \
+    }
+
+#define pbpub_outof_quota(ft, rslt)                                     \
+    (((rslt) == PNR_PUBLISH_FAILED)                                     \
+     && (PNPUB_ACCOUNT_QUOTA_EXCEEDED == (ft).parse_last_publish_result()))
+
+#define if_indeterminate(ft, rslt) (((rslt) == PNR_ABORTED) || pbpub_outof_quota((ft), (rslt)))
+
     /** Helper class to set up a check for a Pubnub transaction.
         Usually to be used with the #SENSE macro.
      */
@@ -208,7 +257,12 @@ namespace pubnub {
             {}
         
         sense &in(std::chrono::milliseconds deadline) {
-            expect<bool>(wait_for(d_ft, deadline, d_result), d_expr, d_fname, d_line, "transaction timed out") == true;
+            bool trans_finished(wait_for(d_ft, deadline, d_result));
+            if(trans_finished && if_indeterminate(d_ft, d_result)) {                
+                std::string str(TEST_INDETE);
+                throw std::runtime_error(str);
+            }
+            expect<bool>(trans_finished, d_expr, d_fname, d_line, "transaction timed out") == true;
             return *this;
         }
         sense &before(std::chrono::milliseconds deadline) { return in(deadline); }
@@ -280,6 +334,21 @@ namespace pubnub {
 /** Someone might find this easier to read, especially on longer checks.
  */    
 #define EXPECT_TRUE(expr) EXPECT(expr) == true
+
+/** See
+    https://support.pubnub.com/support/solutions/articles/14000043769-what-are-valid-channel-names-
+*/
+#define MAX_PUBNUB_CHAN_NAME 92
+
+    inline std::string pnfntst_make_name(char const* s) {
+        std::string grn(std::to_string(rand()));
+        std::string str(s);
+        str += "_" + grn;
+        if(MAX_PUBNUB_CHAN_NAME > str.size()) {
+            str.resize(MAX_PUBNUB_CHAN_NAME);
+        }
+        return str;
+    }
 
     inline void await_console() {
         char s[1024];

@@ -69,12 +69,14 @@ static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)
 static void close_connection(struct pubnub_* pb)
 {
     if (pbpal_close(pb) <= 0) {
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
         PUBNUB_LOG_TRACE("close_connection(): pb->flags.retry_after_close=%d\n",
                          pb->flags.retry_after_close);
         if (pb->flags.retry_after_close) {
             pb->state = PBS_RETRY;
             return;
         }
+#endif
         pbpal_forget(pb);
         pbntf_trans_outcome(pb, PBS_IDLE);
     }
@@ -88,12 +90,14 @@ static enum pubnub_state close_kept_alive_connection(struct pubnub_* pb)
 {
     pb->flags.started_while_kept_alive = false;
     if (pbpal_close(pb) <= 0) {
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
         PUBNUB_LOG_TRACE(
             "close_kept_alive_connection(): pb->flags.retry_after_close=%d\n",
             pb->flags.retry_after_close);
         if (pb->flags.retry_after_close) {
             return PBS_RETRY;
         }
+#endif
         pbpal_forget(pb);
         return PBS_IDLE;
     }
@@ -115,7 +119,9 @@ static void outcome_detected(struct pubnub_* pb, enum pubnub_res rslt)
         PUBNUB_LOG_TRACE("outcome_detected(pb=%p): Keepin' it alive\n", pb);
         pbntf_lost_socket(pb);
         pbntf_trans_outcome(pb, PBS_KEEP_ALIVE_IDLE);
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
         pb->flags.retry_after_close = false;
+#endif
     }
     else {
         pb->flags.started_while_kept_alive = false;
@@ -222,7 +228,6 @@ static enum pubnub_res finish(struct pubnub_* pb)
     possible_gzip_response(pb);
     pb->core.http_reply[pb->core.http_buf_len] = '\0';
     PUBNUB_LOG_TRACE("finish(pb=%p, '%s')\n", pb, pb->core.http_reply);
-
     pbres = parse_pubnub_result(pb);
     if ((PNR_OK == pbres) && ((pb->http_code / 100) != 2)) {
         pbres = PNR_HTTP_ERROR;
@@ -238,8 +243,10 @@ static char const* pbnc_state2str(enum pubnub_state e)
     switch (e) {
     case PBS_NULL:
         return "PBS_NULL";
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
     case PBS_RETRY:
         return "PBS_RETRY";
+#endif
     case PBS_IDLE:
         return "PBS_IDLE";
     case PBS_READY:
@@ -323,7 +330,9 @@ next_state:
     case PBS_NULL:
         break;
     case PBS_IDLE:
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
         pb->flags.retry_after_close = false;
+#endif
 #if PUBNUB_PROXY_API
         pb->proxy_tunnel_established = false;
         pb->proxy_saved_path_len     = 0;
@@ -340,10 +349,12 @@ next_state:
             break;
         }
         break;
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
     case PBS_RETRY:
         pb->flags.retry_after_close = false;
         pb->state                   = PBS_READY;
         goto next_state;
+#endif
     case PBS_READY: {
         enum pbpal_resolv_n_connect_result rslv = pbpal_resolv_and_connect(pb);
         WATCH_ENUM(rslv);
@@ -457,7 +468,9 @@ next_state:
     }
     case PBS_CONNECTED:
         pb->flags.should_close = !pb->options.use_http_keep_alive;
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
         pb->flags.retry_after_close = false;
+#endif
 #if PUBNUB_ADVANCED_KEEP_ALIVE
         pb->keep_alive.t_connect = time(NULL);
         pb->keep_alive.count     = 0;
@@ -1009,10 +1022,12 @@ next_state:
         break;
     case PBS_WAIT_CLOSE:
         if (pbpal_closed(pb)) {
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
             if (pb->flags.retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
+#endif
             pbpal_forget(pb);
             pbntf_trans_outcome(pb, PBS_IDLE);
         }
@@ -1025,10 +1040,12 @@ next_state:
         break;
     case PBS_WAIT_CANCEL_CLOSE:
         if (pbpal_closed(pb)) {
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
             if (pb->flags.retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
+#endif
             pbpal_forget(pb);
             pb->core.msg_ofs = pb->core.msg_end = 0;
             pbntf_trans_outcome(pb, PBS_IDLE);
@@ -1066,10 +1083,12 @@ next_state:
         goto next_state;
     case PBS_KEEP_ALIVE_WAIT_CLOSE:
         if (pbpal_closed(pb)) {
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
             if (pb->flags.retry_after_close) {
                 pb->state = PBS_RETRY;
                 goto next_state;
             }
+#endif
             pbpal_forget(pb);
             pb->state = PBS_IDLE;
             goto next_state;
