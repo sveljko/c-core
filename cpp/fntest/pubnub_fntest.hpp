@@ -55,7 +55,7 @@ namespace pubnub {
             for(i = sz - 1; i > 0; i--) {
                 unsigned j;
                 for(j = 0; j < i; j++) {
-                    if(strcmp(all_sorted[j].c_str(), all_sorted[j+1].c_str()) > 0) {
+                    if(all_sorted[j].compare(all_sorted[j+1]) > 0) {
                         std::string temp = all_sorted[j];
                         all_sorted[j] = all_sorted[j+1];
                         all_sorted[j+1] = temp;
