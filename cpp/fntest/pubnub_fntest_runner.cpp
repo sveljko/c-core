@@ -81,18 +81,11 @@ static std::condition_variable m_cndvar;
 /// 0, it's time for another round of tests.
 static unsigned m_running_tests;
 
-#if defined _WIN32
-static bool is_appveyor_pull_request_build(void)
-{
-    return NULL != getenv("APPVEYOR_PULL_REQUEST_NUMBER");
-}
-#else
 static bool is_travis_pull_request_build(void)
 {
     char const* tprb = getenv("TRAVIS_PULL_REQUEST");
     return (tprb != NULL) && (0 != strcmp(tprb, "false"));
 }
-#endif
 
 /// The "real main" function to run all the tests.  Each test will run
 /// in its own thread, so that they can run in parallel, if we want
@@ -106,11 +99,8 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
     std::vector<std::thread> runners(test_count);
     bool cannot_do_chan_group;
 
-#if defined _WIN32
-    cannot_do_chan_group = is_appveyor_pull_request_build();
-#else
     cannot_do_chan_group = is_travis_pull_request_build();
-#endif
+
     srand(time(NULL));
     std::cout << "Starting Run of " << test_count << " tests" << std::endl;;
     while (next_test < test_count) {
