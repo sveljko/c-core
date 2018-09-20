@@ -149,13 +149,19 @@ enum pubnub_res pubnub_subscribe(pubnub_t*   p,
 }
 
 
-void pubnub_cancel(pubnub_t* pb)
+enum pubnub_cancel_res pubnub_cancel(pubnub_t* pb)
 {
+    enum pubnub_cancel_res res = PN_CANCEL_STARTED;
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
 
     pubnub_mutex_lock(pb->monitor);
     pbnc_stop(pb, PNR_CANCELLED);
+    if (PBS_IDLE == pb->state) {
+        res = PN_CANCEL_FINISHED;
+    }
     pubnub_mutex_unlock(pb->monitor);
+    
+    return res;
 }
 
 

@@ -19,6 +19,12 @@
 #include "core/pubnub_dns_servers.h"
 #endif
 
+#if !defined PUBNUB_USE_SSL
+#define PUBNUB_USE_SSL 0
+#endif
+
+#define PUBNUB_NEED_RETRY_AFTER_CLOSE (PUBNUB_PROXY_API || PUBNUB_USE_SSL)
+
 #if !defined PUBNUB_RECEIVE_GZIP_RESPONSE
 #define PUBNUB_RECEIVE_GZIP_RESPONSE 0
 #elif PUBNUB_RECEIVE_GZIP_RESPONSE
@@ -214,11 +220,12 @@ struct pubnub_ {
         /** Should close connection */
         bool should_close : 1;
         
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
         /** Retry the same Pubnub request after closing current TCP
             connection.
         */
         bool retry_after_close : 1;
-
+#endif
         /** Indicates whether current transaction started while connection
             was kept alive(by client)(true:yes, false:no).
             Used when deciding whether closed connection detected should be
