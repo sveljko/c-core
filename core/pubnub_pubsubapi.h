@@ -71,14 +71,16 @@ void pubnub_set_auth(pubnub_t* p, const char* auth);
 */
 char const* pubnub_auth_get(pubnub_t* p);
 
-/** Cancel an ongoing API transaction. The outcome of the transaction
-    in progress, if any, will be #PNR_CANCELLED.
+/** Cancels an ongoing API transaction and(in the long run) closes TCP connection.
+    The outcome of the transaction in progress, if any, will be #PNR_CANCELLED.
 
     In the sync interface, it's possible that this cancellation will
     finish during the execution of a call to this function. But,
     there's no guarantee, so you're best to await the outcome.
+    @return #PN_CANCEL_STARTED (== 1) (have to await the outcome)
+    @return #PN_CANCEL_FINISHED (== 0) (done)
 */
-void pubnub_cancel(pubnub_t* p);
+enum pubnub_cancel_res pubnub_cancel(pubnub_t* p);
 
 /** Publish the @p message (in JSON format) on @p p channel, using the
     @p p context. This actually means "initiate a publish

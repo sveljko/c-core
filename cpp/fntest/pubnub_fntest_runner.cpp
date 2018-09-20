@@ -1,5 +1,4 @@
 /* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
-#include "pubnub_fntest.hpp"
 #include "pubnub_fntest_basic.hpp"
 #include "pubnub_fntest_medium.hpp"
 
@@ -9,6 +8,7 @@
 #include <thread>
 
 #include <cstdlib>
+#include <cstring>
 
 
 enum class TestResult {
@@ -17,7 +17,10 @@ enum class TestResult {
     indeterminate
 };
 
-using TestFN_T = std::function<void(std::string const&,std::string const&, std::string const&)>;
+using TestFN_T = std::function<void(std::string const&,
+                                    std::string const&,
+                                    std::string const&,
+                                    bool const&)>;
 
 struct TestData {
     TestFN_T pf;
@@ -31,7 +34,7 @@ constexpr auto make_array(T&&... t) -> std::array<std::common_type<T...>, sizeof
     return {{ std::forward<T>(t)... }};
 }
 
-#define LIST_TEST(tstname) { tstname, #tstname, TestResult::indeterminate }
+#define LIST_TEST(tstname) { pnfn_test_##tstname, #tstname, TestResult::indeterminate }
 
 
 
@@ -62,7 +65,7 @@ static TestData m_aTest[] = {
     LIST_TEST(connect_disconnect_and_connect_again_group),
     LIST_TEST(connect_disconnect_and_connect_again_combo),
     LIST_TEST(wrong_api_usage),
-    LIST_TEST(handling_errors_from_pubnub),
+    LIST_TEST(handling_errors_from_pubnub)
 };
 
 #define TEST_COUNT (sizeof m_aTest / sizeof m_aTest[0])
@@ -78,6 +81,18 @@ static std::condition_variable m_cndvar;
 /// 0, it's time for another round of tests.
 static unsigned m_running_tests;
 
+#if defined _WIN32
+static bool is_appveyor_pull_request_build(void)
+{
+    return NULL != getenv("APPVEYOR_PULL_REQUEST_NUMBER");
+}
+#else
+static bool is_travis_pull_request_build(void)
+{
+    char const* tprb = getenv("TRAVIS_PULL_REQUEST");
+    return (tprb != NULL) && (0 != strcmp(tprb, "false"));
+}
+#endif
 
 /// The "real main" function to run all the tests.  Each test will run
 /// in its own thread, so that they can run in parallel, if we want
@@ -89,7 +104,14 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
     unsigned passed_count = 0;
     unsigned indete_count = 0;
     std::vector<std::thread> runners(test_count);
+    bool cannot_do_chan_group;
 
+#if defined _WIN32
+    cannot_do_chan_group = is_appveyor_pull_request_build();
+#else
+    cannot_do_chan_group = is_travis_pull_request_build();
+#endif
+    srand(time(NULL));
     std::cout << "Starting Run of " << test_count << " tests" << std::endl;;
     while (next_test < test_count) {
         unsigned i;
@@ -100,10 +122,14 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
         m_running_tests = in_this_pass;
         /// first, launch the threads, one per and for test
         for (i = next_test; i < next_test+in_this_pass; ++i) {
-            runners[i-next_test] = std::thread([i, pubkey, keysub, origin, aTest] {
+            runners[i-next_test] =
+                std::thread([i, pubkey, keysub, origin, aTest, cannot_do_chan_group] {
                     try {
                         std::this_thread::sleep_for(std::chrono::seconds(1));
-                        aTest[i].pf(pubkey.c_str(), keysub.c_str(), origin.c_str());
+                        aTest[i].pf(pubkey.c_str(),
+                                    keysub.c_str(),
+                                    origin.c_str(),
+                                    cannot_do_chan_group);
                         {
                             std::lock_guard<std::mutex>  lk(m_mtx);
                             --m_running_tests;
@@ -112,11 +138,16 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                         m_cndvar.notify_one();
                     }
                     catch (std::exception &ex) {
-                        std::cout << "\n\x1b[41m !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << ex.what() << "\x1b[m" << std::endl << std::endl;
+                        char const *description = ex.what();
+                        if(0 != strcmp(description, TEST_INDETE)) {
+                            std::cout << "\n\x1b[41m !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << description << "\x1b[m" << std::endl << std::endl;
+                        }
                         {
                             std::lock_guard<std::mutex>  lk(m_mtx);
                             --m_running_tests;
-                            aTest[i].result = TestResult::fail;
+                            if(0 != strcmp(description, TEST_INDETE)) {
+                                aTest[i].result = TestResult::fail;
+                            }
                         }
                         m_cndvar.notify_one();
                     }
@@ -131,12 +162,12 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
         for (i = next_test; i < next_test+in_this_pass; ++i) {
             runners[i-next_test].join();
             switch (aTest[i].result) {
-	    case TestResult::fail:
+            case TestResult::fail:
                 failed.push_back(i);
-		break;
-	    case TestResult::pass:
+                break;
+            case TestResult::pass:
                 ++passed_count;
-		break;
+                break;
             case TestResult::indeterminate:
                 ++indete_count;
 		printf("\x1b[33m Indeterminate %d. test ('%s') of %d\x1b[m\t", i+1, aTest[i].name, test_count);
@@ -157,10 +188,10 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
         if (!failed.empty()) {
             std::cout << "Failed tests:\n";
             for (unsigned i = 0; i < failed.size(); ++i) {
-                std::cout << failed[i] << ". " << aTest[failed[i]].name << '\n';
+                std::cout << failed[i]+1 << ". " << aTest[failed[i]].name << '\n';
             }
         }
-        return failed.size() + indete_count;
+        return failed.size();
     }
 }
 
