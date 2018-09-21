@@ -159,7 +159,6 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     context                   pbp_2(pubkey, keysub, origin);
     std::string const         ch(pnfntst_make_name(this_test_name_+15));
     std::string const         two(pnfntst_make_name(this_test_name_+10));
-    std::string const         three(pnfntst_make_name(this_test_name_+5));
     std::string const         gr(pnfntst_make_name(this_test_name_));
     std::chrono::milliseconds rel_time = Td;
     pubnub_res                result = PNR_STARTED;
