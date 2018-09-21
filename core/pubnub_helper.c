@@ -9,9 +9,7 @@
 enum pubnub_publish_res pubnub_parse_publish_result(char const *result)
 {
     PUBNUB_ASSERT_OPT(result != NULL);
-//
-    printf("--->publish_result_parsed:(%s)\n", result);
-//
+
     if (strcmp(result, "\"Sent\"") == 0) {
         return PNPUB_SENT;
     }
