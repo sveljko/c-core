@@ -4,7 +4,7 @@
 #include "pubnub_assert.h"
 
 #include <string.h>
-
+#include <stdio.h>
 
 enum pubnub_publish_res pubnub_parse_publish_result(char const *result)
 {
