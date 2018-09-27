@@ -72,8 +72,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_several_channels_in_group_simultaneo
     std::string const ch(pnfntst_make_name(this_test_name_));
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(ch_two, gr)).in(Td) == PNR_OK;
@@ -121,8 +120,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_multi_channel_s
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(three, gr)).in(Td) == PNR_OK;
@@ -169,8 +167,7 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
     context           pbp_2(pubkey, keysub, origin);
     std::string const ch(pnfntst_make_name(this_test_name_));
     std::string const two(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp_2.subscribe(ch_two)).in(Td) == PNR_OK;
 
@@ -218,8 +215,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_several_channels_in_group_simulta
     std::string const ch(pnfntst_make_name(this_test_name_));
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp_2.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp_2.add_channel_to_group(ch_two, gr)).in(Td) == PNR_OK;
@@ -271,8 +267,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_multi_channe
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp_2.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp_2.add_channel_to_group(three, gr)).in(Td) == PNR_OK;
@@ -329,8 +324,7 @@ TEST_DEF(broken_connection_test_multi)
     context           pbp(pubkey, keysub, origin);
     std::string const ch(pnfntst_make_name(this_test_name_));
     std::string const two(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp.subscribe(ch_two)).in(Td) == PNR_OK;
 
@@ -401,8 +395,7 @@ TEST_DEF_NEED_CHGROUP(broken_connection_test_multi_in_group)
     std::string const ch(pnfntst_make_name(this_test_name_));
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(ch_two, gr)).in(Td) == PNR_OK;
@@ -484,8 +477,7 @@ TEST_DEF_NEED_CHGROUP(broken_connection_test_group_multichannel_out)
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       ch_two(ch.c_str());
-    ch_two += comma + two;
+    std::string       ch_two = ch + comma + two;
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(three, gr)).in(Td) == PNR_OK;

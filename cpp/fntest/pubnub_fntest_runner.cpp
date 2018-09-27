@@ -81,12 +81,25 @@ static std::condition_variable m_cndvar;
 /// 0, it's time for another round of tests.
 static unsigned m_running_tests;
 
-static bool is_travis_pull_request_build(void)
+static bool is_pull_request_build(void)
 {
+#if !defined _WIN32
     char const* tprb = getenv("TRAVIS_PULL_REQUEST");
     return (tprb != NULL) && (0 != strcmp(tprb, "false"));
+#else
+    return NULL != getenv("APPVEYOR_PULL_REQUEST_NUMBER");
+#endif
 }
 
+static void notify(TestData &test,TestResult result)
+{
+    {
+        std::lock_guard<std::mutex>  lk(m_mtx);
+        --m_running_tests;
+        test.result = result;
+    }
+    m_cndvar.notify_one();
+}
 /// The "real main" function to run all the tests.  Each test will run
 /// in its own thread, so that they can run in parallel, if we want
 /// them to.
@@ -99,7 +112,7 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
     std::vector<std::thread> runners(test_count);
     bool cannot_do_chan_group;
 
-    cannot_do_chan_group = is_travis_pull_request_build();
+    cannot_do_chan_group = is_pull_request_build();
 
     srand(time(NULL));
     std::cout << "Starting Run of " << test_count << " tests" << std::endl;;
@@ -115,38 +128,31 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
             runners[i-next_test] =
                 std::thread([i, pubkey, keysub, origin, aTest, cannot_do_chan_group] {
                     try {
-                        std::this_thread::sleep_for(std::chrono::seconds(1));
                         aTest[i].pf(pubkey.c_str(),
                                     keysub.c_str(),
                                     origin.c_str(),
                                     cannot_do_chan_group);
-                        {
-                            std::lock_guard<std::mutex>  lk(m_mtx);
-                            --m_running_tests;
-                            aTest[i].result = TestResult::pass;
-                        }
-                        m_cndvar.notify_one();
+                        notify(aTest[i], TestResult::pass);
                     }
                     catch (std::exception &ex) {
-                        char const *description = ex.what();
-                        if(0 != strcmp(description, TEST_INDETE)) {
-                            std::cout << "\n\x1b[41m !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << description << "\x1b[m" << std::endl << std::endl;
-                        }
+                        std::cout << "\n\x1b[41m !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << ex.what() << "\x1b[m" << std::endl << std::endl;
+                        notify(aTest[i], TestResult::fail);
+                    }
+                    catch (pubnub::except_test &ex) {
+                        std::cout << "\n\x1b[33m !! " << i+1 << ". test '" << aTest[i].name << "' indeterminate!" << std::endl << "Description: " << ex.what() << "\x1b[m" << std::endl << std::endl;
                         {
                             std::lock_guard<std::mutex>  lk(m_mtx);
                             --m_running_tests;
-                            if(0 != strcmp(description, TEST_INDETE)) {
-                                aTest[i].result = TestResult::fail;
-                            }
                         }
                         m_cndvar.notify_one();
                     }
                 });
+             std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
         /// Await for them all to finish
         {
             std::unique_lock<std::mutex> lk(m_mtx);
-            m_cndvar.wait(lk, []{ return m_running_tests == 0; });
+             m_cndvar.wait(lk, []{ return m_running_tests == 0; });
         }
         /// Now get all of their results and process them
         for (i = next_test; i < next_test+in_this_pass; ++i) {
@@ -160,7 +166,6 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                 break;
             case TestResult::indeterminate:
                 ++indete_count;
-		printf("\x1b[33m Indeterminate %d. test ('%s') of %d\x1b[m\t", i+1, aTest[i].name, test_count);
                 /* Should restart the test... */
                 break;
             }
