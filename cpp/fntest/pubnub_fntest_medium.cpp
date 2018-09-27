@@ -6,7 +6,7 @@
 
 using namespace pubnub;
 
-const std::chrono::seconds Td(5);
+const std::chrono::seconds Td(10);
 const std::chrono::milliseconds T_chan_registry_propagation(1000);
 
 
@@ -17,8 +17,7 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
     std::string const ch(pnfntst_make_name(this_test_name_));
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
-    std::string       two_three(two.c_str());
-    two_three += comma + three;
+    std::string       two_three = two + comma + three;
 
     SENSE(pbp.subscribe(two_three)).in(Td) == PNR_OK;
     SENSE(pbp_2.subscribe(ch)).in(Td) == PNR_OK;
@@ -45,8 +44,7 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
-    std::string       two_three(two.c_str());
-    two_three += comma + three;
+    std::string       two_three = two + comma + three;
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(two_three, gr)).in(Td) == PNR_OK;
@@ -84,10 +82,10 @@ TEST_DEF(connect_disconnect_and_connect_again)
     if(!futr.is_ready()) {
         pbp.cancel();
         EXPECT_TRUE(pubnub::wait_for(futr, rel_time, result));
-        EXPECT(result) == PNR_CANCELLED;
+        EXPECT_RESULT(futr, result) == PNR_CANCELLED;
     }
     else {
-        EXPECT(futr.last_result()) == PNR_OK;
+        EXPECT_RESULT(futr, futr.last_result()) == PNR_OK;
     }
 
     SENSE(pbp.publish(ch, "\"Test M4-2\"")).in(Td) == PNR_OK;
@@ -100,7 +98,7 @@ TEST_DEF(connect_disconnect_and_connect_again)
     rel_time = Td;
     result = PNR_STARTED;
     EXPECT_TRUE(pubnub::wait_for(futr_2, rel_time, result));
-    EXPECT(result) == PNR_CANCELLED;
+    EXPECT_RESULT(futr_2, result) == PNR_CANCELLED;
     
     SENSE(pbp.publish(ch, "\"Test M4 - 3\"")).in(Td) == PNR_OK;
     SENSE(pbp.subscribe(ch)).in(Td) == PNR_OK;
@@ -127,10 +125,10 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     if(!futr.is_ready()) {
         pbp.cancel();
         EXPECT_TRUE(pubnub::wait_for(futr, rel_time, result));
-        EXPECT(result) == PNR_CANCELLED;
+        EXPECT_RESULT(futr, result) == PNR_CANCELLED;
     }
     else {
-        EXPECT(futr.last_result()) == PNR_OK;
+        EXPECT_RESULT(futr, futr.last_result()) == PNR_OK;
     }
 
     SENSE(pbp.publish(ch, "\"Test M4-2\"")).in(Td) == PNR_OK;
@@ -143,7 +141,7 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     rel_time = Td;
     result = PNR_STARTED;
     EXPECT_TRUE(pubnub::wait_for(futr_2, rel_time, result));
-    EXPECT(result) == PNR_CANCELLED;
+    EXPECT_RESULT(futr_2, result) == PNR_CANCELLED;
 
     SENSE(pbp.publish(ch, "\"Test M4 - 3\"")).in(Td) == PNR_OK;
     SENSE(pbp.subscribe("", gr)).in(Td) == PNR_OK;
@@ -174,20 +172,20 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     if(!futr.is_ready()) {
         pbp.cancel();
         EXPECT_TRUE(pubnub::wait_for(futr, rel_time, result));
-        EXPECT(result) == PNR_CANCELLED;
+        EXPECT_RESULT(futr, result) == PNR_CANCELLED;
     }
     else {
-        EXPECT(futr.last_result()) == PNR_OK;
+        EXPECT_RESULT(futr, futr.last_result()) == PNR_OK;
     }
 
     auto futr_2 = pbp_2.publish(two, "\"Test M5\"");
     if(!futr_2.is_ready()) {
         pbp_2.cancel();
         EXPECT_TRUE(pubnub::wait_for(futr_2, rel_time, result));
-        EXPECT(result) == PNR_CANCELLED;
+        EXPECT_RESULT(futr_2, result) == PNR_CANCELLED;
     }
     else {
-        EXPECT(futr_2.last_result()) == PNR_OK;
+        EXPECT_RESULT(futr_2, futr_2.last_result()) == PNR_OK;
     }
 
     (SENSE(pbp.publish(ch, "\"Test M4-2\"")) && 
@@ -203,10 +201,10 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     if(!futr_3.is_ready()) {
         pbp.cancel();
         EXPECT_TRUE(pubnub::wait_for(futr_3, rel_time, result));
-        EXPECT(result) == PNR_CANCELLED;
+        EXPECT_RESULT(futr_3, result) == PNR_CANCELLED;
     }
     else {
-        EXPECT(futr_3.last_result()) == PNR_OK;
+        EXPECT_RESULT(futr_3, futr_3.last_result()) == PNR_OK;
     }
 
     SENSE(pbp.publish(ch, "\"Test M4-3\"")).in(Td) == PNR_OK;
@@ -232,10 +230,10 @@ TEST_DEF(wrong_api_usage)
         SENSE(pbp.publish(ch, "\"Test - 2\"")).in(Td) == PNR_IN_PROGRESS;
         SENSE(pbp.subscribe(ch)).in(Td) == PNR_IN_PROGRESS;
         EXPECT_TRUE(pubnub::wait_for(futr, rel_time, result));
-        EXPECT(result) == PNR_OK;
+        EXPECT_RESULT(futr, result) == PNR_OK;
     }
     else {
-        EXPECT(futr.last_result()) == PNR_OK;
+        EXPECT_RESULT(futr, futr.last_result()) == PNR_OK;
     }
 
     pbp.set_blocking_io(non_blocking);
@@ -247,7 +245,7 @@ TEST_DEF(wrong_api_usage)
 
     pbp.cancel();
     EXPECT_TRUE(pubnub::wait_for(futr_2, rel_time, result));
-    EXPECT(result) == PNR_CANCELLED;
+    EXPECT_RESULT(futr_2, result) == PNR_CANCELLED;
 
     SENSE(pbp.subscribe("")).in(Td) == PNR_INVALID_CHANNEL;
 }

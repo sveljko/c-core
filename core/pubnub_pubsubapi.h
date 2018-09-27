@@ -77,8 +77,8 @@ char const* pubnub_auth_get(pubnub_t* p);
     In the sync interface, it's possible that this cancellation will
     finish during the execution of a call to this function. But,
     there's no guarantee, so you're best to await the outcome.
-    @return #PN_CANCEL_STARTED (== 1) (have to await the outcome)
-    @return #PN_CANCEL_FINISHED (== 0) (done)
+    @retval #PN_CANCEL_STARTED (== 1) (have to await the outcome)
+    @retval #PN_CANCEL_FINISHED (== 0) (done)
 */
 enum pubnub_cancel_res pubnub_cancel(pubnub_t* p);
 

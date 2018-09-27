@@ -104,8 +104,6 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_several_channels_in_group_simultaneo
     expect(pnfntst_subscribe_and_check(
         pbp, NULL, chgrp, 10 * SECONDS, "\"Test M2\"", "ch", "\"Test M2-2\"", "two", NULL));
 
-    expect_PNR_OK(
-        pbp, pubnub_remove_channel_from_group(pbp, "ch", chgrp), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
@@ -133,8 +131,6 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_single_channel_
     expect(pnfntst_subscribe_and_check(
         pbp, "two", chgrp, 10 * SECONDS, "\"Test M3 - 1\"", "ch", "\"Test M3 - 2\"", "two", NULL));
 
-    expect_PNR_OK(
-        pbp, pubnub_remove_channel_from_group(pbp, "ch", chgrp), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
 
     TEST_POP_DEFERRED;
