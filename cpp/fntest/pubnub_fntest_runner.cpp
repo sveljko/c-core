@@ -136,15 +136,21 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                         notify(aTest[i], TestResult::pass);
                     }
                     catch (std::exception &ex) {
+                        std::cout << std::endl;
                         paint_text_white_with_background_red();
-                        std::cout << "\n !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << ex.what() << std::endl << std::endl;
+                        std::cout << " !! " << i+1 << ". test '" << aTest[i].name << "' failed!"
+                                  << std::endl << "Error description: " << ex.what();
                         reset_text_paint();
+                        std::cout << std::endl << std::endl;
                         notify(aTest[i], TestResult::fail);
                     }
                     catch (pubnub::except_test &ex) {
+                        std::cout << std::endl;
                         paint_text_yellow();
-                        std::cout << "\n !! " << i+1 << ". test '" << aTest[i].name << "' indeterminate!" << std::endl << "Description: " << ex.what() << std::endl << std::endl;
+                        std::cout << " !! " << i+1 << ". test '" << aTest[i].name << "' indeterminate!"
+                                  << std::endl << "Description: " << ex.what();
                         reset_text_paint();
+                        std::cout << std::endl << std::endl;
                         {
                             std::lock_guard<std::mutex>  lk(m_mtx);
                             --m_running_tests;
@@ -152,6 +158,7 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                         m_cndvar.notify_one();
                     }
                 });
+                std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
         /// Await for them all to finish
         {
@@ -187,18 +194,25 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
     else {
         paint_text_green();
         std::cout << passed_count << " tests passed, ";
+        reset_text_paint();
         paint_text_white_with_background_red();
         std::cout << failed.size() << " tests failed!";
+        reset_text_paint();
         paint_text_white();
         std::cout << ", ";
         paint_text_yellow();
         std::cout << indete_count << " tests indeterminate" << std::endl; 
+        reset_text_paint();
         if (!failed.empty()) {
+            unsigned i;
             paint_text_white_with_background_red();
             std::cout << "Failed tests:\n";
-            for (unsigned i = 0; i < failed.size(); ++i) {
-                std::cout << failed[i]+1 << ". " << aTest[failed[i]].name << '\n';
+            for (i = 0; i < failed.size() - 1 ; ++i) {
+                std::cout << failed[i]+1 << ". " << aTest[failed[i]].name << std::endl;
             }
+            std::cout << failed[i]+1 << ". " << aTest[failed[i]].name;
+            reset_text_paint();
+            std::cout << std::endl;
         }
         paint_text_white();
         return failed.size();

@@ -345,6 +345,12 @@ namespace pubnub {
         return sense_double(left, right);
     }
 
+#if !defined _WIN32
+    /// Returns a combined checker for two transactions at the same time - non reference operands
+    inline sense_double operator&&(sense left, sense right) {
+        return sense_double(left, right);
+    }
+#endif
  /** Helper macro to capture source code info at the place of
      check in the test.
  */    
