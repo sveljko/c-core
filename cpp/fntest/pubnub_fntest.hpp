@@ -54,7 +54,7 @@ namespace pubnub {
             std::sort(msg_sorted.begin(),msg_sorted.end());
             std::sort(all_sorted.begin(),all_sorted.end());
         }
-        return all_sorted == msg;
+        return all_sorted == msg_sorted;
     }
     
 
@@ -339,18 +339,14 @@ namespace pubnub {
         }
     };
     
-    
+
     /// Returns a combined checker for two transactions at the same time
     inline sense_double operator&&(sense &left, sense &right) {
         return sense_double(left, right);
     }
-    /// Returns a combined checker for two transactions at the same time
-    inline sense_double operator&&(sense left, sense right) {
-        return sense_double(left, right);
-    }
 
-/** Helper macro to capture source code info at the place of
-    check in the test.
+ /** Helper macro to capture source code info at the place of
+     check in the test.
  */    
 #define SENSE(expr) sense(expr, #expr, __FILE__, __LINE__)
 

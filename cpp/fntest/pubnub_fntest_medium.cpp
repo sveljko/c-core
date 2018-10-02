@@ -6,7 +6,7 @@
 
 using namespace pubnub;
 
-const std::chrono::seconds Td(10);
+const std::chrono::seconds Td(5);
 const std::chrono::milliseconds T_chan_registry_propagation(1000);
 
 
@@ -121,7 +121,7 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     
     SENSE(pbp.subscribe("", gr)).in(Td) == PNR_OK;
     
-    auto futr = pbp.publish(ch, "\"Test M4\"");
+    auto futr = pbp.publish(ch, "\"Test M44\"");
     if(!futr.is_ready()) {
         pbp.cancel();
         EXPECT_TRUE(pubnub::wait_for(futr, rel_time, result));
@@ -133,7 +133,7 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
 
     SENSE(pbp.publish(ch, "\"Test M4-2\"")).in(Td) == PNR_OK;
     SENSE(pbp.subscribe("", gr)).in(Td) == PNR_OK;
-    EXPECT_TRUE(got_messages(pbp, {"\"Test M4\"", "\"Test M4-2\""}));
+    EXPECT_TRUE(got_messages(pbp, {"\"Test M44\"", "\"Test M4-2\""}));
 
     pbp.set_blocking_io(non_blocking);
     auto futr_2 = pbp.subscribe("", gr);
@@ -155,8 +155,8 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
 {
     context                   pbp(pubkey, keysub, origin);
     context                   pbp_2(pubkey, keysub, origin);
-    std::string const         ch(pnfntst_make_name(this_test_name_+15));
-    std::string const         two(pnfntst_make_name(this_test_name_+10));
+    std::string const         ch(pnfntst_make_name(this_test_name_+19));
+    std::string const         two(pnfntst_make_name(this_test_name_+8));
     std::string const         gr(pnfntst_make_name(this_test_name_));
     std::chrono::milliseconds rel_time = Td;
     pubnub_res                result = PNR_STARTED;

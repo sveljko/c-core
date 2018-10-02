@@ -10,6 +10,12 @@
 #include <cstdlib>
 #include <cstring>
 
+#if defined _WIN32
+#include "windows/console_subscribe_paint.h"
+#else
+#include "posix/console_subscribe_paint.h"
+#endif
+
 
 enum class TestResult {
     fail,
@@ -28,15 +34,7 @@ struct TestData {
     TestResult result;
 };
 
-
-template <typename... T>
-constexpr auto make_array(T&&... t) -> std::array<std::common_type<T...>, sizeof...(T)> { 
-    return {{ std::forward<T>(t)... }};
-}
-
 #define LIST_TEST(tstname) { pnfn_test_##tstname, #tstname, TestResult::indeterminate }
-
-
 
 static TestData m_aTest[] = {
     LIST_TEST(simple_connect_and_send_over_single_channel),
@@ -111,10 +109,9 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
     unsigned indete_count = 0;
     std::vector<std::thread> runners(test_count);
     bool cannot_do_chan_group;
-
+ 
     cannot_do_chan_group = is_pull_request_build();
 
-    srand(time(NULL));
     std::cout << "Starting Run of " << test_count << " tests" << std::endl;;
     while (next_test < test_count) {
         unsigned i;
@@ -128,6 +125,10 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
             runners[i-next_test] =
                 std::thread([i, pubkey, keysub, origin, aTest, cannot_do_chan_group] {
                     try {
+                        using namespace std::chrono;
+                        system_clock::time_point tp  = system_clock::now();
+                        system_clock::duration   dtn = tp.time_since_epoch();
+                        srand(dtn.count());
                         aTest[i].pf(pubkey.c_str(),
                                     keysub.c_str(),
                                     origin.c_str(),
@@ -135,11 +136,15 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                         notify(aTest[i], TestResult::pass);
                     }
                     catch (std::exception &ex) {
-                        std::cout << "\n\x1b[41m !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << ex.what() << "\x1b[m" << std::endl << std::endl;
+                        paint_text_white_with_background_red();
+                        std::cout << "\n !! " << i+1 << ". test '" << aTest[i].name << "' failed!" << std::endl << "Error description: " << ex.what() << std::endl << std::endl;
+                        reset_text_paint();
                         notify(aTest[i], TestResult::fail);
                     }
                     catch (pubnub::except_test &ex) {
-                        std::cout << "\n\x1b[33m !! " << i+1 << ". test '" << aTest[i].name << "' indeterminate!" << std::endl << "Description: " << ex.what() << "\x1b[m" << std::endl << std::endl;
+                        paint_text_yellow();
+                        std::cout << "\n !! " << i+1 << ". test '" << aTest[i].name << "' indeterminate!" << std::endl << "Description: " << ex.what() << std::endl << std::endl;
+                        reset_text_paint();
                         {
                             std::lock_guard<std::mutex>  lk(m_mtx);
                             --m_running_tests;
@@ -147,7 +152,6 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                         m_cndvar.notify_one();
                     }
                 });
-             std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
         /// Await for them all to finish
         {
@@ -172,20 +176,31 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
         }
         next_test = i;
     }
-
-    std::cout << "Test run over." << std::endl;
+    paint_text_white();
+    std::cout << "\nTest run over." << std::endl;
     if (passed_count == test_count) {
-        std::cout << "\x1b[32m All " << test_count << " tests passed\x1b[m" << std::endl;
+        paint_text_green();
+        std::cout << "All " << test_count << " tests passed" << std::endl;
+        paint_text_white();
         return 0;
     }
     else {
-        std::cout <<"\x1b[32m " << passed_count << " tests passed\x1b[m, \x1b[41m " << failed.size() << " tests failed!\x1b[m, \x1b[33m " << indete_count << " tests indeterminate\x1b[m" << std::endl; 
+        paint_text_green();
+        std::cout << passed_count << " tests passed, ";
+        paint_text_white_with_background_red();
+        std::cout << failed.size() << " tests failed!";
+        paint_text_white();
+        std::cout << ", ";
+        paint_text_yellow();
+        std::cout << indete_count << " tests indeterminate" << std::endl; 
         if (!failed.empty()) {
+            paint_text_white_with_background_red();
             std::cout << "Failed tests:\n";
             for (unsigned i = 0; i < failed.size(); ++i) {
                 std::cout << failed[i]+1 << ". " << aTest[failed[i]].name << '\n';
             }
         }
+        paint_text_white();
         return failed.size();
     }
 }
