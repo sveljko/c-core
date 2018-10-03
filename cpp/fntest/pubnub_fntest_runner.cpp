@@ -151,14 +151,10 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
                                   << std::endl << "Description: " << ex.what();
                         reset_text_paint();
                         std::cout << std::endl << std::endl;
-                        {
-                            std::lock_guard<std::mutex>  lk(m_mtx);
-                            --m_running_tests;
-                        }
-                        m_cndvar.notify_one();
+                        notify(aTest[i], TestResult::indeterminate);
                     }
                 });
-                std::this_thread::sleep_for(std::chrono::milliseconds(3));
+            std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
         /// Await for them all to finish
         {

@@ -27,18 +27,18 @@ TEST_ENDDEF
 TEST_DEF(connect_and_send_over_several_channels_simultaneously)
 {
     context           pb(pubkey, keysub, origin);
-    std::string const chan1(pnfntst_make_name(this_test_name_));
-    std::string const chan2(pnfntst_make_name(this_test_name_));
+    std::string const chan_1st(pnfntst_make_name(this_test_name_));
+    std::string const chan_2nd(pnfntst_make_name(this_test_name_));
 
-    SENSE(pb.subscribe(chan1)).in(Td) == PNR_OK;
+    SENSE(pb.subscribe(chan_1st)).in(Td) == PNR_OK;
 
-    SENSE(pb.publish(chan1, "\"Test M1\"")).in(Td) == PNR_OK;
-    SENSE(pb.publish(chan2, "\"Test M2\"")).in(Td) == PNR_OK;
+    SENSE(pb.publish(chan_1st, "\"Test M1\"")).in(Td) == PNR_OK;
+    SENSE(pb.publish(chan_2nd, "\"Test M2\"")).in(Td) == PNR_OK;
 
-    SENSE(pb.subscribe(chan1)).in(Td) == PNR_OK;
+    SENSE(pb.subscribe(chan_1st)).in(Td) == PNR_OK;
     EXPECT(got_messages(pb, {"\"Test M1\""})) == true;
 
-    SENSE(pb.subscribe(chan2)).in(Td) == PNR_OK;
+    SENSE(pb.subscribe(chan_2nd)).in(Td) == PNR_OK;
     EXPECT(got_messages(pb, {"\"Test M2\""})) == true;
 }
 TEST_ENDDEF
