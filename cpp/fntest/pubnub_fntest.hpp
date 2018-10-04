@@ -97,7 +97,11 @@ namespace pubnub {
     ///
     /// @return true: transaction completed in time with same result,
     /// false: timeout or different results
-    bool wait_for(futres &futr, futres &futr_2, std::chrono::milliseconds &rel_time, pubnub_res &pbresult);
+    bool wait_for(futres &futr_1,
+                  futres &futr_2,
+                  std::chrono::milliseconds &rel_time,
+                  pubnub_res &pbresult_1,
+                  pubnub_res &pbresult_2);
 
     /// Do a subscribe operation on context @p pb and channel @p channel
     /// and channel group @p chgroup, wait for @p rel_time, and
@@ -309,33 +313,55 @@ namespace pubnub {
     class sense_double {
         futres &d_left;
         futres &d_right;
-        pubnub_res d_result;
-        char const *d_expr;
+        pubnub_res d_result_left;
+        pubnub_res d_result_right;
+        char const *d_expr_left;
+        char const *d_expr_right;
         char const *d_fname;
         long d_line;
     public:
         sense_double(sense&left, sense&right) 
             : d_left(left.get_futres())
             , d_right(right.get_futres()) 
-            , d_expr(left.expr())
+            , d_expr_left(left.expr())
+            , d_expr_right(right.expr())
             , d_fname(left.fname())
             , d_line(left.line())
             {}
         sense_double &in(std::chrono::milliseconds deadline) {
-            bool trans_finished(wait_for(d_left, d_right, deadline, d_result));
+            std::string expr_left(d_expr_left);
+            std::string expr_right(d_expr_right);
+            bool trans_finished(wait_for(d_left, d_right, deadline, d_result_left, d_result_right));
             if(trans_finished) {                
-                /* Transaction is finished if left and right 'futres' result are the same
-                   and is reasonable enough to check just one of them*/
-                check_result_for_exceptions(d_left, d_result, d_fname, d_line, d_expr);
+                check_result_for_exceptions(d_left, d_result_left, d_fname, d_line, d_expr_left);
+                check_result_for_exceptions(d_right, d_result_right, d_fname, d_line, d_expr_right);
             }
-            expect<bool>(trans_finished, d_expr, d_fname, d_line, "waiting for two contexts failed / timed out") == true;
+            expect<bool>(trans_finished,
+                         (expr_left + expr_right).c_str(),
+                         d_fname,
+                         d_line,
+                         "waiting for two contexts timed out") == true;
             return *this;
         }
         sense_double &before(std::chrono::milliseconds deadline) { return in(deadline); }
         sense_double &operator<<(std::chrono::milliseconds deadline) { return in(deadline); }
         
         void operator==(pubnub_res expected) {
-            expect<pubnub_res>(d_result, d_expr, d_fname, d_line) == expected;
+            std::string expr_left(d_expr_left);
+            std::string expr_right(d_expr_right);
+            if(d_result_left == d_result_right) {
+                expect<pubnub_res>(d_result_right,
+                                   (expr_left + expr_right).c_str(),
+                                   d_fname,
+                                   d_line) == expected;
+            }
+            else {
+                expect<bool>(false,
+                             (expr_left + expr_right).c_str(),
+                             d_fname,
+                             d_line,
+                             "waiting for two contexts failed") == true;
+            }
         }
     };
     
