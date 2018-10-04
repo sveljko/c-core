@@ -219,7 +219,7 @@ namespace pubnub {
         long d_line;
         char const *d_expr;
     public:
-        except_test(std::string str, char const *f, long l, char const *e)
+        except_test(std::string &str, char const *f, long l, char const *e)
             : d_str(str)
             , d_file(f)
             , d_line(l)
