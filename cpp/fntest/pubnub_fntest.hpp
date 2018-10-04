@@ -337,7 +337,7 @@ namespace pubnub {
                 check_result_for_exceptions(d_right, d_result_right, d_fname, d_line, d_expr_right);
             }
             expect<bool>(trans_finished,
-                         (expr_left + expr_right).c_str(),
+                         (expr_left + " && " + expr_right).c_str(),
                          d_fname,
                          d_line,
                          "waiting for two contexts timed out") == true;
@@ -351,13 +351,13 @@ namespace pubnub {
             std::string expr_right(d_expr_right);
             if(d_result_left == d_result_right) {
                 expect<pubnub_res>(d_result_right,
-                                   (expr_left + expr_right).c_str(),
+                                   (expr_left + " && " + expr_right).c_str(),
                                    d_fname,
                                    d_line) == expected;
             }
             else {
                 expect<bool>(false,
-                             (expr_left + expr_right).c_str(),
+                             (expr_left + " && " + expr_right).c_str(),
                              d_fname,
                              d_line,
                              "waiting for two contexts failed") == true;
