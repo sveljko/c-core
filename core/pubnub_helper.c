@@ -5,7 +5,6 @@
 
 #include <string.h>
 
-
 enum pubnub_publish_res pubnub_parse_publish_result(char const *result)
 {
     PUBNUB_ASSERT_OPT(result != NULL);
