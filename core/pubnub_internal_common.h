@@ -169,13 +169,6 @@ struct pubnub_ {
     char const* origin;
 #endif
 
-#if 0
-    /** Process that started last transaction */
-    struct process *initiator;
-
-    uint8_t *readptr;         /* Pointer to the next data to be read. */
-#endif
-
     struct pubnub_pal pal;
 
     struct pubnub_options {
@@ -219,7 +212,7 @@ struct pubnub_ {
 #endif
         /** Should close connection */
         bool should_close : 1;
-        
+
 #if PUBNUB_NEED_RETRY_AFTER_CLOSE
         /** Retry the same Pubnub request after closing current TCP
             connection.
@@ -232,6 +225,11 @@ struct pubnub_ {
             renewed without losing transaction at hand.
         */
         bool started_while_kept_alive : 1;
+
+        /** Related to operation 'publish_ex'. Indicates whether to send the message
+            in http message body, or if not encoded 'via GET'(, or maybe some third method).
+        */
+        bool is_publish_via_post : 1;
     } flags;
 
 #if PUBNUB_ADVANCED_KEEP_ALIVE
@@ -285,9 +283,9 @@ struct pubnub_ {
     /** Hostname (address) of the proxy server to use */
     char proxy_hostname[PUBNUB_MAX_PROXY_HOSTNAME_LENGTH + 1];
 
-    /** Proxy IP address, if and when available through hostname string in 'numbers
-        and dots' notation. If proxy IP address is not available structure array is
-        filled with zeros.
+    /** Proxy IP address, if and when available through hostname string in
+       'numbers and dots' notation. If proxy IP address is not available
+       structure array is filled with zeros.
      */
     struct pubnub_ipv4_address proxy_ip_address;
 
@@ -373,6 +371,14 @@ pubnub_t* pballoc_get_ctx(unsigned idx);
 /** Internal function, the "bottom half" of pubnub_free(), which is
     done asynchronously in the callback mode. */
 void pballoc_free_at_last(pubnub_t* pb);
+
+
+/**  Parses subscribe V2 response from Pubnub.
+
+     @todo Should probably find a better place for this
+     declaration...
+*/
+enum pubnub_res pbcc_parse_subscribe_v2_response(struct pbcc_context* p);
 
 
 #endif /* !defined INC_PUBNUB_INTERNAL_COMMON */

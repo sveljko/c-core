@@ -57,6 +57,8 @@ struct pubnub_publish_options {
         about the message, which can be used for stream filtering.
      */
     char const* meta;
+    /** Defines the mthod by which publish transaction will be performed */
+    enum publish_method method; 
 };
 
 /** This returns the default options for publish V1 transactions.
@@ -64,6 +66,9 @@ struct pubnub_publish_options {
     and `meta = NULL`
  */
 struct pubnub_publish_options pubnub_publish_defopts(void);
+
+/** Will set default options and desired method(GET, POST or other) for 'publish_ex' */
+struct pubnub_publish_options pubnub_publish_opts_method(enum publish_method method);
 
 /** The extended publish V1. Basically the same as pubnub_publish(),
     but with added optional parameters in @p opts.
@@ -96,25 +101,12 @@ struct pubnub_subscribe_options {
         (instead).
      */
     unsigned heartbeat;
-    /** The filter expression to apply. It's a predicate to apply to
-        the metadata of a message. If it returns `true`, message will
-        be received, otherwise, it will be skipped (as if not
-        published). Syntax is not trivial, but can be described as
-        mostly Javascript on the metadata (which is JSON, thus,
-        "integrates well" wtih Javascript). For example, if your
-        metadata is: `{"zec":3}`, then this filter _would_ match it:
-        `zec==3`, while `zec==4` would _not_.
-
-        If message doesn't have metadata, this will be ignored.
-
-        If NULL, will not be used.
-     */
-    char const* filter_expr;
 };
+
 
 /** This returns the default options for subscribe transactions.  Will
     set `channel_group = NULL`, `heartbeat` to default heartbeat
-    value and `filter_expr = NULL`.
+    value.
  */
 struct pubnub_subscribe_options pubnub_subscribe_defopts(void);
 

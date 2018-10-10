@@ -22,9 +22,16 @@ struct pubnub_publish_options pubnub_publish_defopts(void)
     result.cipher_key = NULL;
     result.replicate  = true;
     result.meta       = NULL;
+    result.method     = publishViaGET;
     return result;
 }
 
+struct pubnub_publish_options pubnub_publish_opts_method(enum publish_method method)
+{
+    struct pubnub_publish_options opts =  pubnub_publish_defopts();
+    opts.method = method;
+    return opts;
+}
 
 enum pubnub_res pubnub_publish_ex(pubnub_t*                     pb,
                                   const char*                   channel,
@@ -61,10 +68,11 @@ enum pubnub_res pubnub_publish_ex(pubnub_t*                     pb,
     }
 
     rslt = pbcc_publish_prep(
-        &pb->core, channel, message, opts.store, !opts.replicate, opts.meta);
+        &pb->core, channel, message, opts.store, !opts.replicate, opts.meta, opts.method);
     if (PNR_STARTED == rslt) {
         pb->trans            = PBTT_PUBLISH;
         pb->core.last_result = PNR_STARTED;
+        pb->flags.is_publish_via_post = (publishViaPOST == opts.method); 
         pbnc_fsm(pb);
         rslt = pb->core.last_result;
     }
@@ -85,7 +93,6 @@ struct pubnub_subscribe_options pubnub_subscribe_defopts(void)
     struct pubnub_subscribe_options result;
     result.channel_group = NULL;
     result.heartbeat     = PUBNUB_MINIMAL_HEARTBEAT_INTERVAL;
-    result.filter_expr   = NULL;
     return result;
 }
 
@@ -105,7 +112,7 @@ enum pubnub_res pubnub_subscribe_ex(pubnub_t*                       p,
     }
 
     rslt = pbcc_subscribe_prep(
-        &p->core, channel, opt.channel_group, &opt.heartbeat, opt.filter_expr);
+        &p->core, channel, opt.channel_group, &opt.heartbeat);
     if (PNR_STARTED == rslt) {
         p->trans            = PBTT_SUBSCRIBE;
         p->core.last_result = PNR_STARTED;

@@ -40,10 +40,11 @@ pubnub_t* pubnub_init(pubnub_t* p, const char* publish_key, const char* subscrib
 #endif
 #endif /* PUBNUB_BLOCKING_IO_SETTABLE */
 
-    p->state                       = PBS_IDLE;
-    p->trans                       = PBTT_NONE;
-    p->options.use_http_keep_alive = true;
+    p->state                          = PBS_IDLE;
+    p->trans                          = PBTT_NONE;
+    p->options.use_http_keep_alive    = true;
     p->flags.started_while_kept_alive = false;
+    p->flags.is_publish_via_post   = false;
 #if PUBNUB_ADVANCED_KEEP_ALIVE
     p->keep_alive.max     = 1000;
     p->keep_alive.timeout = 50;
@@ -52,8 +53,8 @@ pubnub_t* pubnub_init(pubnub_t* p, const char* publish_key, const char* subscrib
     pubnub_mutex_unlock(p->monitor);
 
 #if PUBNUB_PROXY_API
-    p->proxy_type               = pbproxyNONE;
-    p->proxy_hostname[0]        = '\0';
+    p->proxy_type        = pbproxyNONE;
+    p->proxy_hostname[0] = '\0';
     memset(&(p->proxy_ip_address), 0, sizeof p->proxy_ip_address);
     p->proxy_tunnel_established = false;
     p->proxy_port               = 80;
@@ -83,7 +84,7 @@ enum pubnub_res pubnub_publish(pubnub_t* pb, const char* channel, const char* me
         return PNR_IN_PROGRESS;
     }
 
-    rslt = pbcc_publish_prep(&pb->core, channel, message, true, false, NULL);
+    rslt = pbcc_publish_prep(&pb->core, channel, message, true, false, NULL, publishViaGET);
     if (PNR_STARTED == rslt) {
         pb->trans            = PBTT_PUBLISH;
         pb->core.last_result = PNR_STARTED;
@@ -136,7 +137,7 @@ enum pubnub_res pubnub_subscribe(pubnub_t*   p,
         return PNR_IN_PROGRESS;
     }
 
-    rslt = pbcc_subscribe_prep(&p->core, channel, channel_group, NULL, NULL);
+    rslt = pbcc_subscribe_prep(&p->core, channel, channel_group, NULL);
     if (PNR_STARTED == rslt) {
         p->trans            = PBTT_SUBSCRIBE;
         p->core.last_result = PNR_STARTED;
@@ -160,7 +161,7 @@ enum pubnub_cancel_res pubnub_cancel(pubnub_t* pb)
         res = PN_CANCEL_FINISHED;
     }
     pubnub_mutex_unlock(pb->monitor);
-    
+
     return res;
 }
 

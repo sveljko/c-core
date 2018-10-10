@@ -26,6 +26,7 @@ void pbcc_init(struct pbcc_context* p, const char* publish_key, const char* subs
     p->decomp_http_reply = NULL;
 #endif /* PUBNUB_RECEIVE_GZIP_RESPONSE */
 #endif /* PUBNUB_DYNAMIC_REPLY_BUFFER */
+    p->message = NULL;
 
 #if PUBNUB_CRYPTO_API
     p->secret_key = NULL;
@@ -370,35 +371,76 @@ static enum pubnub_res url_encode(struct pbcc_context* pb, char const* what)
     return PNR_OK;
 }
 
+void pbcc_headers_for_publish_via_post(struct pbcc_context *pb, char *header, size_t max_length)
+{
+    char lines[] = "Content-Type: application/json\r\nContent-Length: ";
+    unsigned length;
+
+    PUBNUB_ASSERT_OPT(pb != NULL);
+    PUBNUB_ASSERT_OPT(pb->message != NULL);
+    PUBNUB_ASSERT_OPT(header != NULL);
+    PUBNUB_ASSERT_OPT(max_length > sizeof lines);
+    memcpy(header, lines, sizeof lines - 1);
+    header += sizeof lines - 1;
+    max_length -= sizeof lines - 1;
+    length = snprintf(header, max_length, "%u", (unsigned)strlen(pb->message));
+    PUBNUB_ASSERT_OPT(max_length > length);
+    return;
+}
+
+enum pubnub_res pbcc_append_url_param_encoded(struct pbcc_context* pb,
+                                      char const*          param_name,
+                                      size_t               param_name_len,
+                                      char const*          param_val,
+                                      char                 separator)
+{
+    if (pb->http_buf_len + 1 + param_name_len + 1 > sizeof pb->http_buf) {
+        return PNR_TX_BUFF_TOO_SMALL;
+    }
+
+    pb->http_buf[pb->http_buf_len++] = separator;
+    memcpy(pb->http_buf + pb->http_buf_len, param_name, param_name_len);
+    pb->http_buf_len += param_name_len;
+    pb->http_buf[pb->http_buf_len++] = '=';
+    return url_encode(pb, param_val);
+}
+
 
 enum pubnub_res pbcc_publish_prep(struct pbcc_context* pb,
                                   const char*          channel,
                                   const char*          message,
                                   bool                 store_in_history,
                                   bool                 norep,
-                                  char const*          meta)
+                                  char const*          meta,
+                                  enum publish_method  method)
 {
     char const* const uname = pubnub_uname();
-    enum pubnub_res   rslt;
+    enum pubnub_res   rslt = PNR_OK;
 
     PUBNUB_ASSERT_OPT(message != NULL);
 
     pb->http_content_len = 0;
     pb->http_buf_len     = snprintf(pb->http_buf,
                                 sizeof pb->http_buf,
-                                "/publish/%s/%s/0/%s/0/",
+                                "/publish/%s/%s/0/%s/0",
                                 pb->publish_key,
                                 pb->subscribe_key,
                                 channel);
 
-    rslt = url_encode(pb, message);
-    if (rslt != PNR_OK) {
-        return rslt;
+    if (publishViaPOST != method) {
+        memcpy(pb->http_buf + (pb->http_buf_len++), "/", 1);
+        rslt = url_encode(pb, message);
+        if (rslt != PNR_OK) {
+            return rslt;
+        }
+    }
+    else {
+        pb->message = message;
     }
     APPEND_URL_PARAM_M(pb, "pnsdk", uname, '?');
     APPEND_URL_PARAM_M(pb, "uuid", pb->uuid, '&');
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
-    if ((PNR_OK == rslt) && !store_in_history) {
+    if (!store_in_history) {
         rslt = pbcc_append_url_param(pb, "store", sizeof "store" - 1, "0", '&');
     }
     if ((PNR_OK == rslt) && norep) {
@@ -423,8 +465,7 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context* pb,
 enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
                                     char const*          channel,
                                     char const*          channel_group,
-                                    unsigned*            heartbeat,
-                                    char const*          filter_expr)
+                                    unsigned*            heartbeat)
 {
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -450,7 +491,6 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
     APPEND_URL_PARAM_M(p, "uuid", p->uuid, '&');
     APPEND_URL_PARAM_M(p, "auth", p->auth, '&');
     APPEND_URL_OPT_PARAM_UNSIGNED_M(p, "heartbeat", heartbeat, '&');
-    APPEND_URL_PARAM_M(p, "filter-expr", filter_expr, '&');
 
     return PNR_STARTED;
 }

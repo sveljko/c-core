@@ -38,6 +38,7 @@ void pbntf_lost_socket(pubnub_t *pb)
 
 void pbntf_trans_outcome(pubnub_t* pb, enum pubnub_state state)
 {
+    pb->flags.is_publish_via_post = false;
     PBNTF_TRANS_OUTCOME_COMMON(pb, state);
     PUBNUB_ASSERT(pbnc_can_start_transaction(pb));
 }

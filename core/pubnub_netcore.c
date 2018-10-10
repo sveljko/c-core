@@ -21,6 +21,7 @@
  */
 #define CHUNK_TRAIL_LENGTH 2
 
+
 #if PUBNUB_RECEIVE_GZIP_RESPONSE
 /* 'Accept-Encoding' header line */
 #define ACCEPT_ENCODING "Accept-Encoding: gzip\r\n"
@@ -37,6 +38,17 @@
 #define ACCEPT_ENCODING ""
 #define possible_gzip_response(pb)
 #endif /* PUBNUB_RECEIVE_GZIP_RESPONSE */
+
+
+#define SEND_FIN_HEAD(pb)                                                      \
+                if (0 > pbpal_send_literal_str(                                \
+                           pb,                                                 \
+                           "\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION \
+                           "\r\n" ACCEPT_ENCODING "\r\n")) {                   \
+                    outcome_detected(pb, PNR_IO_ERROR);                        \
+                    break;                                                     \
+                }
+
 
 static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)
 {
@@ -154,6 +166,7 @@ static PFpbcc_parse_response_T m_aParseResponse[] = { dont_parse,
                                                       dont_parse,
                                                       dont_parse,
                                                       dont_parse,
+                                                      dont_parse,
                                                       dont_parse
 #else
     pbcc_parse_presence_response, /* PBTT_LEAVE */
@@ -169,7 +182,12 @@ static PFpbcc_parse_response_T m_aParseResponse[] = { dont_parse,
     pbcc_parse_channel_registry_response, /* PBTT_ADD_CHANNEL_TO_GROUP */
     pbcc_parse_channel_registry_response, /* PBTT_LIST_CHANNEL_GROUP */
     pbcc_parse_presence_response /* PBTT_HEARTBEAT */
+#if PUBNUB_USE_SUBSCRIBE_V2
+    , pbcc_parse_subscribe_v2_response /* PBTT_SUBSCRIBE_V2 */
+#else
+    , dont_parse /* PBTT_SUBSCRIBE_V2 */
 #endif
+#endif /* PUBNUB_ONLY_PUBSUB_API */
 };
 
 
@@ -275,12 +293,14 @@ static char const* pbnc_state2str(enum pubnub_state e)
         return "PBS_TX_PORT_NUM";
     case PBS_TX_VER:
         return "PBS_TX_VER";
-    case PBS_TX_PROXY_AUTHORIZATION:
-        return "PBS_TX_PROXY_AUTHORIZATION";
+    case PBS_TX_EXTRA_HEADERS:
+        return "PBS_TX_EXTRA_HEADERS";
     case PBS_TX_ORIGIN:
         return "PBS_TX_ORIGIN";
     case PBS_TX_FIN_HEAD:
         return "PBS_TX_FIN_HEAD";
+    case PBS_TX_BODY:
+        return "PBS_TX_BODY";
     case PBS_RX_HTTP_VER:
         return "PBS_RX_HTTP_VER";
     case PBS_RX_HEADERS:
@@ -517,7 +537,7 @@ next_state:
             }
         }
 #endif
-        i = pbpal_send_literal_str(pb, "GET ");
+        i = pbpal_send_str(pb, pb->flags.is_publish_via_post ? "POST " : "GET ");
         if (i < 0) {
             outcome_detected(pb, PNR_IO_ERROR);
             break;
@@ -529,7 +549,7 @@ next_state:
         enum pbpal_tls_result res = pbpal_check_tls(pb);
         switch (res) {
         case pbtlsEstablished:
-            i = pbpal_send_literal_str(pb, "GET ");
+            i = pbpal_send_str(pb, pb->flags.is_publish_via_post ? "POST " : "GET ");
             if (i < 0) {
                 outcome_detected(pb, PNR_IO_ERROR);
                 break;
@@ -721,9 +741,9 @@ next_state:
 #if PUBNUB_PROXY_API
             if (!pb->proxy_tunnel_established) {
                 char hedr[1024] = "\r\n";
-                if ((0 == pbproxy_http_header_to_send(pb, hedr + 2, sizeof hedr - 2))) {
+                if (0 == pbproxy_http_header_to_send(pb, hedr + 2, sizeof hedr - 2)) {
                     PUBNUB_LOG_TRACE("Sending HTTP proxy header: '%s'\n", hedr);
-                    pb->state = PBS_TX_PROXY_AUTHORIZATION;
+                    pb->state = PBS_TX_EXTRA_HEADERS;
                     if (-1 == pbpal_send_str(pb, hedr)) {
                         outcome_detected(pb, PNR_IO_ERROR);
                         break;
@@ -732,37 +752,59 @@ next_state:
                 }
             }
 #endif
-            if (0 > pbpal_send_literal_str(
-                        pb,
-                        "\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION
-                        "\r\n" ACCEPT_ENCODING "\r\n")) {
-                outcome_detected(pb, PNR_IO_ERROR);
-                break;
+            if (pb->flags.is_publish_via_post) {
+                char hedr[70] = "\r\n";
+                pbcc_headers_for_publish_via_post(&(pb->core), hedr + 2, sizeof hedr - 2);
+                PUBNUB_LOG_TRACE("Sending HTTP 'publish via POST' headers: '%s'\n", hedr);
+                pb->state = PBS_TX_EXTRA_HEADERS;
+                if (-1 == pbpal_send_str(pb, hedr)) {
+                    outcome_detected(pb, PNR_IO_ERROR);
+                    break;
+                }
+                goto next_state;
             }
+            SEND_FIN_HEAD(pb);
             pb->state = PBS_TX_FIN_HEAD;
             goto next_state;
         }
         break;
-#if PUBNUB_PROXY_API
-    case PBS_TX_PROXY_AUTHORIZATION:
+    case PBS_TX_EXTRA_HEADERS:
         i = pbpal_send_status(pb);
         if (i < 0) {
             outcome_detected(pb, PNR_IO_ERROR);
         }
         else if (0 == i) {
-            if (0 > pbpal_send_literal_str(
-                        pb,
-                        "\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION
-                        "\r\n" ACCEPT_ENCODING "\r\n")) {
-                outcome_detected(pb, PNR_IO_ERROR);
-                break;
-            }
+            SEND_FIN_HEAD(pb);
             pb->state = PBS_TX_FIN_HEAD;
             goto next_state;
         }
         break;
-#endif
     case PBS_TX_FIN_HEAD:
+        i = pbpal_send_status(pb);
+        if (i < 0) {
+            outcome_detected(pb, PNR_IO_ERROR);
+        }
+        else if (0 == i) {
+            if (pb->flags.is_publish_via_post
+#if PUBNUB_PROXY_API
+                && (pb->proxy_tunnel_established || (pbproxyNONE == pb->proxy_type))
+#endif
+                ) {
+                pb->state = PBS_TX_BODY;
+                if (-1 == pbpal_send_str(pb, pb->core.message)) {
+                    outcome_detected(pb, PNR_IO_ERROR);
+                    break;
+                }
+            }
+            else {
+                pbpal_start_read_line(pb);
+                pb->state = PBS_RX_HTTP_VER;
+                pbntf_watch_in_events(pb);
+            }
+            goto next_state;
+        }
+        break;
+    case PBS_TX_BODY:
         i = pbpal_send_status(pb);
         if (i < 0) {
             outcome_detected(pb, PNR_IO_ERROR);
@@ -1055,7 +1097,7 @@ next_state:
 #if PUBNUB_PROXY_API
         pb->proxy_saved_path_len = 0;
 #endif
-        pb->state = PBS_KEEP_ALIVE_READY;
+        pb->state                          = PBS_KEEP_ALIVE_READY;
         pb->flags.started_while_kept_alive = true;
         switch (pbntf_enqueue_for_processing(pb)) {
         case -1:
@@ -1076,7 +1118,7 @@ next_state:
             break;
         }
         pb->state = PBS_TX_GET;
-        i         = pbpal_send_literal_str(pb, "GET ");
+        i         = pbpal_send_str(pb, pb->flags.is_publish_via_post ? "POST " : "GET ");
         if (i < 0) {
             pb->state = close_kept_alive_connection(pb);
         }
@@ -1094,9 +1136,15 @@ next_state:
             goto next_state;
         }
         break;
+    default:
+        PUBNUB_LOG_ERROR("pbnc_fsm(pb=%p): unhandled state: %s\n",
+                         pb,
+                         pbnc_state2str(pb->state));
+        break;
     }
     return 0;
 }
+
 
 void pbnc_stop(struct pubnub_* pbp, enum pubnub_res outcome_to_report)
 {
@@ -1118,11 +1166,13 @@ void pbnc_stop(struct pubnub_* pbp, enum pubnub_res outcome_to_report)
         pbp->trans = PBTT_NONE;
         /*FALLTHRU*/
     case PBS_RX_HTTP_VER:
-        /* Transaction generating PNR_TIMEOUT outcome at any point can not end up in
-           PBS_KEEP_ALIVE_IDLE so previous *FALLTHROUHGH* is safe */
-        if ((PNR_TIMEOUT == outcome_to_report) && (pbp->flags.started_while_kept_alive)) {
-            /* Closing connection that was kept alive is always done with intention
-               to reestablish it anew and don't lose current transaction. 
+        /* Transaction generating PNR_TIMEOUT outcome at any point can not end
+           up in PBS_KEEP_ALIVE_IDLE so previous *FALLTHROUHGH* is safe */
+        if ((PNR_TIMEOUT == outcome_to_report)
+            && (pbp->flags.started_while_kept_alive)) {
+            /* Closing connection that was kept alive is always done with
+               intention to reestablish it anew and don't lose current
+               transaction.
             */
             pbp->state = close_kept_alive_connection(pbp);
             pbntf_requeue_for_processing(pbp);

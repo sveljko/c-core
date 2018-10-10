@@ -189,7 +189,7 @@ public:
 /** A wrapper class for publish options, enabling a nicer
     usage. Something like:
 
-        pn.publish(chan, publish_options().store(false));
+        pn.publish(chan, message, publish_options().store(false));
 */
 class publish_options {
     pubnub_publish_options d_;
@@ -197,7 +197,11 @@ class publish_options {
     std::string            d_mtdt;
 
 public:
+    /** Default options for publish via GET */
     publish_options() { d_ = pubnub_publish_defopts(); }
+    /** Used with pn.publish(chan, message, publish_options(method).store(etc)); for
+        publish via POST, or, maybe, same other 'publish' method */
+    publish_options(enum publish_method method) { d_ = pubnub_publish_opts_method(method); }
     publish_options& store(bool stor)
     {
         d_.store = stor;
