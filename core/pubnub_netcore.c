@@ -166,6 +166,7 @@ static PFpbcc_parse_response_T m_aParseResponse[] = { dont_parse,
                                                       dont_parse,
                                                       dont_parse,
                                                       dont_parse,
+                                                      dont_parse,
                                                       dont_parse
 #else
     pbcc_parse_presence_response, /* PBTT_LEAVE */
@@ -181,7 +182,12 @@ static PFpbcc_parse_response_T m_aParseResponse[] = { dont_parse,
     pbcc_parse_channel_registry_response, /* PBTT_ADD_CHANNEL_TO_GROUP */
     pbcc_parse_channel_registry_response, /* PBTT_LIST_CHANNEL_GROUP */
     pbcc_parse_presence_response /* PBTT_HEARTBEAT */
+#if PUBNUB_USE_SUBSCRIBE_V2
+    , pbcc_parse_subscribe_v2_response /* PBTT_SUBSCRIBE_V2 */
+#else
+    , dont_parse /* PBTT_SUBSCRIBE_V2 */
 #endif
+#endif /* PUBNUB_ONLY_PUBSUB_API */
 };
 
 
@@ -1091,7 +1097,7 @@ next_state:
 #if PUBNUB_PROXY_API
         pb->proxy_saved_path_len = 0;
 #endif
-        pb->state = PBS_KEEP_ALIVE_READY;
+        pb->state                          = PBS_KEEP_ALIVE_READY;
         pb->flags.started_while_kept_alive = true;
         switch (pbntf_enqueue_for_processing(pb)) {
         case -1:
@@ -1130,9 +1136,15 @@ next_state:
             goto next_state;
         }
         break;
+    default:
+        PUBNUB_LOG_ERROR("pbnc_fsm(pb=%p): unhandled state: %s\n",
+                         pb,
+                         pbnc_state2str(pb->state));
+        break;
     }
     return 0;
 }
+
 
 void pbnc_stop(struct pubnub_* pbp, enum pubnub_res outcome_to_report)
 {
@@ -1154,11 +1166,13 @@ void pbnc_stop(struct pubnub_* pbp, enum pubnub_res outcome_to_report)
         pbp->trans = PBTT_NONE;
         /*FALLTHRU*/
     case PBS_RX_HTTP_VER:
-        /* Transaction generating PNR_TIMEOUT outcome at any point can not end up in
-           PBS_KEEP_ALIVE_IDLE so previous *FALLTHROUHGH* is safe */
-        if ((PNR_TIMEOUT == outcome_to_report) && (pbp->flags.started_while_kept_alive)) {
-            /* Closing connection that was kept alive is always done with intention
-               to reestablish it anew and don't lose current transaction. 
+        /* Transaction generating PNR_TIMEOUT outcome at any point can not end
+           up in PBS_KEEP_ALIVE_IDLE so previous *FALLTHROUHGH* is safe */
+        if ((PNR_TIMEOUT == outcome_to_report)
+            && (pbp->flags.started_while_kept_alive)) {
+            /* Closing connection that was kept alive is always done with
+               intention to reestablish it anew and don't lose current
+               transaction.
             */
             pbp->state = close_kept_alive_connection(pbp);
             pbntf_requeue_for_processing(pbp);
