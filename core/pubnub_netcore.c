@@ -1118,7 +1118,7 @@ next_state:
             break;
         }
         pb->state = PBS_TX_GET;
-        i         = pbpal_send_literal_str(pb, "GET ");
+        i         = pbpal_send_str(pb, pb->flags.is_publish_via_post ? "POST " : "GET ");
         if (i < 0) {
             pb->state = close_kept_alive_connection(pb);
         }
