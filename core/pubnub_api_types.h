@@ -165,5 +165,9 @@ enum pubnub_tribool {
     pbccNotSet
 };
 
+enum publish_method {
+    publishViaPOST,
+    publishViaGET
+};
 
 #endif /* !defined INC_PUBNUB_API_TYPES */
