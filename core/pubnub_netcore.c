@@ -791,7 +791,7 @@ next_state:
 #endif
                 ) {
                 pb->state = PBS_TX_BODY;
-                if (-1 == pbpal_send_str(pb, pb->core.message)) {
+                if (-1 == pbpal_send_str(pb, pb->core.message_to_publish)) {
                     outcome_detected(pb, PNR_IO_ERROR);
                     break;
                 }

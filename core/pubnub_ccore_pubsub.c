@@ -26,7 +26,7 @@ void pbcc_init(struct pbcc_context* p, const char* publish_key, const char* subs
     p->decomp_http_reply = NULL;
 #endif /* PUBNUB_RECEIVE_GZIP_RESPONSE */
 #endif /* PUBNUB_DYNAMIC_REPLY_BUFFER */
-    p->message = NULL;
+    p->message_to_publish = NULL;
 
 #if PUBNUB_CRYPTO_API
     p->secret_key = NULL;
@@ -377,13 +377,13 @@ void pbcc_headers_for_publish_via_post(struct pbcc_context *pb, char *header, si
     unsigned length;
 
     PUBNUB_ASSERT_OPT(pb != NULL);
-    PUBNUB_ASSERT_OPT(pb->message != NULL);
+    PUBNUB_ASSERT_OPT(pb->message_to_publish != NULL);
     PUBNUB_ASSERT_OPT(header != NULL);
     PUBNUB_ASSERT_OPT(max_length > sizeof lines);
     memcpy(header, lines, sizeof lines - 1);
     header += sizeof lines - 1;
     max_length -= sizeof lines - 1;
-    length = snprintf(header, max_length, "%u", (unsigned)strlen(pb->message));
+    length = snprintf(header, max_length, "%u", (unsigned)strlen(pb->message_to_publish));
     PUBNUB_ASSERT_OPT(max_length > length);
     return;
 }
@@ -406,13 +406,13 @@ enum pubnub_res pbcc_append_url_param_encoded(struct pbcc_context* pb,
 }
 
 
-enum pubnub_res pbcc_publish_prep(struct pbcc_context* pb,
-                                  const char*          channel,
-                                  const char*          message,
-                                  bool                 store_in_history,
-                                  bool                 norep,
-                                  char const*          meta,
-                                  enum publish_method  method)
+enum pubnub_res pbcc_publish_prep(struct pbcc_context*        pb,
+                                  const char*                 channel,
+                                  const char*                 message,
+                                  bool                        store_in_history,
+                                  bool                        norep,
+                                  char const*                 meta,
+                                  enum pubnub_publish_method  method)
 {
     char const* const uname = pubnub_uname();
     enum pubnub_res   rslt = PNR_OK;
@@ -427,20 +427,20 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context* pb,
                                 pb->subscribe_key,
                                 channel);
 
-    if (publishViaPOST != method) {
-        memcpy(pb->http_buf + (pb->http_buf_len++), "/", 1);
+    if (pubnubPublishViaPOST != method) {
+        pb->http_buf[pb->http_buf_len++] = '/';
         rslt = url_encode(pb, message);
         if (rslt != PNR_OK) {
             return rslt;
         }
     }
     else {
-        pb->message = message;
+        pb->message_to_publish = message;
     }
     APPEND_URL_PARAM_M(pb, "pnsdk", uname, '?');
     APPEND_URL_PARAM_M(pb, "uuid", pb->uuid, '&');
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
-    if (!store_in_history) {
+    if ((PNR_OK == rslt) && !store_in_history) {
         rslt = pbcc_append_url_param(pb, "store", sizeof "store" - 1, "0", '&');
     }
     if ((PNR_OK == rslt) && norep) {

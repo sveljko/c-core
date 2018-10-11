@@ -22,15 +22,8 @@ struct pubnub_publish_options pubnub_publish_defopts(void)
     result.cipher_key = NULL;
     result.replicate  = true;
     result.meta       = NULL;
-    result.method     = publishViaGET;
+    result.method     = pubnubPublishViaGET;
     return result;
-}
-
-struct pubnub_publish_options pubnub_publish_opts_method(enum publish_method method)
-{
-    struct pubnub_publish_options opts =  pubnub_publish_defopts();
-    opts.method = method;
-    return opts;
 }
 
 enum pubnub_res pubnub_publish_ex(pubnub_t*                     pb,
@@ -72,7 +65,7 @@ enum pubnub_res pubnub_publish_ex(pubnub_t*                     pb,
     if (PNR_STARTED == rslt) {
         pb->trans            = PBTT_PUBLISH;
         pb->core.last_result = PNR_STARTED;
-        pb->flags.is_publish_via_post = (publishViaPOST == opts.method); 
+        pb->flags.is_publish_via_post = (pubnubPublishViaPOST == opts.method); 
         pbnc_fsm(pb);
         rslt = pb->core.last_result;
     }

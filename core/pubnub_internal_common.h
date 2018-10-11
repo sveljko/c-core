@@ -226,8 +226,8 @@ struct pubnub_ {
         */
         bool started_while_kept_alive : 1;
 
-        /** Related to operation 'publish_ex'. Indicates whether to send the message
-            in http message body, or if not encoded 'via GET'(, or maybe some third method).
+        /** Indicates whether to send the message in http message body, or if not,
+            encoded 'via GET'(, or maybe some third method).
         */
         bool is_publish_via_post : 1;
     } flags;

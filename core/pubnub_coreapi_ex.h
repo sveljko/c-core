@@ -57,8 +57,8 @@ struct pubnub_publish_options {
         about the message, which can be used for stream filtering.
      */
     char const* meta;
-    /** Defines the mthod by which publish transaction will be performed */
-    enum publish_method method; 
+    /** Defines the method by which publish transaction will be performed */
+    enum pubnub_publish_method method; 
 };
 
 /** This returns the default options for publish V1 transactions.
@@ -66,9 +66,6 @@ struct pubnub_publish_options {
     and `meta = NULL`
  */
 struct pubnub_publish_options pubnub_publish_defopts(void);
-
-/** Will set default options and desired method(GET, POST or other) for 'publish_ex' */
-struct pubnub_publish_options pubnub_publish_opts_method(enum publish_method method);
 
 /** The extended publish V1. Basically the same as pubnub_publish(),
     but with added optional parameters in @p opts.

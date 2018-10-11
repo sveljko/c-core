@@ -199,9 +199,6 @@ class publish_options {
 public:
     /** Default options for publish via GET */
     publish_options() { d_ = pubnub_publish_defopts(); }
-    /** Used with pn.publish(chan, message, publish_options(method).store(etc)); for
-        publish via POST, or, maybe, same other 'publish' method */
-    publish_options(enum publish_method method) { d_ = pubnub_publish_opts_method(method); }
     publish_options& store(bool stor)
     {
         d_.store = stor;
@@ -222,6 +219,11 @@ public:
     {
         d_mtdt  = mtdt;
         d_.meta = d_mtdt.c_str();
+        return *this;
+    }
+    publish_options& method(pubnub_publish_method method)
+    {
+        d_.method = method;
         return *this;
     }
     pubnub_publish_options data() { return d_; }
