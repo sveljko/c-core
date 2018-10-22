@@ -197,6 +197,14 @@ public:
      */
     pubnub_res publish_via_post(QString const &channel, QByteArray const &message);
 
+    /** Overloaded 'publish_via_post()' method 
+        @param channel The string with the channel
+        @param message The message to publish, expected to be of type 'QJsonDocument'
+
+        @return #PNR_STARTED on success, an error otherwise
+     */
+    pubnub_res publish_via_post(QString const &channel, QJsonDocument const &message);
+
     /** Subscribe to @p channel and/or @p channel_group. This actually
         means "initiate a subscribe operation/transaction". The outcome
         will be retrieved by the "notification" API, which is different
@@ -763,7 +771,7 @@ private:
     /// Is publish transaction done via POST method
     bool d_is_publish_via_post;
 
-    /// Pointer to the message to publish via POST method
+    /// Message to publish via POST method
     QByteArray d_message_to_publish;
 };
 
