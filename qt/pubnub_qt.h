@@ -190,7 +190,7 @@ public:
      */
     pubnub_res publish(QString const &channel, QString const &message);
 
-    /** Functin that initiates 'publish' transaction via POST method 
+    /** Function that initiates 'publish' transaction via POST method 
         @param channel The string with the channel
         @param message The message to publish, expected to be in JSON format
 
@@ -207,8 +207,7 @@ public:
 
         @return #PNR_STARTED on success, an error otherwise
      */
-    inline pubnub_res publish_via_post(QString const &channel, QJsonDocument const &message)
-    {
+    inline pubnub_res publish_via_post(QString const &channel, QJsonDocument const &message) {
         return publish_via_post(channel, message.toJson());
     }
 
