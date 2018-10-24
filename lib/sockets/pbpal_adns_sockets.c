@@ -3,8 +3,8 @@
 
 #include "pubnub_internal.h"
 
-#include "core/pubnub_assert.h"
 #include "core/pubnub_log.h"
+#include "lib/pubnub_rle_label.h"
 
 #if !defined(_WIN32)
 #include <arpa/inet.h>
@@ -113,121 +113,6 @@ enum DNSqueryType {
 enum DNSqclass { dnsqclassInternet = 1 };
 
 
-/** Do the DNS QNAME (host) encoding. This strange kind of "run-time
-    length encoding" will convert `"www.google.com"` to
-    `"\3www\6google\3com"`.
- */
-static unsigned char* dns_qname_encode(uint8_t* dns, size_t n, uint8_t const* host)
-{
-    uint8_t*             dest = dns + 1;
-    uint8_t*             lpos;
-    uint8_t const* const end = dns + n;
-
-    PUBNUB_ASSERT_OPT(n > 0);
-    PUBNUB_ASSERT_OPT(host != NULL);
-    PUBNUB_ASSERT_OPT(dns != NULL);
-
-    lpos  = dns;
-    *lpos = '\0';
-    while (dest < end) {
-        char hc = *host++;
-        if ((hc != '.') && (hc != '\0')) {
-            *dest++ = hc;
-        }
-        else {
-            size_t d = dest - lpos;
-            *dest++  = '\0';
-            if (d > 63) {
-                /* label too long */
-                return NULL;
-            }
-
-            *lpos = (uint8_t)(d - 1);
-            lpos += d;
-
-            if ('\0' == hc) {
-                break;
-            }
-        }
-    }
-
-    return dns;
-}
-
-
-/* Do the DNS label decoding. Apart from the RLE decoding of
-   `3www6google3com0` -> `www.google.com`, it also has a
-   "(de)compression" scheme in which a label can be shared with
-   another in the same buffer.
-*/
-static int dns_label_decode(uint8_t*       decoded,
-                            size_t         n,
-                            uint8_t const* src,
-                            uint8_t const* buffer,
-                            size_t         buffer_size,
-                            size_t*        o_bytes_to_skip)
-{
-    uint8_t*             dest   = decoded;
-    uint8_t const* const end    = decoded + n;
-    uint8_t const*       reader = src;
-
-    PUBNUB_ASSERT_OPT(n > 0);
-    PUBNUB_ASSERT_OPT(src != NULL);
-    PUBNUB_ASSERT_OPT(buffer != NULL);
-    PUBNUB_ASSERT_OPT(decoded != NULL);
-    PUBNUB_ASSERT_OPT(o_bytes_to_skip != NULL);
-
-    *o_bytes_to_skip = 0;
-    while (dest < end) {
-        uint8_t b = *reader;
-        if (b & 0xC0) {
-            uint16_t offset = (b & 0x3F) * 256 + reader[1];
-            if (0 == *o_bytes_to_skip) {
-                *o_bytes_to_skip = reader - src + 2;
-            }
-            if (offset >= buffer_size) {
-                PUBNUB_LOG_ERROR("Error in DNS label/name decoding - offset=%d "
-                                 ">= buffer_size=%d\n",
-                                 offset,
-                                 buffer_size);
-                *dest = '\0';
-                return -1;
-            }
-            reader = buffer + offset;
-        }
-        else if (0 == b) {
-            if (0 == *o_bytes_to_skip) {
-                *o_bytes_to_skip = reader - src + 1;
-            }
-            return 0;
-        }
-        else {
-            if (dest != decoded) {
-                *dest++ = '.';
-            }
-            if (dest + b >= end) {
-                PUBNUB_LOG_ERROR("Error in DNS label/name decoding - dest=%p + "
-                                 "b=%d >= end=%p\n",
-                                 dest,
-                                 b,
-                                 end);
-                *dest = '\0';
-                return -1;
-            }
-            memcpy(dest, reader + 1, b);
-            dest[b] = '\0';
-            dest += b;
-            reader += b + 1;
-        }
-    }
-
-    PUBNUB_LOG_ERROR(
-        "Destination for decoding DNS label/name too small, n=%d\n", n);
-
-    return -1;
-}
-
-
 #if PUBNUB_LOG_LEVEL >= PUBNUB_LOG_LEVEL_TRACE
 #define TRACE_SOCKADDR(str, addr)                                              \
     do {                                                                       \
@@ -262,7 +147,7 @@ int send_dns_query(int skt, struct sockaddr const* dest, unsigned char* host)
     dns->ans_count = dns->auth_count = dns->add_count = 0;
 
     TRACE_SOCKADDR("Sending DNS query to: ", dest);
-    dns_qname_encode(qname, sizeof buf - sizeof *dns, host);
+    label_encode(qname, sizeof buf - sizeof *dns, host);
 
     qinfo = (struct QUESTION*)(buf + sizeof *dns + strlen((const char*)qname) + 1);
     qinfo->qtype  = htons(dnsA);
@@ -285,7 +170,6 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr_in* resolv
 {
     uint8_t            buf[8192];
     struct DNS_HEADER* dns   = (struct DNS_HEADER*)buf;
-    uint8_t*           qname = buf + sizeof *dns;
     uint8_t*           reader;
     int                i, msg_size;
     unsigned           addr_size = sizeof *dest;
@@ -310,11 +194,11 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr_in* resolv
         uint8_t name[256];
         size_t  to_skip;
 
-        if (0 != dns_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
+        if (0 != label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
             return -1;
         }
         PUBNUB_LOG_TRACE(
-            "DNS response, question name: %s, to_skip=%d\n", name, to_skip);
+            "DNS response, question name: %s, to_skip=%d\n", name, (int)to_skip);
 
         /* Could check for QUESTION data format (QType and QClass), but
            even if it's wrong, we don't know what to do with it, so,
@@ -327,7 +211,7 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr_in* resolv
         struct R_DATA* prdata;
         size_t         r_data_len;
 
-        if (0 != dns_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
+        if (0 != label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
             return -1;
         }
         prdata     = (struct R_DATA*)(reader + to_skip);
