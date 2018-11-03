@@ -1,7 +1,15 @@
 name: c-core
-version: 2.5.4
+version: 2.5.6
 scm: github.com/pubnub/c-core
 changelog:
+  - version: v2.5.6
+    changes:
+      - type: bug
+        text: TLS connection timeout was prone to errors due to time syncronisation and such.
+  - version: v2.5.5
+    changes:
+      - type: bug
+        text: Fix wrong detection of PNR_TIMEOUT, by reset of TLS connect timer when connection is established.
   - version: v2.5.4
     changes:
       - type: bug
