@@ -8,95 +8,90 @@
 
 #include <string.h>
 
-/** DNS message header */
-struct DNS_HEADER {
-    /** identification number */
-    uint16_t id;
 
-    /** Options. This is a bitfield, IETF bit-numerated:
+/** Size of DNS header, in octets */
+#define HEADER_SIZE 12
 
-       |0 |1 2 3 4| 5| 6| 7| 8| 9|10|11|12 13 14 15|
-       |QR|OPCODE |AA|TC|RD|RA| /|AD|CD|   RCODE   |
+/** Offset of the ID field in the DNS header */
+#define HEADER_ID_OFFSET 0
 
-       - QR query-response bit (0->query, 1->response)
-       - OPCODE 0->query, 1->inverse query, 2->status
-       - AA authorative answer
-       - TC truncation (1 message was truncated, 0 otherwise)
-       - RD recursion desired
-       - RA recursion available
-       - AD authenticated data
-       - CD checking disabled
-       - RCODE response type 0->no error, 1->format error, 2-> server fail,
-       3->name eror, 4->not implemented, 5->refused
-     */
-    uint16_t options;
+/** Offset of the options field in the DNS header */
+#define HEADER_OPTIONS_OFFSET 2
 
-    /** number of question entries */
-    uint16_t q_count;
-    /** number of answer entries */
-    uint16_t ans_count;
-    /** number of authority entries */
-    uint16_t auth_count;
-    /** number of resource entries */
-    uint16_t add_count;
-};
+/** Offset of the query count field in the DNS header */
+#define HEADER_QUERY_COUNT_OFFSET 4
 
+/** Offset of the answer count field in the DNS header */
+#define HEADER_ANSWER_COUNT_OFFSET 6
+
+/** Offset of the authoritive servers count field in the DNS header */
+#define HEADER_AUTHOR_COUNT_OFFSET 8
+
+/** Offset of the additional records count field in the DNS header */
+#define HEADER_ADDITI_COUNT_OFFSET 10
+
+/** Bits for the options field of the DNS header - two octets
+    in total.
+ */
 enum DNSoptionsMask {
-    dnsoptRCODEmask  = 0x000F,
-    dnsoptCDmask     = 0x0010,
-    dnsoptADmask     = 0x0020,
-    dnsoptRAmask     = 0x0080,
-    dnsoptRDmask     = 0x0100,
-    dnsoptTCmask     = 0x0200,
-    dnsoptAAmask     = 0x0400,
+    /* Response type;  0: no error, 1: format error, 2: server fail,
+       3: name eror, 4: not implemented, 5: refused
+    */
+    dnsoptRCODEmask = 0x000F,
+    /** Checking disabled */
+    dnsoptCDmask = 0x0010,
+    /** Authentication data */
+    dnsoptADmask = 0x0020,
+    /** Recursion available */
+    dnsoptRAmask = 0x0080,
+    /** Recursion desired */
+    dnsoptRDmask = 0x0100,
+    /** Truncation (1 - message was truncated, 0 - was not) */
+    dnsoptTCmask = 0x0200,
+    /** Authorative answer */
+    dnsoptAAmask = 0x0400,
+    /** 0: query, 1: inverse query, 2: status */
     dnsoptOPCODEmask = 0x7800,
-    dnsoptQRmask     = 0x8000,
+    /** 0: query, 1: response */
+    dnsoptQRmask = 0x8000,
 };
 
 
-/** Constant sized fields of query structure */
-struct QUESTION {
-    /* Question type */
-    uint16_t qtype;
-    /* Question class */
-    uint16_t qclass;
-};
+/** Size of non-name data in the QUESTION field of a DNS mesage,
+    in octets */
+#define QUESTION_DATA_SIZE 4
 
-/** Constant sized fields of the resource record (RR) structure */
-#pragma pack(push, 1)
-struct R_DATA {
-    /** Type of resource record */
-    uint16_t type;
-    /** Class code */
-    uint16_t class_;
-    /** Time-To-Live - count of seconds RR stays valid */
-    uint32_t ttl;
-    /** Length of RDATA (in octets) */
-    uint16_t data_len;
-};
-#pragma pack(pop)
+/** Size of non-name data in the RESOURCE DATA field of a DNS mesage,
+    in octets */
+#define RESOURCE_DATA_SIZE 10
+
+/** Offset of the type sub-field of the RESOURCE DATA */
+#define RESOURCE_DATA_TYPE_OFFSET 0
+
+/** Offset of the data length sub-field of the RESOURCE DATA */
+#define RESOURCE_DATA_DATA_LEN_OFFSET 8
 
 /** Question/query types */
 enum DNSqueryType {
     /** Address - IPv4 */
-    dnsA     = 1,
+    dnsA = 1,
     /** Name server */
-    dnsNS    = 2,
+    dnsNS = 2,
     /** Canonical name */
     dnsCNAME = 5,
     /** Start of authority */
-    dnsSOA   = 6,
+    dnsSOA = 6,
     /** Pointer (to another location in the name space ) */
-    dnsPTR   = 12,
+    dnsPTR = 12,
     /** Mail exchange (responsible for handling e-mail sent to the
      * domain */
-    dnsMX    = 15,
+    dnsMX = 15,
     /** IPv6 address - 128 bit */
-    dnsAAAA  = 28,
+    dnsAAAA = 28,
     /** Service locator */
-    dnsSRV   = 33,
+    dnsSRV = 33,
     /** All cached records */
-    dnsANY   = 255
+    dnsANY = 255
 };
 
 /** Question/query class */
@@ -111,26 +106,26 @@ enum DNSqclass { dnsqclassInternet = 1 };
 */
 #define MAXIMUM_LOOP_PASSES 10
 
-/** Do the label (host) encoding. This strange kind of "run-time
+/** Do the DNS QNAME (host) encoding. This strange kind of "run-time
     length encoding" will convert `"www.google.com"` to
     `"\3www\6google\3com"`.
-    @param encoded Pointer to the buffer where encoded host label will be placed
-    @param n       Maximum buffer length provided
-    @param host    Label to encode
+    @param dns  Pointer to the buffer where encoded host label will be placed
+    @param n    Maximum buffer length provided
+    @param host Label to encode
 
-    @return Pointer to the encoded label(same as @p encoded) on success, NULL otherwise
+    @return 'Encoded-dns-label-length' on success, -1 on failure
  */
-static unsigned char* rle_label_encode(uint8_t* encoded, size_t n, uint8_t const* host)
+static int dns_qname_encode(uint8_t* dns, size_t n, uint8_t const* host)
 {
-    uint8_t*             dest = encoded + 1;
+    uint8_t*             dest = dns + 1;
     uint8_t*             lpos;
-    uint8_t const* const end = encoded + n;
+    uint8_t const* const end = dns + n;
 
     PUBNUB_ASSERT_OPT(n > 0);
     PUBNUB_ASSERT_OPT(host != NULL);
-    PUBNUB_ASSERT_OPT(encoded != NULL);
+    PUBNUB_ASSERT_OPT(dns != NULL);
 
-    lpos  = encoded;
+    lpos  = dns;
     *lpos = '\0';
     while (dest < end) {
         char hc = *host++;
@@ -146,10 +141,10 @@ static unsigned char* rle_label_encode(uint8_t* encoded, size_t n, uint8_t const
                                  "encoded ='%s',\n"
                                  "Label to long: d=%u > MAX_ALPHABET_STRETCH_LENGTH=%d\n",
                                  host,
-                                 encoded,
+                                 dns,
                                  (unsigned)d,
                                  MAX_ALPHABET_STRETCH_LENGTH);
-                return NULL;
+                return -1;
             }
 
             *lpos = (uint8_t)(d - 1);
@@ -160,58 +155,62 @@ static unsigned char* rle_label_encode(uint8_t* encoded, size_t n, uint8_t const
             }
         }
     }
-    if ('\0' != *(dest -1)) {
+    if ('\0' != *(dest - 1)) {
         PUBNUB_LOG_ERROR("Error: in DNS label/name encoding - "
                          "Buffer for encoded label too small: host='%s', n=%u, encoded='%s'\n",
                          host,
                          (unsigned)n,
-                         encoded);
-        return NULL;
+                         dns);
+        return -1;
     }
 
-    return encoded;
+    return dest - dns;
 }
 
 
 int pubnub_prepare_dns_request(uint8_t* buf, size_t buf_size, unsigned char* host, int *to_send)
 {
-    struct DNS_HEADER* dns   = (struct DNS_HEADER*)buf;
-    uint8_t*           qname = buf + sizeof *dns;
-    struct QUESTION*   qinfo;
+    int qname_encoded_length;
 
-    *to_send = 0;
-	
-    PUBNUB_ASSERT_OPT(buf_size > sizeof *dns);
-    dns->id        = htons(33); /* in lack of a better ID */
-    dns->options   = htons(dnsoptRDmask);
-    dns->q_count   = htons(1);
-    dns->ans_count = dns->auth_count = dns->add_count = 0;
-    *to_send      += sizeof *dns;
+    *to_send = 0;	
+    PUBNUB_ASSERT_OPT(buf_size > HEADER_SIZE);
+    buf[HEADER_ID_OFFSET]              = 0;
+    buf[HEADER_ID_OFFSET + 1]          = 33; /* in lack of a better ID */
+    buf[HEADER_OPTIONS_OFFSET]         = dnsoptRDmask >> 8;
+    buf[HEADER_OPTIONS_OFFSET + 1]     = 0;
+    buf[HEADER_QUERY_COUNT_OFFSET]     = 0;
+    buf[HEADER_QUERY_COUNT_OFFSET + 1] = 1;
+    memset(buf + HEADER_ANSWER_COUNT_OFFSET,
+           0,
+           HEADER_SIZE - HEADER_ANSWER_COUNT_OFFSET);
+    *to_send += HEADER_SIZE;
 
-    if(NULL == rle_label_encode(qname, buf_size - sizeof *dns, host)) {
+    qname_encoded_length = dns_qname_encode(buf + HEADER_SIZE, buf_size - HEADER_SIZE, host);
+    if (qname_encoded_length <= 0) {
         return -1;
     }
-    *to_send      += strlen((char*)qname) + 1;
+    *to_send += qname_encoded_length;
 
-    PUBNUB_ASSERT_OPT(buf_size - *to_send > sizeof *qinfo);
-    qinfo          = (struct QUESTION*)(buf + *to_send);
-    qinfo->qtype   = htons(dnsA);
-    qinfo->qclass  = htons(dnsqclassInternet);
-    *to_send      += sizeof *qinfo;
+    PUBNUB_ASSERT_OPT(buf_size - *to_send > QUESTION_DATA_SIZE);
+    buf[*to_send]     = 0;
+    buf[*to_send + 1] = dnsA;
+    buf[*to_send + 2] = 0;
+    buf[*to_send + 3] = dnsqclassInternet;
+    *to_send += QUESTION_DATA_SIZE;
 
     return 0;
 }
 
 
-#define RL_DECODIG_FAILS(...) do {                                                 \
-                                  PUBNUB_LOG(PUBNUB_LOG_LEVEL_ERROR,               \
-                                             "Error: in DNS label/name decoding - "\
-                                             __VA_ARGS__);                         \
-                                  *dest = '\0';                                    \
-                                  return -1;                                       \
-                              } while(0)  
+#define DNS_LABEL_DECODIG_FAILS(...) do {                                                  \
+                                         PUBNUB_LOG(PUBNUB_LOG_LEVEL_ERROR,                \ 
+                                                    "Error: in DNS label/name decoding - " \
+                                                    __VA_ARGS__);                          \
+                                         *dest = '\0';                                     \
+                                         return -1;                                        \
+                                     } while(0)  
 
-/* Do the label decoding. Apart from the RLE decoding of
+/* Do the DNS label decoding. Apart from the RLE decoding of
    `3www6google3com0` -> `www.google.com`, it also has a
    "(de)compression" scheme in which a label can be shared with
    another in the same buffer.
@@ -225,7 +224,7 @@ int pubnub_prepare_dns_request(uint8_t* buf, size_t buf_size, unsigned char* hos
                           available for 'next' buffer access
    @return 0 on success, -1 otherwise
 */
-static int rle_label_decode(uint8_t*       decoded,
+static int dns_label_decode(uint8_t*       decoded,
                             size_t         n,
                             uint8_t const* src,
                             uint8_t const* buffer,
@@ -247,7 +246,7 @@ static int rle_label_decode(uint8_t*       decoded,
     while (dest < end) {
         uint8_t b = *reader;
         if (MAXIMUM_LOOP_PASSES < ++pass) {
-            RL_DECODIG_FAILS("Too many passes(%d) through the loop.\n", pass);
+            DNS_LABEL_DECODIG_FAILS("Too many passes(%d) through the loop.\n", pass);
         }
         if (0xC0 == (b & 0xC0)) {
             uint16_t offset = (b & 0x3F) * 256 + reader[1];
@@ -255,7 +254,7 @@ static int rle_label_decode(uint8_t*       decoded,
                 *o_bytes_to_skip = reader - src + 2;
             }
             if (offset >= buffer_size) {
-                RL_DECODIG_FAILS("offset=%d >= buffer_size=%d\n", offset, (int)buffer_size);
+                DNS_LABEL_DECODIG_FAILS("offset=%d >= buffer_size=%d\n", offset, (int)buffer_size);
             }
             reader = buffer + offset;
         }
@@ -270,20 +269,20 @@ static int rle_label_decode(uint8_t*       decoded,
                 *dest++ = '.';
             }
             if (dest + b >= end) {
-                RL_DECODIG_FAILS("dest=%p + b=%d >= end=%p - "
-                                 "Destination for decoding label/name too small, n=%u\n",
-                                 dest,
-                                 b,
-                                 end,
-                                 (unsigned)n);
+                DNS_LABEL_DECODIG_FAILS("dest=%p + b=%d >= end=%p - "
+                                        "Destination for decoding label/name too small, n=%u\n",
+                                        dest,
+                                        b,
+                                        end,
+                                        (unsigned)n);
             }
             if ((unsigned)(reader + b - buffer + 1) > buffer_size) {
-                RL_DECODIG_FAILS("About to read outside the buffer:\n"
-                                 "reader=%p + b=%d - buffer=%p + 1 >= buffer_size=%u\n",
-                                 reader,
-                                 b,
-                                 buffer,
-                                 (unsigned)buffer_size);
+                DNS_LABEL_DECODIG_FAILS("About to read outside the buffer:\n"
+                                         "reader=%p + b=%d - buffer=%p + 1 >= buffer_size=%u\n",
+                                         reader,
+                                         b,
+                                         buffer,
+                                         (unsigned)buffer_size);
             }
             memcpy(dest, reader + 1, b);
             dest[b] = '\0';
@@ -291,7 +290,7 @@ static int rle_label_decode(uint8_t*       decoded,
             reader += b + 1;
         }
         else {
-            RL_DECODIG_FAILS("Bad offset format: b & 0xC0=%d, &b=%p\n", b & 0xC0, &b);
+            DNS_LABEL_DECODIG_FAILS("Bad offset format: b & 0xC0=%d, &b=%p\n", b & 0xC0, &b);
         }
     }
 
@@ -304,30 +303,31 @@ static int rle_label_decode(uint8_t*       decoded,
 
 int pubnub_pick_resolved_address(uint8_t* buf, int msg_size, struct sockaddr_in* resolved_addr)
 {
-    struct DNS_HEADER* dns;
-    uint8_t*           reader;
-    int                i;
+    uint8_t* reader;
+    size_t   q_count;
+    size_t   ans_count;
+    size_t   i;
 
     PUBNUB_ASSERT_OPT(buf != NULL);
 
-	dns = (struct DNS_HEADER*)buf;
-    reader = buf + sizeof *dns;
-    PUBNUB_LOG_TRACE("DNS response has: %hu Questions, %hu Answers, %hu "
-                     "Auth. Servers, %hu Additional records.\n",
-                     ntohs(dns->q_count),
-                     ntohs(dns->ans_count),
-                     ntohs(dns->auth_count),
-                     ntohs(dns->add_count));
-    if (ntohs(dns->q_count) != 1) {
+    reader = buf + HEADER_SIZE;
+
+    q_count = buf[HEADER_QUERY_COUNT_OFFSET] * 256
+              + buf[HEADER_QUERY_COUNT_OFFSET + 1];
+    ans_count = buf[HEADER_ANSWER_COUNT_OFFSET] * 256
+                + buf[HEADER_ANSWER_COUNT_OFFSET + 1];
+    PUBNUB_LOG_TRACE(
+        "DNS response has: %hu Questions, %hu Answers.\n", q_count, ans_count);
+    if (q_count != 1) {
         PUBNUB_LOG_INFO("Strange DNS response, we sent one question, but DNS "
                         "response doesn't have one question.\n");
     }
-    for (i = 0; i < ntohs(dns->q_count); ++i) {
+    for (i = 0; i < q_count; ++i) {
         uint8_t name[256];
         size_t  to_skip;
 
-        if (0 != rle_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
-            reader += to_skip + sizeof(struct QUESTION);
+        if (0 != dns_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
+            reader += to_skip + QUESTION_DATA_SIZE;
             continue;
         }
         PUBNUB_LOG_TRACE(
@@ -336,35 +336,38 @@ int pubnub_pick_resolved_address(uint8_t* buf, int msg_size, struct sockaddr_in*
         /* Could check for QUESTION data format (QType and QClass), but
            even if it's wrong, we don't know what to do with it, so,
            there's no use */
-        reader += to_skip + sizeof(struct QUESTION);
+        reader += to_skip + QUESTION_DATA_SIZE;
     }
-    for (i = 0; i < ntohs(dns->ans_count); ++i) {
-        uint8_t        name[256];
-        size_t         to_skip;
-        struct R_DATA* prdata;
-        size_t         r_data_len;
+    for (i = 0; i < ans_count; ++i) {
+        uint8_t  name[256];
+        size_t   to_skip;
+        size_t   r_data_len;
+        unsigned r_data_len;
 
-        if (0 != rle_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
+        if (0 != dns_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip)) {
             /* Even if label decoding fails(having offsets messed up, maybe), hopefully 'to_skip'
                will be set properly and we keep chasing good usable answer
             */
-            prdata     = (struct R_DATA*)(reader + to_skip);
-            reader += to_skip + sizeof *prdata + ntohs(prdata->data_len);
+            r_data_len = reader[to_skip + RESOURCE_DATA_DATA_LEN_OFFSET] * 256
+                         + reader[to_skip + RESOURCE_DATA_DATA_LEN_OFFSET + 1];
+            reader += to_skip + RESOURCE_DATA_SIZE + r_data_len;
             continue;
         }
-        prdata     = (struct R_DATA*)(reader + to_skip);
-        r_data_len = ntohs(prdata->data_len);
-        reader += to_skip + sizeof *prdata;
+        r_data_len = reader[to_skip + RESOURCE_DATA_DATA_LEN_OFFSET] * 256
+                     + reader[to_skip + RESOURCE_DATA_DATA_LEN_OFFSET + 1];
+        r_data_type = reader[to_skip + RESOURCE_DATA_TYPE_OFFSET] * 256
+                      + reader[to_skip + RESOURCE_DATA_TYPE_OFFSET + 1];
+        reader += to_skip + RESOURCE_DATA_SIZE;
 
         PUBNUB_LOG_TRACE(
             "DNS %d. answer: %s, to_skip:%zu, type=%hu, data_len=%zu\n",
             i+1,
             name,
             to_skip,
-            ntohs(prdata->type),
+            r_data_type,
             r_data_len);
 
-        if (ntohs(prdata->type) == dnsA) {
+        if (r_data_type == dnsA) {
             if (r_data_len != 4) {
                 PUBNUB_LOG_WARNING("unexpected answer R_DATA length %zu\n",
                                    r_data_len);
