@@ -200,9 +200,9 @@ static void resize_msg(void)
     } while(0)
 
 /* Assert "catching" */
-static bool        m_expect_assert;
-static jmp_buf     m_assert_exp_jmpbuf;
-static char const* m_expect_assert_file;
+static bool        m_expect_Assert;
+static jmp_buf     m_Assert_exp_jmpbuf;
+static char const* m_expect_Assert_file;
 
 
 void assert_handler(char const* s, const char* file, long i)
@@ -210,22 +210,22 @@ void assert_handler(char const* s, const char* file, long i)
     //    mock(s, i);
     printf("%s:%ld: Pubnub assert failed '%s'\n", file, i, s);
 
-    attest(m_expect_assert);
-    attest(m_expect_assert_file, streqs(file));
-    if (m_expect_assert) {
-        m_expect_assert = false;
-        longjmp(m_assert_exp_jmpbuf, 1);
+    attest(m_expect_Assert);
+    attest(m_expect_Assert_file, streqs(file));
+    if (m_expect_Assert) {
+        m_expect_Assert = false;
+        longjmp(m_Assert_exp_jmpbuf, 1);
     }
 }
 
 #define expect_assert_in(expr, file)                                           \
     {                                                                          \
-        m_expect_assert      = true;                                           \
-        m_expect_assert_file = file;                                           \
-        int val              = setjmp(m_assert_exp_jmpbuf);                    \
+        m_expect_Assert      = true;                                           \
+        m_expect_Assert_file = file;                                           \
+        int val              = setjmp(m_Assert_exp_jmpbuf);                    \
         if (0 == val)                                                          \
             expr;                                                              \
-        attest(!m_expect_assert);                                              \
+        attest(!m_expect_Assert);                                              \
     }
 
 Describe(pubnub_dns_handler);
@@ -506,8 +506,8 @@ Ensure(pubnub_dns_handler,
 Ensure(pubnub_dns_handler,
        handles_response_with_RecordType_and_DataLength_mismatch)
 {
-    /* Resolved Ipv4 address */
-    uint8_t data[] = {255,255,0,0};
+    /* Resolved IpvX address */
+    uint8_t data[] = {255,255,0,0,0};
     struct sockaddr_in resolved_addr;
     make_dns_header(RESPONSE, 1, 2);
     append_question(encoded_abc_domain_name,
@@ -515,12 +515,12 @@ Ensure(pubnub_dns_handler,
     append_answer(encoded_piece3,
                   sizeof encoded_piece3 - 1,
                   RecordTypeA,
-                  sizeof data + 1,
+                  sizeof data,
                   data);
     append_answer(encoded_piece3,
                   sizeof encoded_piece3 - 1,
                   RecordTypeA,
-                  sizeof data,
+                  sizeof data - 1,
                   data);
     attest(pubnub_pick_resolved_address(m_buf, m_msg_size, &resolved_addr), equals(-1));
 }
