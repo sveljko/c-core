@@ -43,7 +43,7 @@ int send_dns_query(int skt, struct sockaddr const* dest, unsigned char* host)
     int                sent_to;
 
     if(-1 == pubnub_prepare_dns_request(buf, sizeof buf, host, &to_send)) {
-        PUBNUB_LOG_ERROR("Couldn't prepare dns request! : #successfully prepared bytes=%d\n", to_send);
+        PUBNUB_LOG_ERROR("Couldn't prepare dns request! : #prepared bytes=%d\n", to_send);
         return -1;
     }
     TRACE_SOCKADDR("Sending DNS query to: ", dest);
