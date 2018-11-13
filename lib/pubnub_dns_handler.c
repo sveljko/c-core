@@ -261,7 +261,7 @@ static int dns_label_decode(uint8_t*       decoded,
     for(;;) {
         uint8_t b = *reader;
         if (MAXIMUM_LOOP_PASSES < ++pass) {
-            DNS_LABEL_DECODIG_FAILS("Too many passes(%hu) through the loop.\n", pass);
+            DNS_LABEL_DECODIG_FAILS("Too many passes(%hhu) through the loop.\n", pass);
             return -1;
         }
         if (0xC0 == (b & 0xC0)) {
@@ -414,7 +414,7 @@ int pubnub_pick_resolved_address(uint8_t* buf, int msg_size, struct sockaddr_in*
         reader += to_skip + RESOURCE_DATA_SIZE;
 
         PUBNUB_LOG_TRACE(
-            "DNS %zu. answer: %s, to_skip:%zu, type=%hu, data_len=%zu\n",
+            "DNS %zu. answer: %s, to_skip:%zu, type=%u, data_len=%zu\n",
             i+1,
             name,
             to_skip,
