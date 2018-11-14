@@ -69,9 +69,6 @@ pubnub_callback.a : $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES)
 pubnub_sync_sample: ../core/samples/pubnub_sync_sample.c pubnub_sync.a
 	$(CC) -o $@ $(CFLAGS) $(INCLUDES) ../core/samples/pubnub_sync_sample.c pubnub_sync.a $(LDLIBS)
 
-pubnub_sync_subscribe_loop: ../core/samples/pubnub_sync_subscribe_loop.c pubnub_sync.a
-	$(CC) -o $@ $(CFLAGS) $(INCLUDES) ../core/samples/pubnub_sync_subscribe_loop.c pubnub_sync.a $(LDLIBS)
-
 pubnub_crypto_sync_sample: ../core/samples/pubnub_crypto_sync_sample.c pubnub_sync.a
 	$(CC) -o $@ $(CFLAGS) $(INCLUDES) ../core/samples/pubnub_crypto_sync_sample.c pubnub_sync.a $(LDLIBS)
 
