@@ -4,7 +4,7 @@
 #include "pubnub_internal.h"
 
 #include "core/pubnub_log.h"
-#include "lib/pubnub_dns_handler.h"
+#include "lib/pubnub_dns_codec.h"
 
 #if !defined(_WIN32)
 #include <arpa/inet.h>
@@ -36,13 +36,13 @@
 #endif
 
 
-int send_dns_query(int skt, struct sockaddr const* dest, unsigned char* host)
+int send_dns_query(int skt, struct sockaddr const* dest, char const* host)
 {
     uint8_t            buf[4096];
     int                to_send;
     int                sent_to;
 
-    if(-1 == pubnub_prepare_dns_request(buf, sizeof buf, host, &to_send)) {
+    if (-1 == pubnub_prepare_dns_request(buf, sizeof buf, host, &to_send)) {
         PUBNUB_LOG_ERROR("Couldn't prepare dns request! : #prepared bytes=%d\n", to_send);
         return -1;
     }
@@ -69,8 +69,11 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr_in* resolv
     if (msg_size <= 0) {
         return socket_would_block() ? +1 : -1;
     }
+    resolved_addr->sin_family = AF_INET;
 
-    return pubnub_pick_resolved_address(buf, msg_size, resolved_addr);
+    return pubnub_pick_resolved_address(buf,
+                                        msg_size,
+                                        (struct pubnub_ipv4_address*)&(resolved_addr->sin_addr.s_addr));
 }
 
 
