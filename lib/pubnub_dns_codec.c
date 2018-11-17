@@ -100,11 +100,11 @@ enum DNSqclass { dnsqclassInternet = 1 };
 #define MAX_ALPHABET_STRETCH_LENGTH 63
 
 /* Maximum passes through the loop allowed while decoding label, considering that it may contain
-   up to five or six dots(In case host name could have more dots, more passes should be alowed).
+   up to five or six dots.
    Defined in order to detect erroneous offset pointers infinite loops.
-   (Represents maximum  #encoded_lengths + #offsets detected while decoding)
+   (Represents maximum  #offsets detected while decoding)
 */
-#define MAXIMUM_LOOP_PASSES 12
+#define MAXIMUM_LOOP_PASSES 10
 
 /** Do the DNS QNAME (host) encoding. This strange kind of "run-time
     length encoding" will convert `"www.google.com"` to
@@ -211,12 +211,100 @@ int pubnub_prepare_dns_request(uint8_t* buf, size_t buf_size, char const* host, 
     return 0;
 }
 
-#define DNS_LABEL_DECODING_ERROR(...) do {                                                  \
-                                         PUBNUB_LOG(PUBNUB_LOG_LEVEL_ERROR,                \
-                                                    "Error: in DNS label/name decoding - " \
-                                                    __VA_ARGS__);                          \
-                                         *dest = '\0';                                     \
-                                     } while(0)  
+static int handle_offset(uint8_t         pass,
+                         uint8_t const** o_reader,
+                         uint8_t const*  buffer,
+                         size_t          buffer_size)
+{
+    uint16_t       offset;
+    uint8_t const* reader;
+
+    PUBNUB_ASSERT_OPT(buffer != NULL);
+    PUBNUB_ASSERT_OPT(o_reader != NULL);
+    reader = *o_reader;
+    PUBNUB_ASSERT_OPT(buffer < reader);
+
+    if ((reader + 1) >= (buffer + buffer_size)) {
+        PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
+                         "About to read outside the buffer while reading offset:\n"
+                         "reader=%p + 1 >= buffer=%p + buffer_size=%zu\n",
+                         reader,
+                         buffer,
+                         buffer_size);
+        return -1;
+    }
+    if (pass > MAXIMUM_LOOP_PASSES) {
+        PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
+                         "Too many passes(%hhu) through the loop.\n",
+                         pass);
+        return +1;
+    }
+    offset = (reader[0] & 0x3F) * 256 + reader[1];
+    if (offset < HEADER_SIZE) {
+        PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
+                         "Offset within header : offset=%hu, HEADER_SIZE=%d\n",
+                         offset,
+                         HEADER_SIZE);
+        return +1;
+    }
+    if (offset >= buffer_size) {
+        PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - offset=%hu >= buffer_size=%zu\n",
+                         offset,
+                         buffer_size);
+        return +1;
+    }
+    *o_reader = buffer + offset;
+    return 0;
+}
+
+static int forced_skip(uint8_t         pass,
+                       uint8_t const** o_reader,
+                       uint8_t const*  buffer,
+                       size_t          buffer_size)
+{
+    uint8_t const* reader;
+
+    PUBNUB_ASSERT_OPT(buffer != NULL);
+    PUBNUB_ASSERT_OPT(o_reader != NULL);
+    PUBNUB_ASSERT_OPT(buffer < *o_reader);
+    PUBNUB_ASSERT_OPT(*o_reader < (buffer + buffer_size));
+
+    reader = *o_reader;
+    for(;;) {
+        uint8_t b = *reader;
+        if (0xC0 == (b & 0xC0)) {
+            *o_reader = reader + 2;            
+            return 0;
+        }
+        else if (0 == b) {
+            *o_reader = reader + 1;
+            return 0;
+        }
+        else if (0 == (b & 0xC0)) {
+            /* (buffer + buffer_size) points to the first octet outside the buffer,
+               while (reader + b + 1) has to be inside of it
+             */
+            if ((reader + b + 1) >= (buffer + buffer_size)) {
+                PUBNUB_LOG_ERROR("Error: forced_skip() - "
+                                 "About to read outside the buffer while reading encoded label:\n"
+                                 "reader=%p + b=%d + 1 >= buffer=%p + buffer_size=%zu\n",
+                                 reader,
+                                 b,
+                                 buffer,
+                                 buffer_size);
+                return -1;
+            }
+            reader += b + 1;
+        }
+        else {
+            PUBNUB_LOG_ERROR("Error: forced_skip() - Bad offset format: b & 0xC0=%d, &b=%p\n",
+                             b & 0xC0,
+                             &b);
+            return -1;
+        }
+    }
+    return -1;
+}
 
 /* Do the DNS label decoding. Apart from the RLE decoding of
    `3www6google3com0` -> `www.google.com`, it also has a
@@ -243,105 +331,79 @@ static int dns_label_decode(uint8_t*       decoded,
     uint8_t const* const end         = decoded + n;
     uint8_t const*       reader      = src;
     uint8_t              pass        = 0;
-    bool                 forced_skip = false;
 
     PUBNUB_ASSERT_OPT(n > 0);
     PUBNUB_ASSERT_OPT(src != NULL);
     PUBNUB_ASSERT_OPT(buffer != NULL);
-    PUBNUB_ASSERT_OPT(src < buffer + buffer_size);
+    PUBNUB_ASSERT_OPT(src < (buffer + buffer_size));
     PUBNUB_ASSERT_OPT(decoded != NULL);
     PUBNUB_ASSERT_OPT(o_bytes_to_skip != NULL);
 
     *o_bytes_to_skip = 0;
     for(;;) {
         uint8_t b = *reader;
-        if (++pass > MAXIMUM_LOOP_PASSES) {
-            DNS_LABEL_DECODING_ERROR("Too many passes(%hhu) through the loop.\n", pass);
-            return -1;
-        }
         if (0xC0 == (b & 0xC0)) {
-            uint16_t offset;
-            if ((reader + 1) >= (buffer + buffer_size)) {
-                DNS_LABEL_DECODING_ERROR("About to read outside the buffer while reading offset:\n"
-                                         "reader=%p + 1 >= buffer=%p + buffer_size=%zu\n",
-                                         reader,
-                                         buffer,
-                                         buffer_size);
-                return -1;
-            }
-            offset = (b & 0x3F) * 256 + reader[1];
             if (0 == *o_bytes_to_skip) {
                 *o_bytes_to_skip = reader - src + 2;
             }
-            if (offset < HEADER_SIZE) {
-                DNS_LABEL_DECODING_ERROR("Offset within header:offset=%hu, HEADER_SIZE=%d\n",
-                                        offset,
-                                        HEADER_SIZE);
+            if(handle_offset(++pass, &reader, buffer, buffer_size) != 0) {
+                *dest = '\0';
                 return -1;
             }
-            if (offset >= buffer_size) {
-                DNS_LABEL_DECODING_ERROR("offset=%hu >= buffer_size=%zu\n", offset, buffer_size);
-                return -1;
-            }
-            reader = buffer + offset;
         }
         else if (0 == b) {
             if (0 == *o_bytes_to_skip) {
                 *o_bytes_to_skip = reader - src + 1;
             }
-            if (*o_bytes_to_skip < 2) {
-                DNS_LABEL_DECODING_ERROR(
-                    "Something's wrong with message mapping or format! bytes_to_skip=%zu\n"
-                    "Possibly misplaced offset, or labels to long.\n",
-                    *o_bytes_to_skip);
-                *o_bytes_to_skip = 0;
-
-                return -1;
-            }
-
-            return forced_skip ? -1 : 0;
+            return 0;
         }
         else if (0 == (b & 0xC0)) {
-            if (!forced_skip) {
-                if (dest != decoded) {
-                    *dest++ = '.';
+            if (dest != decoded) {
+                *dest++ = '.';
+            }
+            if (dest + b >= end) {
+                PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - dest=%p + b=%d >= end=%p - "
+                                 "Destination for decoded label/name too small, n=%zu\n",
+                                 dest,
+                                 b,
+                                 end,
+                                 n);
+                if (0 == *o_bytes_to_skip) {
+                    if (forced_skip(pass, &reader, buffer, buffer_size) == 0) {
+                        *o_bytes_to_skip = reader - src;
+                    }
                 }
-                if (dest + b >= end) {
-                    DNS_LABEL_DECODING_ERROR("dest=%p + b=%d >= end=%p - "
-                                             "Destination for decoding label/name too small, n=%zu\n",
-                                             dest,
-                                             b,
-                                             end,
-                                             n);
-                    forced_skip = true;
-                }
+                *dest = '\0';
+                return -1;
             }
             /* (buffer + buffer_size) points to the first octet outside the buffer,
                 while (reader + b + 1) has to be inside of it
              */
             if ((reader + b + 1) >= (buffer + buffer_size)) {
-                DNS_LABEL_DECODING_ERROR(
-                    "About to read outside the buffer while reading encoded label:\n"
-                    "reader=%p + b=%d + 1 >= buffer=%p + buffer_size=%zu\n",
-                    reader,
-                    b,
-                    buffer,
-                    buffer_size);
+                PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
+                                 "About to read outside the buffer while reading encoded label:\n"
+                                 "reader=%p + b=%d + 1 >= buffer=%p + buffer_size=%zu\n",
+                                 reader,
+                                 b,
+                                 buffer,
+                                 buffer_size);
+                *dest = '\0';
                 return -1;
             }
-            if (!forced_skip) {
-                memcpy(dest, reader + 1, b);
-                dest[b] = '\0';
-                dest += b;
-            }
+            memcpy(dest, reader + 1, b);
+            dest[b] = '\0';
+            dest += b;
             reader += b + 1;
         }
         else {
-            DNS_LABEL_DECODING_ERROR("Bad offset format: b & 0xC0=%d, &b=%p\n", b & 0xC0, &b);
+            PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
+                             "Bad offset format: b & 0xC0=%d, &b=%p\n",
+                             b & 0xC0,
+                             &b);
+            *dest = '\0';
             return -1;
         }
     }
-
     /* The only way to reach this code, at the time of this writing, is if n == 0, which we check
        with an 'assert', but it is left here 'just in case'*/
     PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
@@ -349,30 +411,20 @@ static int dns_label_decode(uint8_t*       decoded,
     return -1;
 }
 
-#define DNS_RESPONSE_ERR_OR_INCOMPLETE(...)                             \
-   do {                                                                 \
-        PUBNUB_LOG(PUBNUB_LOG_LEVEL_ERROR,                              \
-                   "Error: DNS response erroneous, or incomplete:\n"    \
-                   __VA_ARGS__);                                        \
-   } while(0)  
-
-int pubnub_pick_resolved_address(uint8_t* buf,
-                                 int msg_size,
-                                 struct pubnub_ipv4_address* resolved_addr)
+static int read_header(uint8_t const*  buf,
+                       size_t          msg_size,
+                       size_t*         o_q_count,
+                       size_t*         o_ans_count)
 {
-    uint8_t* reader;
-    size_t   q_count;
-    size_t   ans_count;
-    size_t   i;
-    uint8_t* end;
     uint16_t options;
 
     PUBNUB_ASSERT_OPT(buf != NULL);
-    PUBNUB_ASSERT_OPT(resolved_addr != NULL);
+    PUBNUB_ASSERT_OPT(o_q_count != NULL);
+    PUBNUB_ASSERT_OPT(o_ans_count != NULL);
 
     if (HEADER_SIZE > msg_size) {
         PUBNUB_LOG_ERROR(
-            "Error: DNS response is shorter than its header - msg_size=%d, HEADER_SIZE=%d\n",
+            "Error: DNS response is shorter than its header - msg_size=%zu, HEADER_SIZE=%d\n",
             msg_size,
             HEADER_SIZE); 
         return -1;
@@ -387,35 +439,67 @@ int pubnub_pick_resolved_address(uint8_t* buf,
                          buf[HEADER_OPTIONS_OFFSET + 1] & dnsoptRCODEmask); 
         return -1;
     }
-
-    reader = buf + HEADER_SIZE;
-    end    = buf + msg_size;
-
-    q_count = buf[HEADER_QUERY_COUNT_OFFSET] * 256
+    *o_q_count = buf[HEADER_QUERY_COUNT_OFFSET] * 256
               + buf[HEADER_QUERY_COUNT_OFFSET + 1];
-    ans_count = buf[HEADER_ANSWER_COUNT_OFFSET] * 256
+    *o_ans_count = buf[HEADER_ANSWER_COUNT_OFFSET] * 256
                 + buf[HEADER_ANSWER_COUNT_OFFSET + 1];
     PUBNUB_LOG_TRACE(
-        "DNS response has: %zu Questions, %zu Answers.\n", q_count, ans_count);
-    if (q_count != 1) {
-        PUBNUB_LOG_INFO("Strange DNS response, we sent one question, but DNS "
-                        "response doesn't have one question.\n");
+        "DNS response has: %zu Questions, %zu Answers.\n", *o_q_count, *o_ans_count);
+
+    return 0;
+}
+
+/* Even if label decoding reports an error(having offsets messed up, maybe, or buffer too small
+   for decoded label), 'bytes_to_skip' may be set and we can keep looking usable answer
+ */
+static int decode_label_and_set_to_skip(uint8_t*       decoded,
+                                        size_t         n,
+                                        uint8_t const* src,
+                                        uint8_t const* buffer,
+                                        size_t         buffer_size,
+                                        size_t*        o_bytes_to_skip)
+{
+    if (dns_label_decode(decoded, n, src, buffer, buffer_size, o_bytes_to_skip) != 0) {
+        if (0 == *o_bytes_to_skip) {
+            return -1;
+        }
     }
+    return 0;
+}
+
+static int skip_questions(uint8_t const** o_reader,
+                          uint8_t const*  buf,
+                          uint8_t const*  end,
+                          size_t          q_count)
+{
+    size_t   i;
+    uint8_t const* reader;
+
+    PUBNUB_ASSERT_OPT(buf != NULL);
+    PUBNUB_ASSERT_OPT(end != NULL);
+    PUBNUB_ASSERT_OPT(buf < end);
+    PUBNUB_ASSERT_OPT(o_reader != NULL);
+
+    reader = *o_reader;
     for (i = 0; i < q_count; ++i) {
         uint8_t name[256];
         size_t  to_skip;
 
         if (reader + QUESTION_DATA_SIZE > end) {
-            DNS_RESPONSE_ERR_OR_INCOMPLETE(
-                "reader=%p + QUESTION_DATA_SIZE=%d > buf=%p + msg_size=%d\n",
-                reader,
-                QUESTION_DATA_SIZE,
-                buf,
-                msg_size);
+            PUBNUB_LOG_ERROR("Error: DNS response erroneous, or incomplete:\n"
+                             "reader=%p + QUESTION_DATA_SIZE=%d > buf=%p + msg_size=%ld\n",
+                             reader,
+                             QUESTION_DATA_SIZE,
+                             buf,
+                             end - buf + 1);
             return -1;
         }
-        if ((dns_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip) != 0) &&
-            (0 == to_skip)) {
+        if (decode_label_and_set_to_skip(name,
+                                         sizeof name,
+                                         reader,
+                                         buf,
+                                         (end - buf + 1),
+                                         &to_skip) != 0) {
             return -1;
         }
         PUBNUB_LOG_TRACE("DNS response, %zu. question name: %s, to_skip=%zu\n",
@@ -428,50 +512,88 @@ int pubnub_pick_resolved_address(uint8_t* buf,
            there's no use */
         reader += to_skip + QUESTION_DATA_SIZE;
     }
+    *o_reader = reader;
+    return 0;
+}
+
+static int check_answer(const uint8_t**             o_reader,
+                        unsigned                    r_data_type,
+                        size_t                      r_data_len,
+                        struct pubnub_ipv4_address* resolved_addr)
+{
+    PUBNUB_ASSERT_OPT(o_reader != NULL);
+
+    if (r_data_type == dnsA) {
+        const uint8_t* reader = *o_reader;
+        *o_reader += r_data_len;
+        if (r_data_len != 4) {
+            PUBNUB_LOG_ERROR("Error: Unexpected answer R_DATA length %zu\n",
+                             r_data_len);
+            return -1;
+        }
+        PUBNUB_LOG_TRACE("Got IPv4: %u.%u.%u.%u\n",
+                         reader[0],
+                         reader[1],
+                         reader[2],
+                         reader[3]);
+        memcpy(resolved_addr->ipv4, reader, 4);
+        return 0;
+    }
+    /* Don't care about other resource types, for now */
+    *o_reader += r_data_len;
+    return -1;
+}
+
+static int find_the_answer(uint8_t const* reader,
+                           uint8_t const* buf,
+                           uint8_t const* end,
+                           size_t         ans_count,
+                           struct pubnub_ipv4_address* resolved_addr)
+{
+    size_t i;
+    
+    PUBNUB_ASSERT_OPT(buf != NULL);
+    PUBNUB_ASSERT_OPT(reader != NULL);
+    PUBNUB_ASSERT_OPT(end != NULL);
+    PUBNUB_ASSERT_OPT(buf < reader);
+    PUBNUB_ASSERT_OPT(reader < end);
+
     for (i = 0; i < ans_count; ++i) {
         uint8_t  name[256];
         size_t   to_skip;
         size_t   r_data_len;
         unsigned r_data_type;
         
-        if (reader + RESOURCE_DATA_SIZE > end) {
-            DNS_RESPONSE_ERR_OR_INCOMPLETE(
-                "reader=%p + RESOURCE_DATA_SIZE=%d > buf=%p + msg_size=%d\n",
-                reader,
-                RESOURCE_DATA_SIZE,
-                buf,
-                msg_size);
-            return -1;
-        }
-        /* Even if label decoding fails(having offsets messed up, maybe, or buffer too small for
-           decoded label), 'to_skip' may be set(> 0) and we keep looking usable answer
-         */
-        if ((dns_label_decode(name, sizeof name, reader, buf, msg_size, &to_skip) != 0) &&
-            (0 == to_skip)) {
+        if (decode_label_and_set_to_skip(name,
+                                         sizeof name,
+                                         reader,
+                                         buf,
+                                         (end - buf + 1),
+                                         &to_skip) != 0) {
             return -1;
         }
         reader += to_skip + RESOURCE_DATA_SIZE;
         if (reader > end) {
-            DNS_RESPONSE_ERR_OR_INCOMPLETE(
-                "reader=%p > buf=%p + msg_size=%d :\n"
-                "to_skip=%zu, RESOURCE_DATA_SIZE=%d\n",
-                reader,
-                buf,
-                msg_size,
-                to_skip,
-                RESOURCE_DATA_SIZE);
+            PUBNUB_LOG_ERROR("Error: DNS response erroneous, or incomplete:\n"
+                             "reader=%p > buf=%p + msg_size=%ld :\n"
+                             "to_skip=%zu, RESOURCE_DATA_SIZE=%d\n",
+                             reader,
+                             buf,
+                             end - buf + 1,
+                             to_skip,
+                             RESOURCE_DATA_SIZE);
             return -1;
         }
         /* Resource record data offsets are negative */
         r_data_len = reader[RESOURCE_DATA_DATA_LEN_OFFSET] * 256
                      + reader[RESOURCE_DATA_DATA_LEN_OFFSET + 1];
         if ((reader + r_data_len) > end) {
-            DNS_RESPONSE_ERR_OR_INCOMPLETE(
-                "reader=%p + r_data_len=%zu > buf=%p + msg_size=%d\n",
-                reader,
-                r_data_len,
-                buf,
-                msg_size);
+            PUBNUB_LOG_ERROR("Error: DNS response erroneous, or incomplete:\n"
+                             "reader=%p + r_data_len=%zu > buf=%p + msg_size=%ld\n",
+                             reader,
+                             r_data_len,
+                             buf,
+                             end - buf + 1);
             return -1;
         }
         r_data_type = reader[RESOURCE_DATA_TYPE_OFFSET] * 256
@@ -482,30 +604,46 @@ int pubnub_pick_resolved_address(uint8_t* buf,
                          to_skip,
                          r_data_type,
                          r_data_len);
-
-        if (r_data_type == dnsA) {
-            if (r_data_len != 4) {
-                PUBNUB_LOG_ERROR("Error: Unexpected answer R_DATA length %zu\n",
-                                 r_data_len);
-                reader += r_data_len;
-                continue;
-            }
-            PUBNUB_LOG_TRACE("Got IPv4: %u.%u.%u.%u\n",
-                             reader[0],
-                             reader[1],
-                             reader[2],
-                             reader[3]);
-            memcpy(resolved_addr->ipv4, reader, 4);
-            reader += r_data_len;
+        if(check_answer(&reader, r_data_type, r_data_len, resolved_addr) == 0) {
             return 0;
         }
-        else {
-            /* Don't care about other resource types, for now */
-            reader += r_data_len;
-        }
+    }
+    /* Don't care about Authoritative Servers or Additional records, for now */
+    return -1;
+}
+
+int pubnub_pick_resolved_address(uint8_t const* buf,
+                                 size_t msg_size,
+                                 struct pubnub_ipv4_address* resolved_addr)
+{
+    size_t         q_count;
+    size_t         ans_count;
+    uint8_t const* reader;
+    uint8_t const* end;
+
+    PUBNUB_ASSERT_OPT(buf != NULL);
+    PUBNUB_ASSERT_OPT(resolved_addr != NULL);
+
+    if (read_header(buf, msg_size, &q_count, &ans_count) != 0) {
+        return -1;
+    }
+    if (0 == ans_count) {
+        return -1;
+    }
+    reader = buf + HEADER_SIZE;
+    end    = buf + msg_size;
+    if (skip_questions(&reader, buf, end, q_count) != 0) {
+        return -1;
+    }
+    if (reader > end) {
+        PUBNUB_LOG_ERROR("Error: DNS message incomplete - answers missing."
+                         "reader=%p > buf=%p + msg_size=%zu\n",
+                         reader,
+                         buf,
+                         msg_size);
+
+        return -1;
     }
 
-    /* Don't care about Authoritative Servers or Additional records, for now */
-
-    return -1;
+    return find_the_answer(reader, buf, end, ans_count, resolved_addr);
 }

@@ -23,8 +23,8 @@ int pubnub_prepare_dns_request(uint8_t* buf, size_t buf_size, char const* host, 
 
     @retval 0 success, -1 on error
  */
-int pubnub_pick_resolved_address(uint8_t* buf,
-                                 int msg_size,
+int pubnub_pick_resolved_address(uint8_t const* buf,
+                                 size_t msg_size,
                                  struct pubnub_ipv4_address* resolved_addr);
 
 #endif /* defined INC_PUBNUB_DNS_HANDLER */

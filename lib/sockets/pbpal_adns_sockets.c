@@ -72,7 +72,7 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr_in* resolv
     resolved_addr->sin_family = AF_INET;
 
     return pubnub_pick_resolved_address(buf,
-                                        msg_size,
+                                        (size_t)msg_size,
                                         (struct pubnub_ipv4_address*)&(resolved_addr->sin_addr.s_addr));
 }
 
