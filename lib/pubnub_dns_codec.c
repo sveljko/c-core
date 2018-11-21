@@ -226,7 +226,7 @@ static int handle_offset(uint8_t         pass,
 
     if ((reader + 1) >= (buffer + buffer_size)) {
         PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
-                         "About to read outside the buffer while reading offset:\n"
+                         "pointer in encoded label points outside the message while reading offset:\n"
                          "reader=%p + 1 >= buffer=%p + buffer_size=%zu\n",
                          reader,
                          buffer,
@@ -235,7 +235,7 @@ static int handle_offset(uint8_t         pass,
     }
     if (pass > MAXIMUM_LOOP_PASSES) {
         PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
-                         "Too many passes(%hhu) through the loop.\n",
+                         "Too many offset jumps(%hhu).\n",
                          pass);
         return +1;
     }
@@ -285,19 +285,21 @@ static int forced_skip(uint8_t         pass,
                while (reader + b + 1) has to be inside of it
              */
             if ((reader + b + 1) >= (buffer + buffer_size)) {
-                PUBNUB_LOG_ERROR("Error: forced_skip() - "
-                                 "About to read outside the buffer while reading encoded label:\n"
-                                 "reader=%p + b=%d + 1 >= buffer=%p + buffer_size=%zu\n",
-                                 reader,
-                                 b,
-                                 buffer,
-                                 buffer_size);
+                PUBNUB_LOG_ERROR(
+                    "Error: reading DNS response - forced_skip() - "
+                    "Pointer in encoded label points outside the message:\n"
+                    "reader=%p + b=%d + 1 >= buffer=%p + buffer_size=%zu\n",
+                    reader,
+                    b,
+                    buffer,
+                    buffer_size);
                 return -1;
             }
             reader += b + 1;
         }
         else {
-            PUBNUB_LOG_ERROR("Error: forced_skip() - Bad offset format: b & 0xC0=%d, &b=%p\n",
+            PUBNUB_LOG_ERROR("Error: reading DNS response - forced_skip() - "
+                             "Bad offset format: b & 0xC0=%d, &b=%p\n",
                              b & 0xC0,
                              &b);
             return -1;
@@ -381,7 +383,7 @@ static int dns_label_decode(uint8_t*       decoded,
              */
             if ((reader + b + 1) >= (buffer + buffer_size)) {
                 PUBNUB_LOG_ERROR("Error: in DNS label/name decoding - "
-                                 "About to read outside the buffer while reading encoded label:\n"
+                                 "Pointer in encoded label points outside the message:\n"
                                  "reader=%p + b=%d + 1 >= buffer=%p + buffer_size=%zu\n",
                                  reader,
                                  b,
@@ -435,7 +437,7 @@ static int read_header(uint8_t const*  buf,
         return -1;
     }
     if (options & dnsoptRCODEmask) {
-        PUBNUB_LOG_ERROR("Error: DNS response reports an error - RCODE = %d!\n",
+        PUBNUB_LOG_ERROR("Error: DNS response reports an error - RCODE = %d\n",
                          buf[HEADER_OPTIONS_OFFSET + 1] & dnsoptRCODEmask); 
         return -1;
     }
@@ -446,24 +448,6 @@ static int read_header(uint8_t const*  buf,
     PUBNUB_LOG_TRACE(
         "DNS response has: %zu Questions, %zu Answers.\n", *o_q_count, *o_ans_count);
 
-    return 0;
-}
-
-/* Even if label decoding reports an error(having offsets messed up, maybe, or buffer too small
-   for decoded label), 'bytes_to_skip' may be set and we can keep looking usable answer
- */
-static int decode_label_and_set_to_skip(uint8_t*       decoded,
-                                        size_t         n,
-                                        uint8_t const* src,
-                                        uint8_t const* buffer,
-                                        size_t         buffer_size,
-                                        size_t*        o_bytes_to_skip)
-{
-    if (dns_label_decode(decoded, n, src, buffer, buffer_size, o_bytes_to_skip) != 0) {
-        if (0 == *o_bytes_to_skip) {
-            return -1;
-        }
-    }
     return 0;
 }
 
@@ -494,13 +478,13 @@ static int skip_questions(uint8_t const** o_reader,
                              end - buf + 1);
             return -1;
         }
-        if (decode_label_and_set_to_skip(name,
-                                         sizeof name,
-                                         reader,
-                                         buf,
-                                         (end - buf + 1),
-                                         &to_skip) != 0) {
-            return -1;
+        /* Even if label decoding reports an error(having offsets messed up, maybe, or buffer too
+           small for decoded label), 'bytes_to_skip' may be set and we can keep looking usable answer
+         */
+        if (dns_label_decode(name, sizeof name, reader, buf, (end - buf + 1), &to_skip) != 0) {
+            if (0 == to_skip) {
+                return -1;
+            }
         }
         PUBNUB_LOG_TRACE("DNS response, %zu. question name: %s, to_skip=%zu\n",
                          i+1,
@@ -539,8 +523,8 @@ static int check_answer(const uint8_t**             o_reader,
         memcpy(resolved_addr->ipv4, reader, 4);
         return 0;
     }
-    /* Don't care about other resource types, for now */
     *o_reader += r_data_len;
+    /* Don't care about other resource types, for now */
     return -1;
 }
 
@@ -564,13 +548,10 @@ static int find_the_answer(uint8_t const* reader,
         size_t   r_data_len;
         unsigned r_data_type;
         
-        if (decode_label_and_set_to_skip(name,
-                                         sizeof name,
-                                         reader,
-                                         buf,
-                                         (end - buf + 1),
-                                         &to_skip) != 0) {
-            return -1;
+        if (dns_label_decode(name, sizeof name, reader, buf, (end - buf + 1), &to_skip) != 0) {
+            if (0 == to_skip) {
+                return -1;
+            }
         }
         reader += to_skip + RESOURCE_DATA_SIZE;
         if (reader > end) {
