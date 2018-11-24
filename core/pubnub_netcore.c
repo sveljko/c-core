@@ -829,18 +829,6 @@ next_state:
             goto next_state;
         }
         break;
-    case PBS_TX_BODY:
-        i = pbpal_send_status(pb);
-        if (i < 0) {
-            outcome_detected(pb, PNR_IO_ERROR);
-        }
-        else if (0 == i) {
-            pbpal_start_read_line(pb);
-            pb->state = PBS_RX_HTTP_VER;
-            pbntf_watch_in_events(pb);
-            goto next_state;
-        }
-        break;
     case PBS_RX_HTTP_VER:
         pbrslt = pbpal_line_read_status(pb);
         PUBNUB_LOG_TRACE("pb=%p PBS_RX_HTTP_VER: pbrslt=%d\n", pb, pbrslt);
