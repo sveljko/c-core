@@ -13,9 +13,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-//
-#include <stdio.h>
-//
 
 
 struct pubnub_publish_options pubnub_publish_defopts(void)
