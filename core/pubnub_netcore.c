@@ -823,9 +823,22 @@ next_state:
             outcome_detected(pb, PNR_IO_ERROR);
         }
         else if (0 == i) {
-            pbpal_start_read_line(pb);
-            pb->state = PBS_RX_HTTP_VER;
-            pbntf_watch_in_events(pb);
+            if (pb->flags.is_publish_via_post
+#if PUBNUB_PROXY_API
+                && (pb->proxy_tunnel_established || (pbproxyNONE == pb->proxy_type))
+#endif
+                ) {
+                pb->state = PBS_TX_BODY;
+                if (-1 == pbpal_send_str(pb, pb->core.message_to_publish)) {
+                    outcome_detected(pb, PNR_IO_ERROR);
+                    break;
+                }
+            }
+            else {
+                pbpal_start_read_line(pb);
+                pb->state = PBS_RX_HTTP_VER;
+                pbntf_watch_in_events(pb);
+            }
             goto next_state;
         }
         break;
