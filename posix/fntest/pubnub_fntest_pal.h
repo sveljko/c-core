@@ -135,12 +135,16 @@
             if (M_rslt_1 == PNR_STARTED) {                                     \
                 M_rslt_1 = pubnub_last_result(pbp1);                           \
             }                                                                  \
+            else {                                                             \
+                expect_last_result(pbp1, M_rslt_1, (exp_rslt1));               \
+            }                                                                  \
             if (M_rslt_2 == PNR_STARTED) {                                     \
                 M_rslt_2 = pubnub_last_result(pbp2);                           \
             }                                                                  \
-            if ((PNR_STARTED != M_rslt_1) && (PNR_STARTED != M_rslt_2)) {      \
-                expect_last_result(pbp1, M_rslt_1, (exp_rslt1));               \
+            else {                                                             \
                 expect_last_result(pbp2, M_rslt_2, (exp_rslt2));               \
+            }                                                                  \
+            if ((PNR_STARTED != M_rslt_1) && (PNR_STARTED != M_rslt_2)) {      \
                 break;                                                         \
             }                                                                  \
         }                                                                      \

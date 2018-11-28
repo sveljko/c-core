@@ -190,9 +190,9 @@ TEST_DEF(simple_connect_and_receiver_over_single_channel)
     pubnub_set_non_blocking_io(pbp_2);
 
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chan, NULL), 10 * SECONDS);
-    rslt = pubnub_publish(pbp, chan, "\"Test 3 - 1\"");
-    expect_pnr(rslt, PNR_STARTED);
     rslt = pubnub_subscribe(pbp_2, chan, NULL);
+    expect_pnr(rslt, PNR_STARTED);
+    rslt = pubnub_publish(pbp, chan, "\"Test 3 - 1\"");
     expect_pnr(rslt, PNR_STARTED);
     await_timed_2(10 * SECONDS, PNR_OK, pbp, PNR_OK, pbp_2);
     expect(pnfntst_got_messages(pbp_2, "\"Test 3 - 1\"", NULL));
