@@ -62,7 +62,7 @@ pubnub_res pubnub_qt::startRequest(pubnub_res result, pubnub_trans transaction)
             switch (d_publish_method) {
             case pubnubPublishViaPOSTwithGZIP:
                 req.setRawHeader("Content-Encoding", "gzip");
-                /* FALLTHROUGH */
+                /* FALLTHRU */
             case pubnubPublishViaPOST:
                 req.setRawHeader("Content-Type", "application/json");
                 req.setRawHeader("Content-Length", QByteArray::number(d_message_to_publish.size()));

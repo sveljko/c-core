@@ -100,10 +100,9 @@ static enum pubnub_res deflate_total_to_context_buffer(pubnub_t*   pb,
 }
 
 /* Compile-time assertion */
-pubnub_t* spb;
-PUBNUB_STATIC_ASSERT(
-    sizeof spb->core.gzip_msg_buf > (GZIP_HEADER_LENGTH_BYTES + GZIP_FOOTER_LENGTH_BYTES),
-    gzip_msg_buf_too_small_);
+PUBNUB_STATIC_ASSERT(sizeof (*(pubnub_t*)(NULL)).core.gzip_msg_buf
+                     > (GZIP_HEADER_LENGTH_BYTES + GZIP_FOOTER_LENGTH_BYTES),
+                     gzip_msg_buf_too_small_);
 
 enum pubnub_res pbgzip_compress(pubnub_t* pb, char const* message)
 {
