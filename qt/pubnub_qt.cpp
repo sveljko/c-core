@@ -9,7 +9,7 @@ extern "C" {
 
 #include <QtNetwork>
 
-/* Percents 'off' message length after compression */
+/* Minimal acceptable message length difference, between unpacked and packed message, in percents */
 #define PUBNUB_MINIMAL_ACCEPTABLE_COMPRESSION_RATIO 10
 #define GZIP_HEADER_AND_FOOTER_LENGTH 18
 
@@ -198,6 +198,7 @@ static QByteArray pack_message_to_gzip(QByteArray const &message)
         return message;
     }
     /* Prepending a generic 10-byte gzip header (RFC 1952) */
+    ds1.setByteOrder(QDataStream::BigEndian);
     ds1 << quint16(0x1f8b)
         << quint16(0x0800)
         << quint16(0x0000)

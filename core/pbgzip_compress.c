@@ -43,7 +43,7 @@ static enum pubnub_res deflate_total_to_context_buffer(pubnub_t*   pb,
                              (diff*1000)/unpacked_size);
             if ((diff*100)/unpacked_size < PUBNUB_MINIMAL_ACCEPTABLE_COMPRESSION_RATIO) {
                 /* With insufficient compression we choose not to pack */
-                return PNR_INSUFFICIENT_COMPRESSION;
+                return PNR_STARTED;
             }
             /* Cyclic redundancy checksum data(little endian) */
             crc = pbcrc32(message, unpacked_size);

@@ -94,7 +94,7 @@
 
 
 #define expect_last_result(pbp, rslt, exp_rslt)                                \
-    if ((rslt) == (exp_rslt)) {                                                \
+    if (((rslt) == (exp_rslt)) && !pbpub_outof_quota(pbp, rslt)) {             \
     }                                                                          \
     else if (((rslt) == PNR_ABORTED) || pbpub_outof_quota(pbp, rslt)) {        \
         *(enum PNFNTestResult*)pResult = trIndeterminate;                      \
@@ -135,13 +135,13 @@
             if (M_rslt_1 == PNR_STARTED) {                                     \
                 M_rslt_1 = pubnub_last_result(pbp1);                           \
             }                                                                  \
-            else {                                                             \
+            if (M_rslt_1 != PNR_STARTED) {                                     \
                 expect_last_result(pbp1, M_rslt_1, (exp_rslt1));               \
             }                                                                  \
             if (M_rslt_2 == PNR_STARTED) {                                     \
                 M_rslt_2 = pubnub_last_result(pbp2);                           \
             }                                                                  \
-            else {                                                             \
+            if (M_rslt_2 != PNR_STARTED) {                                     \
                 expect_last_result(pbp2, M_rslt_2, (exp_rslt2));               \
             }                                                                  \
             if ((PNR_STARTED != M_rslt_1) && (PNR_STARTED != M_rslt_2)) {      \

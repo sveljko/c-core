@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 /* The standard CRC32 checksum(Cyclic Redundancy Checksum).
-   Returns the checksum for for (unpacked) @p data with given @p n_bytes length
+   Returns the checksum for (unpacked) @p data with given @p n_bytes length
    in octets.
  */ 
 uint32_t pbcrc32(const void *data, size_t n_bytes);

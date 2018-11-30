@@ -122,7 +122,7 @@
 
 
 #define expect_last_result(pbp, rslt, exp_rslt)                                \
-    if ((rslt) == (exp_rslt)) {                                                \
+    if (((rslt) == (exp_rslt)) && !pbpub_outof_quota(pbp, rslt)) {             \
     }                                                                          \
     else if (((rslt) == PNR_ABORTED) || pbpub_outof_quota(pbp, rslt)) {        \
         *(enum PNFNTestResult*)pResult = trIndeterminate;                      \
@@ -137,7 +137,7 @@
     while (pnfntst_timer_is_running(tmr)) {                                    \
         enum pubnub_res M_pbres_ = pubnub_last_result(pbp);                    \
         if (M_pbres_ != PNR_STARTED) {                                         \
-            expect_last_result(pbp, M_pbres_, (rslt));                   \
+            expect_last_result(pbp, M_pbres_, (rslt));                         \
             break;                                                             \
         }                                                                      \
     }                                                                          \
@@ -163,13 +163,13 @@
             if (M_rslt == PNR_STARTED) {                                       \
                 M_rslt = pubnub_last_result(pbp);                              \
             }                                                                  \
-            else {                                                             \
+            if (M_rslt != PNR_STARTED) {                                       \
                 expect_last_result(pbp, M_rslt, (exp_rslt));                   \
             }                                                                  \
             if (M_rslt_2 == PNR_STARTED) {                                     \
                 M_rslt_2 = pubnub_last_result(pbp_2);                          \
             }                                                                  \
-            else {                                                             \
+            if (M_rslt_2 != PNR_STARTED) {                                     \
                 expect_last_result(pbp_2, M_rslt_2, (exp_rslt_2));             \
             }                                                                  \
             if ((PNR_STARTED != M_rslt) && (PNR_STARTED != M_rslt_2)) {        \

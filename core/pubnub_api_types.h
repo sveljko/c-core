@@ -90,8 +90,6 @@ enum pubnub_res {
     PNR_INTERNAL_ERROR,
     /** Encryption (and decryption) not supported */
     PNR_CRYPTO_NOT_SUPPORTED,
-    /** Insuficient compression */
-    PNR_INSUFFICIENT_COMPRESSION,
     /** Bad compression format or compressed data corrupted */
     PNR_BAD_COMPRESSION_FORMAT
 };

@@ -5,7 +5,6 @@
 
 #include <string.h>
 
-
 enum pubnub_publish_res pubnub_parse_publish_result(char const *result)
 {
     PUBNUB_ASSERT_OPT(result != NULL);
@@ -61,7 +60,6 @@ char const* pubnub_res_2_string(enum pubnub_res e)
     case PNR_REPLY_TOO_BIG: return "Reply from Pubnub too big to fit in buffer";
     case PNR_INTERNAL_ERROR: return "Internal error in processing";
     case PNR_CRYPTO_NOT_SUPPORTED: return "Encryption/decryption not supported";
-    case PNR_INSUFFICIENT_COMPRESSION: return "Insufficient data compression";
     case PNR_BAD_COMPRESSION_FORMAT: return "Bad data compression format";
     }
     return "!?!?!";
@@ -91,7 +89,6 @@ enum pubnub_tribool pubnub_should_retry(enum pubnub_res e)
     case PNR_REPLY_TOO_BIG: return pbccFalse; /* Rebuild with bigger buffer */
     case PNR_INTERNAL_ERROR: return pbccFalse; /* Sorry, something went wrong... */
     case PNR_CRYPTO_NOT_SUPPORTED: return pbccFalse; /* Use a platform that supports encryption, say OpenSSL */
-    case PNR_INSUFFICIENT_COMPRESSION: return pbccNotSet;
     case PNR_BAD_COMPRESSION_FORMAT: return pbccNotSet; /* If bad compressing was transient, a retry might help */
     }
     return pbccFalse;

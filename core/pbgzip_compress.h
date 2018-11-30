@@ -6,7 +6,7 @@
 
 /** Compresses(deflates) @p message into gzip-formatted data stored in context buffer.
     @retval PNR_OK on success,
-    @retval PNR_INSUFFICIENT_COMPRESSION on poor comression ratio,
+    @retval PNR_STARTED on poor comression ratio,
     @retval PNR_BAD_COMPRESSION_FORMAT on error     
  */
 enum pubnub_res pbgzip_compress(pubnub_t *pb, char const* message);
