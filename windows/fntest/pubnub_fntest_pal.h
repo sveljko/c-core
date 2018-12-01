@@ -168,8 +168,8 @@
                 rslt_2 = pubnub_last_result(pbp_2);                            \
             }                                                                  \
             if ((PNR_STARTED != rslt) && (PNR_STARTED != rslt_2)               \
-                || pbpub_outof_quota(pbp1, rslt1)                              \
-                || pbpub_outof_quota(pbp2, rslt_2)) {                          \
+                || pbpub_outof_quota(pbp, rslt)                              \
+                || pbpub_outof_quota(pbp_2, rslt_2)) {                          \
                 break;                                                         \
             }                                                                  \
         }                                                                      \
