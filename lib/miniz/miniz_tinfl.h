@@ -1,3 +1,4 @@
+/* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
 #pragma once
 #include "lib/miniz/miniz_common.h"
 /* ------------------- Low-level Decompression API Definitions */

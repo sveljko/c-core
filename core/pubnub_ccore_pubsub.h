@@ -51,6 +51,19 @@ struct pbcc_context {
      */
     unsigned http_buf_len;
 
+#if PUBNUB_CRYPTO_API
+    /** Holds encrypted message */
+    char encrypted_msg_buf[PUBNUB_BUF_MAXLEN];
+#endif
+
+#if PUBNUB_USE_GZIP_COMPRESSION
+    /** Buffer for compressed message */
+    char gzip_msg_buf[PUBNUB_COMPRESSED_MAXLEN];
+    
+    /** The length of compressed data in 'comp_http_buf' ready to be sent */
+    unsigned gzip_msg_len;
+#endif
+
 #if PUBNUB_RECEIVE_GZIP_RESPONSE
     /** The length of the decompressed data currently in the decompressing
      * buffer ("scratch").
