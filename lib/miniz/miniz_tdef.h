@@ -1,4 +1,3 @@
-/* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
 #pragma once
 #include "miniz_common.h"
 

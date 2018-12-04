@@ -261,10 +261,10 @@ namespace pubnub {
 
 #define check_result_for_exceptions(ft, rslt, fname, line, expr)                   \
     if ((rslt) == PNR_ABORTED) {                                                   \
-        throw test_exception("Transaction aborted.", fname, line, expr);           \
+        throw test_exception("Transaction aborted.", (fname), (line), (expr));     \
     }                                                                              \
-    else if (pbpub_outof_quota(ft, rslt)) {                                        \
-        throw test_exception("Out of quota.", fname, line, expr);                  \
+    else if (pbpub_outof_quota((ft), (rslt))) {                                    \
+        throw test_exception("Out of quota.", (fname), (line), (expr));            \
     }                                                                       
 
     /** Helper class to set up a check for a Pubnub transaction.
