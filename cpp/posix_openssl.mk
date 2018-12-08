@@ -49,7 +49,7 @@ LDLIBS=-lrt -lpthread -lssl -lcrypto
 endif
 
 
-all: openssl/pubnub_sync_sample openssl/pubnub_callback_sample openssl/pubnub_callback_cpp11_sample openssl/cancel_subscribe_sync_sample openssl/subscribe_publish_callback_sample openssl/futres_nesting_sync openssl/fntest_runner openssl/futres_nesting_callback openssl/futres_nesting_callback_cpp11
+all: openssl/pubnub_sync_sample openssl/pubnub_callback_sample openssl/pubnub_callback_cpp11_sample openssl/cancel_subscribe_sync_sample openssl/pubnub_publish_via_post_sample openssl/subscribe_publish_callback_sample openssl/futres_nesting_sync openssl/fntest_runner openssl/futres_nesting_callback openssl/futres_nesting_callback_cpp11
 
 
 openssl/pubnub_sync_sample: samples/pubnub_sample.cpp $(SOURCEFILES) ../core/pubnub_ntf_sync.c pubnub_futres_sync.cpp
@@ -85,6 +85,9 @@ openssl/pubnub_callback_cpp11_sample: samples/pubnub_sample.cpp $(SOURCEFILES) $
 openssl/subscribe_publish_callback_sample: samples/subscribe_publish_callback_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
 	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS) -x c++ samples/subscribe_publish_callback_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)
 
+openssl/pubnub_publish_via_post_sample: samples/pubnub_publish_via_post_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
+	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS)  -x c++ samples/pubnub_publish_via_post_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)
+
 openssl/futres_nesting_callback: samples/futres_nesting.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
 	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS) -x c++ samples/futres_nesting.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)
 
@@ -92,4 +95,4 @@ openssl/futres_nesting_callback_cpp11: samples/futres_nesting.cpp $(SOURCEFILES)
 	$(CXX) -o $@ --std=c++11 -D PUBNUB_CALLBACK_API $(CFLAGS) -x c++ samples/futres_nesting.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_cpp11.cpp $(SOURCEFILES) $(LDLIBS)
 
 clean:
-	rm openssl/pubnub_sync_sample openssl/pubnub_callback_sample openssl/pubnub_callback_cpp11_sample openssl/cancel_subscribe_sync_sample openssl/subscribe_publish_callback_sample openssl/futres_nesting_sync openssl/fntest_runner openssl/futres_nesting_callback openssl/futres_nesting_callback_cpp11
+	rm openssl/pubnub_sync_sample openssl/pubnub_callback_sample openssl/pubnub_callback_cpp11_sample openssl/cancel_subscribe_sync_sample openssl/subscribe_publish_callback_sample openssl/pubnub_publish_via_post_sample openssl/futres_nesting_sync openssl/fntest_runner openssl/futres_nesting_callback openssl/futres_nesting_callback_cpp11

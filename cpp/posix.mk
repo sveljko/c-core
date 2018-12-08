@@ -50,7 +50,7 @@ CFLAGS =-g -I .. -I ../posix -I . -Wall -D PUBNUB_THREADSAFE
 
 all: cpp11 cpp98
 
-cpp98: pubnub_sync_sample pubnub_callback_sample cancel_subscribe_sync_sample subscribe_publish_callback_sample futres_nesting_sync futres_nesting_callback pubnub_sync_subloop_sample pubnub_callback_subloop_sample
+cpp98: pubnub_sync_sample pubnub_callback_sample cancel_subscribe_sync_sample pubnub_publish_via_post_sample subscribe_publish_callback_sample futres_nesting_sync futres_nesting_callback pubnub_sync_subloop_sample pubnub_callback_subloop_sample
 
 cpp11: pubnub_callback_cpp11_sample futres_nesting_callback_cpp11 fntest_runner pubnub_callback_cpp11_subloop_sample
 
@@ -87,6 +87,9 @@ pubnub_callback_cpp11_sample: samples/pubnub_sample.cpp $(SOURCEFILES) $(CALLBAC
 subscribe_publish_callback_sample: samples/subscribe_publish_callback_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
 	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS)  -x c++ samples/subscribe_publish_callback_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)
 
+pubnub_publish_via_post_sample: samples/pubnub_publish_via_post_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
+	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS)  -x c++ samples/pubnub_publish_via_post_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)
+
 futres_nesting_callback: samples/futres_nesting.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
 	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS) -x c++ samples/futres_nesting.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)
 
@@ -104,4 +107,4 @@ fntest_runner: fntest/pubnub_fntest_runner.cpp $(SOURCEFILES)  ../core/pubnub_nt
 
 
 clean:
-	rm pubnub_sync_sample pubnub_callback_sample pubnub_callback_cpp11_sample pubnub_callback_subloop_sample pubnub_callback_cpp11_subloop_sample cancel_subscribe_sync_sample subscribe_publish_callback_sample futres_nesting_sync pubnub_sync_subloop_sample futres_nesting_callback futres_nesting_callback_cpp11 fntest_runner
+	rm pubnub_sync_sample pubnub_callback_sample pubnub_callback_cpp11_sample pubnub_callback_subloop_sample pubnub_callback_cpp11_subloop_sample cancel_subscribe_sync_sample pubnub_publish_via_post_sample subscribe_publish_callback_sample futres_nesting_sync pubnub_sync_subloop_sample futres_nesting_callback futres_nesting_callback_cpp11 fntest_runner
