@@ -37,18 +37,37 @@ static struct pubnub_publish_options publish_opts_method(enum pubnub_publish_met
 /** Allocates memory for message to be published and initiates 'publish via post' transaction.
     This memory should be freed after the publish 'via post' transaction is finished, not before.
     (In callback environment we can free message memory from callback.)
+    Publish via post could not work if this function passed pointer to lacal char array insead
+    of pointer to dynamically allocated memory.
  */
-static int allocate_mem_for_message_and_start_publish_via_post(pubnub_t*        pb,
-                                                               char const*      channel,
-                                                               char**           allocated,
-                                                               char const*      message,
-                                                               enum pubnub_res* publish_res)
+static int alloc_and_start_publish_via_post(pubnub_t*        pb,
+                                            char const*      channel,
+                                            char**           allocated,
+                                            enum pubnub_res* publish_res)
 {
-    char* mem = malloc(strlen(message) + 1); 
+    char time_string[100];
+    char* p;
+    char* mem;
+    time_t rawtime;
+    struct tm* timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    /* Making json object */
+    sprintf(time_string,
+            "\"Local date and time(published via post)-%s",
+            asctime(timeinfo)); 
+    /* Replacing colons with hyphens */
+    for (p = time_string; (p = strchr(p, ':')) != NULL; ++p) {
+        *p = '-';
+    }
+    /* Replacing 'new line' with quotes */
+    time_string[strlen(time_string) - 1] = '\"';
+    mem = malloc(strlen(time_string) + 1);
     if (NULL == mem) {
         return -1;
     }
-    strcpy(mem, message);
+    strcpy(mem, time_string);
     *publish_res = pubnub_publish_ex(pb,
                                      channel,
                                      mem,
@@ -83,11 +102,10 @@ int main()
 
     puts("Publishing(via post)...");
     time(&t0);
-    if (-1 == allocate_mem_for_message_and_start_publish_via_post(
+    if (-1 == alloc_and_start_publish_via_post(
                   pbp,
                   chan,
                   &allocated,
-                  "\"Hello world from publish via post sample!\"",
                   &res)) {
         puts("Failed to allocate memory for 'publish via post' message!");
 
@@ -96,6 +114,7 @@ int main()
     if (PNR_STARTED == res) {
         res = pubnub_await(pbp);
     }
+    free(allocated);
     printf("Publish via post lasted %lf seconds.\n", difftime(time(NULL), t0));
     if (PNR_OK == res) {
         printf("Published! Response from Pubnub: %s\n",
@@ -110,7 +129,6 @@ int main()
                res,
                pubnub_res_2_string(res));
     }
-    free(allocated);
 
     puts("=========================================");
     /* Publishing via post with gzip */
@@ -140,9 +158,7 @@ int main()
                res,
                pubnub_res_2_string(res));
     }
-    /* We're done, but, if keep-alive is on, we can't free,
-       we need to cancel first...
-     */
+
     sync_sample_free(pbp);
 
     puts("Pubnub publish 'via post' demo over.");

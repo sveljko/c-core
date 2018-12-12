@@ -54,12 +54,6 @@ int main()
         time_t          t    = time(NULL);
         bool            stop = false;
         enum pubnub_res res  = pubnub_subscribe(pbp, chan, NULL);
-        if (res != PNR_STARTED) {
-            printf("pubnub_subscribe() returned unexpected: %d('%s')\n",
-                   res,
-                   pubnub_res_2_string(res));
-            break;
-        }
 
         /* Don't await here, 'cause it will loop until done */
         while (!stop) {

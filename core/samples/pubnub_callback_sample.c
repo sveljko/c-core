@@ -194,13 +194,11 @@ static int do_time(pubnub_t* pbp, struct UserData* pUserData)
         printf("pubnub_time() returned unexpected %d('%s')\n",
                res,
                pubnub_res_2_string(res));
-        callback_sample_free(pbp);
         return -1;
     }
     res = await(pUserData);
     if (res == PNR_STARTED) {
         printf("await() returned unexpected: PNR_STARTED(%d)\n", res);
-        callback_sample_free(pbp);
         return -1;
     }
 
@@ -334,6 +332,7 @@ int main()
 
     /* Getting time */
     if (do_time(pbp, &user_data) == -1) {
+        callback_sample_free(pbp);
         return -1;
     }
 

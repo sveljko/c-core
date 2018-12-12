@@ -9,7 +9,7 @@ CFLAGS = /EHsc /Zi /MP /TP /I .. /I . /I ..\core\c99 /I ..\windows /W3 /D PUBNUB
 # /EHsc enables (standard) exception support
 # /analyze runs static analysis
 
-all: fntest_runner.exe pubnub_sync_sample.exe pubnub_callback_sample.exe pubnub_callback_cpp11_sample.exe cancel_subscribe_sync_sample.exe pubnub_publish_via_post_sample.exe subscribe_publish_callback_sample.exe futres_nesting_sync.exe futres_nesting_callback.exe futres_nesting_callback_cpp11.exe
+all: fntest_runner.exe pubnub_sync_sample.exe pubnub_callback_sample.exe pubnub_callback_cpp11_sample.exe cancel_subscribe_sync_sample.exe subscribe_publish_callback_sample.exe futres_nesting_sync.exe futres_nesting_callback.exe futres_nesting_callback_cpp11.exe
 
 
 pubnub_sync_sample.exe: samples\pubnub_sample.cpp $(SOURCEFILES) ..\core\pubnub_ntf_sync.c pubnub_futres_sync.cpp
@@ -46,9 +46,6 @@ pubnub_callback_cpp11_sample.exe: samples\pubnub_sample.cpp $(SOURCEFILES) $(CAL
 
 subscribe_publish_callback_sample.exe: samples\subscribe_publish_callback_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_windows.cpp
 	$(CXX) /Fe$@ -D PUBNUB_CALLBACK_API $(CFLAGS) samples\subscribe_publish_callback_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_windows.cpp $(SOURCEFILES) /link $(LIBS)
-
-pubnub_publish_via_post_sample.exe: samples\pubnub_publish_via_post_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_windows.cpp
-	$(CXX) /Fe$@ -D PUBNUB_CALLBACK_API $(CFLAGS) samples\pubnub_publish_via_post_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_windows.cpp $(SOURCEFILES) /link $(LIBS)
 
 futres_nesting_callback.exe: samples\futres_nesting.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_windows.cpp
 	$(CXX) /Fe$@ -D PUBNUB_CALLBACK_API $(CFLAGS) samples\futres_nesting.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_windows.cpp $(SOURCEFILES) /link $(LIBS)
