@@ -46,7 +46,6 @@ static int alloc_and_start_publish_via_post(pubnub_t*        pb,
                                             enum pubnub_res* publish_res)
 {
     char time_string[100];
-    char* p;
     char* mem;
     time_t rawtime;
     struct tm* timeinfo;
@@ -57,10 +56,6 @@ static int alloc_and_start_publish_via_post(pubnub_t*        pb,
     sprintf(time_string,
             "\"Local date and time(published via post)-%s",
             asctime(timeinfo)); 
-    /* Replacing colons with hyphens */
-    for (p = time_string; (p = strchr(p, ':')) != NULL; ++p) {
-        *p = '-';
-    }
     /* Replacing 'new line' with quotes */
     time_string[strlen(time_string) - 1] = '\"';
     mem = malloc(strlen(time_string) + 1);
