@@ -514,12 +514,14 @@ public:
                    std::string const& message,
                    publish_options    opt)
     {
-        if (message.size() > sizeof d_message_to_publish) {
+        if (message.size() + 1 > sizeof d_message_to_publish) {
             throw std::range_error("string for publish too long");
         }
+        if (pubnub_can_start_transaction(d_pb) == PNR_IN_PROGRESS) {
+            throw std::logic_error("transaction on context not finished");
+        }
         strcpy(d_message_to_publish, message.c_str());
-        return doit(pubnub_publish_ex(
-            d_pb, channel.c_str(), d_message_to_publish, opt.data()));
+        return doit(pubnub_publish_ex(d_pb, channel.c_str(), d_message_to_publish, opt.data()));
     }
 
 #if PUBNUB_CRYPTO_API
