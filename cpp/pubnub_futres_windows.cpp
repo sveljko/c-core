@@ -111,8 +111,10 @@ static void futres_callback(pubnub_t *pb, enum pubnub_trans trans, enum pubnub_r
 futres::futres(pubnub_t *pb, context &ctx, pubnub_res initial) :
     d_pb(pb), d_ctx(ctx), d_result(initial), d_pimpl(new impl)
 {
-    if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, d_pimpl)) {
-        throw std::logic_error("Failed to register callback");
+    if (initial != PNR_IN_PROGRESS) {
+        if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, d_pimpl)) {
+            throw std::logic_error("Failed to register callback");
+        }
     }
 }
 
@@ -137,7 +139,12 @@ futres::~futres()
 
 pubnub_res futres::last_result()
 {
-    return pubnub_last_result(d_pb);
+    if (PNR_STARTED == d_result) {
+        return d_result = pubnub_last_result(d_pb);
+    }
+    else {
+        return d_result;
+    }
 }
 
  
@@ -148,8 +155,12 @@ void futres::start_await()
 
 pubnub_res futres::end_await()
 {
-    d_pimpl->end_await();
-    return pubnub_last_result(d_pb);
+    if (PNR_STARTED == d_result) {
+        d_pimpl->end_await();
+        return d_result = pubnub_last_result(d_pb);
+    else {
+        return d_result;
+    }
 }
 
 

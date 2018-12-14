@@ -50,7 +50,12 @@ void futres::start_await()
  
 pubnub_res futres::end_await()
 {
-    return d_result = pubnub_await(d_pb);
+    if (PNR_STARTED == d_result) {
+        return d_result = pubnub_await(d_pb);
+    }
+    else {
+        return d_result;
+    }
 }
 
 

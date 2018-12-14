@@ -517,8 +517,8 @@ public:
         if (message.size() + 1 > sizeof d_message_to_publish) {
             throw std::range_error("string for publish too long");
         }
-        if (pubnub_can_start_transaction(d_pb) == PNR_IN_PROGRESS) {
-            throw std::logic_error("transaction on context not finished");
+        if (!pubnub_can_start_transaction(d_pb)) {
+            return futres(d_pb, *this, PNR_IN_PROGRESS);
         }
         strcpy(d_message_to_publish, message.c_str());
         return doit(pubnub_publish_ex(d_pb, channel.c_str(), d_message_to_publish, opt.data()));

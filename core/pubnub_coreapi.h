@@ -403,10 +403,10 @@ enum pubnub_res pubnub_list_channel_group(pubnub_t *p, char const *channel_group
 
 /** Checks if a transaction can be started on @p pb context. Anotherwords, checks if previous
     transaction is finished.
-    @retval PNR_OK can start new transaction
-    @retval PNR_IN_PROGRESS otherwise
+    @retval true can start new transaction
+    @retval false otherwise
  */
-enum pubnub_res pubnub_can_start_transaction(pubnub_t* pb);
+bool pubnub_can_start_transaction(pubnub_t* pb);
 
 
 #endif /* defined INC_PUBNUB_COREAPI */
