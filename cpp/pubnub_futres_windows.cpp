@@ -19,27 +19,62 @@ extern "C" {
 
 namespace pubnub {
 
+static void futres_callback(pubnub_t*         pb,
+                            enum pubnub_trans trans,
+                            enum pubnub_res   result,
+                            void*             user_data);
+
 class futres::impl {
 public:
-    impl()
-        : d_wevent(CreateEvent(NULL, TRUE, FALSE, NULL))
-        , d_parent(nullptr)
-        , d_thread(0)
+    impl(pubnub_t *pb, pubnub_res initial) :
+        d_wevent(CreateEvent(NULL, TRUE, FALSE, NULL)),
+        d_pb(pb),
+        d_parent(nullptr),
+        d_thread(0),
+        d_result(initial),
     {
         pubnub_mutex_init(d_mutex);
         if (NULL == d_wevent) {
             throw std::runtime_error("Failed to create a Windows event handle");
         }
+        if (d_result != PNR_IN_PROGRESS) {
+            if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, this)) {
+                throw std::logic_error("Failed to register callback");
+            }
+        }
+    }
+    impl(impl* pimpl) {
+        lock_guard lck(pimpl->d_mutex);
+        impl(pimpl->d_pb, pimpl->d_result);
     }
     ~impl()
     {
         wait4_then_thread_to_start();
         wait4_then_thread_to_finish();
+        (void)pubnub_register_callback(d_pb, NULL, NULL);
         pubnub_mutex_destroy(d_mutex);
         CloseHandle(d_wevent);
     }
     void start_await() { ResetEvent(d_wevent); }
-    void end_await() { WaitForSingleObject(d_wevent, INFINITE); }
+    pubnub_res end_await() { 
+        lock_guard lck(d_mutex);
+        if (PNR_STARTED == d_result) {
+            WaitForSingleObject(d_wevent, INFINITE);
+            return d_result = pubnub_last_result(d_pb);
+        }
+        else {
+            return d_result;
+        }
+    }
+    pubnub_res last_result() {
+        lock_guard lck(d_mutex);
+        if (PNR_STARTED == d_result) {
+            return d_result = pubnub_last_result(d_pb);
+        }
+        else {
+            return d_result;
+        }
+    }
     static unsigned __stdcall do_the_then(void* parg)
     {
         futres::impl* that = static_cast<futres::impl*>(parg);
@@ -94,6 +129,8 @@ private:
 
     HANDLE         d_wevent;
     pubnub_mutex_t d_mutex;
+    /// The C Pubnub context that we are "wrapping"
+    pubnub_t* d_pb;
 
 #if (__cplusplus < 201103L) && (_MSC_VER < 1600)
     pubnub::caller_keeper d_thenf;
@@ -117,29 +154,17 @@ static void futres_callback(pubnub_t*         pb,
 
 
 futres::futres(pubnub_t* pb, context& ctx, pubnub_res initial)
-    : d_pb(pb)
-    , d_ctx(ctx)
-    , d_result(initial)
-    , d_pimpl(new impl)
+    : d_ctx(ctx)
+    , d_pimpl(new impl(pb, initial))
 {
-    if (initial != PNR_IN_PROGRESS) {
-        if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, d_pimpl)) {
-            throw std::logic_error("Failed to register callback");
-        }
-    }
 }
 
 
-#if _cplusplus < 201103L
+#if __cplusplus < 201103L
 futres::futres(futres const& x)
-    : d_pb(x.d_pb)
-    , d_ctx(x.d_ctx)
-    , d_result(x.d_result)
-    , d_pimpl(new impl)
+    : d_ctx(x.d_ctx)
+    , d_pimpl(new impl(x.d_pimpl))
 {
-    if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, d_pimpl)) {
-        throw std::logic_error("Failed to register callback");
-    }
 }
 #endif
 
@@ -147,18 +172,12 @@ futres::futres(futres const& x)
 futres::~futres()
 {
     delete d_pimpl;
-    (void)pubnub_register_callback(d_pb, NULL, NULL);
 }
 
 
 pubnub_res futres::last_result()
 {
-    if (PNR_STARTED == d_result) {
-        return d_result = pubnub_last_result(d_pb);
-    }
-    else {
-        return d_result;
-    }
+    return d_pimpl->last_result();
 }
 
 
@@ -169,25 +188,25 @@ void futres::start_await()
 
 pubnub_res futres::end_await()
 {
-    if (PNR_STARTED == d_result) {
-        d_pimpl->end_await();
-        return d_result = pubnub_last_result(d_pb);
-    }
-    else {
-        return d_result;
-    }
+   return d_pimpl->end_await();
 }
 
 
 bool futres::valid() const
 {
-    return (d_pb != NULL) && (d_pimpl != NULL);
+    return (d_pimpl != NULL);
 }
 
 
 bool futres::is_ready() const
 {
     return d_pimpl->is_ready();
+}
+
+
+tribool futres::should_retry() const
+{
+    return pubnub_should_retry(d_pimpl->last_result());
 }
 
 #if (__cplusplus >= 201103L) || (_MSC_VER >= 1600)
