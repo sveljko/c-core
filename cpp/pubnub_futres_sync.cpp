@@ -11,8 +11,6 @@ extern "C" {
 }
 #endif
 
-#include <chrono>
-#include <thread>
 
 namespace pubnub {
 
