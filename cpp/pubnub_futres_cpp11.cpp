@@ -24,21 +24,19 @@ static void futres_callback(pubnub_t *pb,
                             void *user_data);
 
 class futres::impl {
+    friend class futres;
 public:
     impl(pubnub_t *pb, pubnub_res initial) :
         d_triggered(false),
         d_pb(pb),
         d_parent(nullptr),
         d_result(initial) {
-        if (d_result != PNR_IN_PROGRESS) {
+        if (initial != PNR_IN_PROGRESS) {
+            std::unique_lock<std::mutex> lk(d_mutex);
             if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, this)) {
                 throw std::logic_error("Failed to register callback");
             }
         }
-    }
-    impl(impl* pimpl) {
-        std::lock_guard<std::mutex> lk(pimpl->d_mutex);
-        impl(pimpl->d_pb, pimpl->d_result);
     }
     ~impl() {
         wait4_then_thread_to_start();
@@ -137,7 +135,8 @@ futres::futres(pubnub_t *pb, context &ctx, pubnub_res initial) :
 
 #if __cplusplus < 201103L
 futres::futres(futres const &x) :
-	d_ctx(x.d_ctx), d_pimpl(new impl(x.d_pimpl))
+    d_ctx(x.d_ctx),
+    d_pimpl(new impl(x.d_pimpl->d_pb, x.d_pimpl->d_result))
 {
 }
 #endif
@@ -168,7 +167,7 @@ pubnub_res futres::end_await()
 
 bool futres::valid() const
 {
-    return (d_pimpl != NULL);
+    return (d_pimpl != NULL) && (d_pimpl->d_pb != NULL);
 }
 
 

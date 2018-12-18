@@ -37,6 +37,7 @@ static void futres_callback(pubnub_t*         pb,
 
 
 class futres::impl {
+    friend class futres;
 public:
     impl(pubnub_t* pb, pubnub_res initial)
         : d_triggered(false)
@@ -47,15 +48,11 @@ public:
         pthread_mutex_init(&d_mutex, NULL);
         pthread_cond_init(&d_cond, NULL);
         if (initial != PNR_IN_PROGRESS) {
+            pthread_lock_guard lck(&d_mutex);
             if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, this)) {
                 throw std::logic_error("Failed to register callback");
             }
         }
-    }
-    impl(impl* pimpl)
-    {
-        pthread_lock_guard lck(&pimpl->d_mutex);
-        impl(pimpl->d_pb, pimpl->d_result);
     }
     ~impl()
     {
@@ -70,37 +67,25 @@ public:
     }
     pubnub_res end_await()
     {
-        pubnub_res res;
-        {
-            pthread_lock_guard lck(&d_mutex);
-            res = d_result;
-        }
-        if (PNR_STARTED == res) {
+        pthread_lock_guard lck(&d_mutex);
+        if (PNR_STARTED == d_result) {
             while (!d_triggered) {
                 pthread_cond_wait(&d_cond, &d_mutex);
             }
-            res = pubnub_last_result(d_pb);
-            pthread_lock_guard lck(&d_mutex);
-            return d_result = res;
+            return d_result = pubnub_last_result(d_pb);
         }
         else {
-            return res;
+            return d_result;
         }
     }
     pubnub_res last_result()
     {
-        pubnub_res res;
-        {
-            pthread_lock_guard lck(&d_mutex);
-            res = d_result;
-        }
-        if (PNR_STARTED == res) {
-            res = pubnub_last_result(d_pb);
-            pthread_lock_guard lck(&d_mutex);
-            return d_result = res;
+        pthread_lock_guard lck(&d_mutex);
+        if (PNR_STARTED == d_result) {
+            return d_result = pubnub_last_result(d_pb);
         }
         else {
-            return res;
+            return d_result;
         }
     }
     static void* do_the_then(void* parg)
@@ -198,7 +183,7 @@ futres::futres(pubnub_t* pb, context& ctx, pubnub_res initial)
 #if __cplusplus < 201103L
 futres::futres(futres const& x)
     : d_ctx(x.d_ctx)
-    , d_pimpl(new impl(x.d_pimpl))
+    , d_pimpl(new impl(x.d_pimpl->d_pb, x.d_pimpl->d_result))
 {
 }
 #endif
@@ -229,7 +214,7 @@ pubnub_res futres::end_await()
 
 bool futres::valid() const
 {
-    return (d_pimpl != NULL);
+    return (d_pimpl != NULL) && (d_pimpl->d_pb != NULL);
 }
 
 
