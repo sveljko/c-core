@@ -31,13 +31,13 @@ public:
         d_pb(pb),
         d_parent(nullptr),
         d_thread(0),
-        d_result(initial),
+        d_result(initial)
     {
         pubnub_mutex_init(d_mutex);
         if (NULL == d_wevent) {
             throw std::runtime_error("Failed to create a Windows event handle");
         }
-        if (d_result != PNR_IN_PROGRESS) {
+        if (initial != PNR_IN_PROGRESS) {
             if (PNR_OK != pubnub_register_callback(d_pb, futres_callback, this)) {
                 throw std::logic_error("Failed to register callback");
             }
@@ -56,23 +56,35 @@ public:
         CloseHandle(d_wevent);
     }
     void start_await() { ResetEvent(d_wevent); }
-    pubnub_res end_await() { 
-        lock_guard lck(d_mutex);
-        if (PNR_STARTED == d_result) {
+    pubnub_res end_await() {
+        pubnub_res res;
+        {
+            lock_guard lck(d_mutex);
+            res = d_result;
+        }
+        if (PNR_STARTED == res) {
             WaitForSingleObject(d_wevent, INFINITE);
-            return d_result = pubnub_last_result(d_pb);
+            res = pubnub_last_result(d_pb);
+            lock_guard lck(d_mutex);
+            return d_result = res;
         }
         else {
-            return d_result;
+            return res;
         }
     }
     pubnub_res last_result() {
-        lock_guard lck(d_mutex);
-        if (PNR_STARTED == d_result) {
-            return d_result = pubnub_last_result(d_pb);
+        pubnub_res res;
+        {
+            lock_guard lck(d_mutex);
+            res = d_result;
+        }
+        if (PNR_STARTED == res) {
+            res = pubnub_last_result(d_pb);
+            lock_guard lck(d_mutex);
+            return d_result = res;
         }
         else {
-            return d_result;
+            return res;
         }
     }
     static unsigned __stdcall do_the_then(void* parg)

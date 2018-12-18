@@ -14,64 +14,69 @@ extern "C" {
 
 namespace pubnub {
 
-class pthread_lock_guard {
-public:
-    pthread_lock_guard(pubnub_mutex_t mutex) : d_mutex(mutex) {
-        pubnub_mutex_lock(d_mutex);
-    }
-    ~pthread_lock_guard() { pubnub_mutex_unlock(d_mutex); }
-private:
-    pubnub_mutex_t d_mutex;
-};
-
 class futres::impl {
-
 public:
-    impl(pubnub_t *pb, pubnub_res initial) :
-        d_pb(pb),
-        d_result(initial) {
+    impl(pubnub_t* pb, pubnub_res initial)
+        : d_pb(pb)
+        , d_result(initial)
+    {
         pubnub_mutex_init(d_mutex);
     }
-    impl(impl* pimpl) {
-        pthread_lock_guard lck(pimpl->d_mutex);
+    impl(impl* pimpl)
+    {
+        lock_guard lck(pimpl->d_mutex);
         impl(pimpl->d_pb, pimpl->d_result);
     }
-    ~impl() {
-        pubnub_mutex_destroy(d_mutex);
-    }
-    pubnub_res end_await() {
-        pthread_lock_guard lck(d_mutex);
-        if (PNR_STARTED == d_result) {
-            return d_result = pubnub_await(d_pb);
+    ~impl() { pubnub_mutex_destroy(d_mutex); }
+    pubnub_res end_await()
+    {
+        pubnub_res res;
+        {
+            lock_guard lck(d_mutex);
+            res = d_result;
+        }
+        if (PNR_STARTED == res) {
+            res = pubnub_await(d_pb);
+            lock_guard lck(d_mutex);
+            return d_result = res;
         }
         else {
-            return d_result;
+            return res;
         }
     }
-    pubnub_res last_result() {
-        pthread_lock_guard lck(d_mutex);
-        if (PNR_STARTED == d_result) {
-            return d_result = pubnub_last_result(d_pb);
+    pubnub_res last_result()
+    {
+        pubnub_res res;
+        {
+            lock_guard lck(d_mutex);
+            res = d_result;
+        }
+        if (PNR_STARTED == res) {
+            res = pubnub_last_result(d_pb);
+            lock_guard lck(d_mutex);
+            return d_result = res;
         }
         else {
-            return d_result;
+            return res;
         }
     }
-    bool is_ready() const {
-        pthread_lock_guard lck(d_mutex);
+    bool is_ready() const
+    {
+        lock_guard lck(d_mutex);
         return d_result != PNR_STARTED;
     }
 
 private:
-    pubnub_mutex_t d_mutex;
+    mutable pubnub_mutex_t d_mutex;
     /// The C Pubnub context that we are "wrapping"
-    pubnub_t* d_pb;
+    pubnub_t*  d_pb;
     pubnub_res d_result;
 };
 
 
-futres::futres(pubnub_t *pb, context &ctx, pubnub_res initial) : 
-    d_ctx(ctx), d_pimpl(new impl(pb, initial)) 
+futres::futres(pubnub_t* pb, context& ctx, pubnub_res initial)
+    : d_ctx(ctx)
+    , d_pimpl(new impl(pb, initial))
 {
 }
 
@@ -85,7 +90,7 @@ futres::futres(futres const& x)
 #endif
 
 
-futres::~futres() 
+futres::~futres()
 {
     delete d_pimpl;
 }
@@ -101,7 +106,7 @@ void futres::start_await()
     // nothing to do to "start" a sync await...
 }
 
- 
+
 pubnub_res futres::end_await()
 {
     return d_pimpl->end_await();
@@ -123,9 +128,9 @@ pubnub_publish_res futres::parse_last_publish_result()
 {
     return d_ctx.parse_last_publish_result();
 }
- 
+
 #if (__cplusplus >= 201103L) || (_MSC_VER >= 1600)
-void futres::then(std::function<void(context &, pubnub_res)> f)
+void futres::then(std::function<void(context&, pubnub_res)> f)
 {
     f(d_ctx, await());
 }
@@ -136,4 +141,4 @@ void futres::thenx(caller_keeper f)
 }
 #endif
 
-}
+} // namespace pubnub
