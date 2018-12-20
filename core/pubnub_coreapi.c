@@ -363,3 +363,16 @@ enum pubnub_res pubnub_list_channel_group(pubnub_t* pb, char const* channel_grou
     pubnub_mutex_unlock(pb->monitor);
     return rslt;
 }
+
+bool pubnub_can_start_transaction(pubnub_t* pb)
+{
+    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+
+    pubnub_mutex_lock(pb->monitor);
+    if (!pbnc_can_start_transaction(pb)) {
+        pubnub_mutex_unlock(pb->monitor);
+        return false;
+    }
+    pubnub_mutex_unlock(pb->monitor);
+    return true;
+}

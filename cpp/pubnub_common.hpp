@@ -28,7 +28,9 @@ extern "C" {
 
 
 #include <string>
+#include <cstring>
 #include <vector>
+#include <stdexcept>
 
 #if __cplusplus >= 201103L
 #include <chrono>
@@ -512,8 +514,14 @@ public:
                    std::string const& message,
                    publish_options    opt)
     {
-        return doit(pubnub_publish_ex(
-            d_pb, channel.c_str(), message.c_str(), opt.data()));
+        if (message.size() + 1 > sizeof d_message_to_publish) {
+            throw std::range_error("string for publish too long");
+        }
+        if (!pubnub_can_start_transaction(d_pb)) {
+            return futres(d_pb, *this, PNR_IN_PROGRESS);
+        }
+        strcpy(d_message_to_publish, message.c_str());
+        return doit(pubnub_publish_ex(d_pb, channel.c_str(), d_message_to_publish, opt.data()));
     }
 
 #if PUBNUB_CRYPTO_API
@@ -951,6 +959,8 @@ private:
     /// The origin set last time (doen't have to be the one used,
     /// the default can be used instead)
     std::string d_origin;
+    /// Buffer for message to be published
+    char d_message_to_publish[PUBNUB_BUF_MAXLEN];
     /// The (C) Pubnub context
     pubnub_t* d_pb;
 };
