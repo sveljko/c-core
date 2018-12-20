@@ -401,6 +401,12 @@ enum pubnub_res pubnub_add_channel_to_group(pubnub_t *p, char const *channel, ch
 */
 enum pubnub_res pubnub_list_channel_group(pubnub_t *p, char const *channel_group);
 
+/** Checks if a transaction can be started on @p pb context. Anotherwords, checks if previous
+    transaction is finished.
+    @retval true can start new transaction
+    @retval false otherwise
+ */
+bool pubnub_can_start_transaction(pubnub_t* pb);
 
 
 #endif /* defined INC_PUBNUB_COREAPI */
