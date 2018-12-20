@@ -2,6 +2,7 @@
 #if !defined INC_PUBNUB_COMMON_HPP
 #define INC_PUBNUB_COMMON_HPP
 
+
 #if PUBNUB_USE_EXTERN_C
 extern "C" {
 #endif
@@ -26,6 +27,7 @@ extern "C" {
 }
 #endif
 
+#include "pubnub_mutex.hpp"
 
 #include <string>
 #include <cstring>
@@ -347,6 +349,7 @@ public:
         : d_pubk(pubkey)
         , d_ksub(subkey)
     {
+        pubnub_mutex_init(d_mutex);
         d_pb = pubnub_alloc();
         if (0 == d_pb) {
             throw std::bad_alloc();
@@ -386,11 +389,19 @@ public:
      */
     void set_auth(std::string const& auth)
     {
+        lock_guard lck(d_mutex);
+        if (!pubnub_can_start_transaction(d_pb)) {
+            throw std::logic_error("setting 'auth' key while transaction in progress");
+        }
         d_auth = auth;
         pubnub_set_auth(d_pb, auth.empty() ? NULL : d_auth.c_str());
     }
     /// Returns the current `auth` key for this context
-    std::string const& auth() const { return d_auth; }
+    std::string const& auth() const
+    {
+        lock_guard lck(d_mutex);
+        return d_auth;
+    }
 
     /** Sets the UUID to @p uuid. If @p uuid is an empty string,
         UUID will not be used.
@@ -398,8 +409,7 @@ public:
      */
     void set_uuid(std::string const& uuid)
     {
-        d_uuid = uuid;
-        pubnub_set_uuid(d_pb, uuid.empty() ? NULL : d_uuid.c_str());
+        pubnub_set_uuid(d_pb, uuid.empty() ? NULL : uuid.c_str());
     }
     /// Set the UUID to a random-generated one
     /// @see pubnub_generate_uuid_v4_random
@@ -413,7 +423,11 @@ public:
         return 0;
     }
     /// Returns the current UUID
-    std::string const& uuid() const { return d_uuid; }
+    std::string const uuid() const
+    {
+        char const* uuid = pubnub_uuid_get(d_pb);
+        return std::string((NULL == uuid) ? "" : uuid);
+    }
 
     /// Returns the next message from the context. If there are
     /// none, returns an empty string.
@@ -939,6 +953,7 @@ public:
         if (d_pb) {
             pubnub_free_with_timeout(d_pb, 1000);
         }
+        pubnub_mutex_destroy(d_mutex);
     }
 
 private:
@@ -947,7 +962,8 @@ private:
 
     // internal helper function
     futres doit(pubnub_res e) { return futres(d_pb, *this, e); }
-
+    /// The mutex protecting d_auth field
+    mutable pubnub_mutex_t d_mutex;
     /// The publish key
     std::string d_pubk;
     /// The subscribe key
