@@ -153,12 +153,12 @@ class TestController : public QObject {
     unsigned d_max_conc_thread;
     TestData *d_test;
     unsigned d_test_count;
-
     unsigned d_next_test;
     unsigned d_failed_count;
     unsigned d_passed_count;
     unsigned d_indete_count;
     bool     d_cannot_do_chan_group;
+
 public:
     TestController(TestData aTest[],
                    unsigned test_count,
