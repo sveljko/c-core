@@ -208,7 +208,10 @@ namespace pubnub {
 #define TEST_DEF(tst)                                                   \
     TEST_DECL(tst)                                                      \
     {                                                                   \
-        char const* const this_test_name_ = #tst;                       
+        char const* const this_test_name_ = #tst;                       \
+        /* Eliminating unused variable warning */                       \
+        do {                                                            \
+        } while (sizeof cannot_do == 0);
 
 #define TEST_ENDDEF }
 

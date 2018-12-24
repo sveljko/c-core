@@ -13,6 +13,13 @@ build_script:
   - cd core
   - nmake /f W_makefile.mk
   - cd ..
+  - cd qt
+  - qmake fn_test.pro
+  - make
+  - qmake pubnub.pro
+  - make
+  - qmake pubnub_gui.pro
+  - make
 
 test_script:
   - core\pubnub_proxy_NTLM_test
@@ -20,5 +27,6 @@ test_script:
   - openssl\pubnub_fntest
   - cpp\fntest_runner
   - cpp\openssl\fntest_runner
+  - qt\fn_test
 
 deploy: off

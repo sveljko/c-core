@@ -1,5 +1,4 @@
 /* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
-#include "pubnub_fntest.hpp"
 #include "pubnub_fntest_basic.hpp"
 #include "pubnub_fntest_medium.hpp"
 
@@ -12,6 +11,12 @@
 #include <QTimer>
 #include <QThread>
 
+#if defined _WIN32
+#include "windows/console_subscribe_paint.h"
+#else
+#include "posix/console_subscribe_paint.h"
+#endif
+
 
 enum class TestResult {
     fail,
@@ -20,7 +25,10 @@ enum class TestResult {
 };
 Q_DECLARE_METATYPE(TestResult);
 
-using TestFN_T = std::function<void(std::string const&,std::string const&, std::string const&)>;
+using TestFN_T = std::function<void(std::string const&,
+                                    std::string const&,
+                                    std::string const&,
+                                    bool const&)>;
 
 struct TestData {
     TestFN_T pf;
@@ -29,7 +37,7 @@ struct TestData {
 };
 
 
-#define LIST_TEST(tstname) { tstname, #tstname, TestResult::indeterminate }
+#define LIST_TEST(tstname) { pnfn_test_##tstname, #tstname, TestResult::indeterminate }
 
 
 static TestData m_aTest[] = {
@@ -75,21 +83,55 @@ class TestRunner : public QObject {
     unsigned d_iTest;
     TestFN_T d_pf;
     char const *d_name;
+    bool d_cannot_do_chan_group;
 public:
-    TestRunner(QString const& pubkey, QString const& keysub, QString const&origin, unsigned iTest, TestFN_T pf, char const *name)
-        : d_pubkey(pubkey), d_keysub(keysub), d_origin(origin), d_iTest(iTest), d_pf(pf), d_name(name) {}
+    TestRunner(QString const& pubkey,
+               QString const& keysub,
+               QString const&origin,
+               unsigned iTest,
+               TestFN_T pf,
+               char const *name,
+               bool cannot_do_chan_group) :
+        d_pubkey(pubkey),
+        d_keysub(keysub),
+        d_origin(origin),
+        d_iTest(iTest),
+        d_pf(pf),
+        d_name(name),
+        d_cannot_do_chan_group(cannot_do_chan_group)
+    {}
     
     unsigned iTest() const { return d_iTest; }
 
 public slots:
     void doTest() {
         TestResult result = TestResult::pass;
+        using namespace std::chrono;
+        system_clock::time_point tp  = system_clock::now();
+        system_clock::duration   dtn = tp.time_since_epoch();
+        srand(dtn.count());
         try {
-            d_pf(d_pubkey.toStdString(), d_keysub.toStdString(), d_origin.toStdString());
+            d_pf(d_pubkey.toStdString(),
+                 d_keysub.toStdString(),
+                 d_origin.toStdString(),
+                 d_cannot_do_chan_group);
         }
         catch (std::exception &ex) {
-            std::cout << "\n\x1b[41m !! " << d_iTest+1 << ". test '" << d_name << "' failed!\nError description: " << ex.what() << "\x1b[m\n" << std::endl;
+            paint_text_white_with_background_red();
+            std::cout << " !! " << d_iTest+1 << ". test '" << d_name
+                      << "' failed!\nError description: " << ex.what();
+            reset_text_paint();
+            std::cout << std::endl << std::endl;
             result = TestResult::fail;
+        }
+        catch (pubnub::except_test &ex) {
+            std::cout << std::endl;
+            paint_text_yellow();
+            std::cout << " !! " << d_iTest+1 << ". test '" << d_name << "' indeterminate!"
+                      << std::endl << "Description: " << ex.what();
+            reset_text_paint();
+            std::cout << std::endl << std::endl;
+            result = TestResult::indeterminate;
         }
         emit testFinished(this, result);
     }
@@ -116,15 +158,22 @@ class TestController : public QObject {
     unsigned d_failed_count;
     unsigned d_passed_count;
     unsigned d_indete_count;
-
+    bool     d_cannot_do_chan_group;
 public:
-    TestController(TestData aTest[], unsigned test_count, QString const& pubkey, QString const& keysub, QString const& origin, unsigned max_conc_thread)
-        : d_pubkey(pubkey)
-        , d_keysub(keysub)
-        , d_origin(origin)
-        , d_max_conc_thread(max_conc_thread) 
-        , d_test(aTest)
-        , d_test_count(test_count) {
+    TestController(TestData aTest[],
+                   unsigned test_count,
+                   QString const& pubkey,
+                   QString const& keysub,
+                   QString const& origin,
+                   unsigned max_conc_thread,
+                   bool cannot_do_chan_group) :
+        d_pubkey(pubkey),
+        d_keysub(keysub),
+        d_origin(origin),
+        d_max_conc_thread(max_conc_thread),
+        d_test(aTest),
+        d_test_count(test_count),
+        d_cannot_do_chan_group(cannot_do_chan_group) {
     }
 
 public slots:
@@ -182,7 +231,13 @@ private:
         }
         for (unsigned i = d_next_test; i < d_next_test+in_this_pass; ++i) {
             QThread *pqt = new QThread;
-            TestRunner *runner = new TestRunner(d_pubkey, d_keysub, d_origin, i, d_test[i].pf, d_test[i].name);
+            TestRunner *runner = new TestRunner(d_pubkey,
+                                                d_keysub,
+                                                d_origin,
+                                                i,
+                                                d_test[i].pf,
+                                                d_test[i].name,
+                                                d_cannot_do_chan_group);
             runner->moveToThread(pqt);
             connect(pqt, SIGNAL(finished()), runner, SLOT(deleteLater()));
             connect(runner, SIGNAL(testFinished(TestRunner*,TestResult)), this, SLOT(onTestFinished(TestRunner*,TestResult)));
@@ -196,6 +251,15 @@ private:
 
 #include "pubnub_fntest_runner.moc"
 
+static bool is_pull_request_build(void)
+{
+#if !defined _WIN32
+    char const* tprb = getenv("TRAVIS_PULL_REQUEST");
+    return (tprb != NULL) && (0 != strcmp(tprb, "false"));
+#else
+    return NULL != getenv("APPVEYOR_PULL_REQUEST_NUMBER");
+#endif
+}
 
 int main(int argc, char *argv[])
 {
@@ -206,9 +270,16 @@ int main(int argc, char *argv[])
     char const *origin = (argc > 3) ? argv[3] : "pubsub.pubnub.com";
     unsigned max_conc_thread = (argc > 4) ? std::atoi(argv[4]) : 1;
 
-    std::cout << "Using: pubkey == " << pubkey << ", keysub == " << keysub << ", origin == " << origin << std::endl;
+    std::cout << "Using: pubkey == " << pubkey << ", keysub == " << keysub << ", origin == "
+              << origin << std::endl;
 
-    TestController ctrl(m_aTest, TEST_COUNT, pubkey, keysub, origin, max_conc_thread);
+    TestController ctrl(m_aTest,
+                        TEST_COUNT,
+                        pubkey,
+                        keysub,
+                        origin,
+                        max_conc_thread,
+                        is_pull_request_build());
 
     QTimer::singleShot(0, &ctrl, SLOT(execute()));
     

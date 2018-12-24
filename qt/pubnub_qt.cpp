@@ -13,23 +13,25 @@ extern "C" {
 #define PUBNUB_MINIMAL_ACCEPTABLE_COMPRESSION_RATIO 10
 #define GZIP_HEADER_AND_FOOTER_LENGTH 18
 
-pubnub_qt::pubnub_qt(QString pubkey, QString keysub)
-    : d_pubkey(pubkey.toLatin1())
-    , d_keysub(keysub.toLatin1())
-    , d_context(new pbcc_context)
-    , d_http_code(0)
+pubnub_qt::pubnub_qt(QString pubkey, QString keysub) :
+    d_pubkey(pubkey.toLatin1()),
+    d_keysub(keysub.toLatin1()),
+    d_context(new pbcc_context),
+    d_http_code(0),
 #ifdef QT_NO_SSL
-    , d_origin("http://pubsub.pubnub.com")
-    , d_ssl_opts(0)
+    d_origin("http://pubsub.pubnub.com"),
+    d_ssl_opts(0),
 #else
-    , d_origin("https://pubsub.pubnub.com")
-    , d_ssl_opts(useSSL)
+    d_origin("https://pubsub.pubnub.com"),
+    d_ssl_opts(useSSL),
 #endif
-    , d_transaction_timeout_duration_ms(10000)
-    , d_transaction_timed_out(false)
-    , d_transactionTimer(new QTimer(this))
-    , d_use_http_keep_alive(true)
+    d_transaction_timeout_duration_ms(10000),
+    d_transaction_timed_out(false),
+    d_transactionTimer(new QTimer(this)),
+    d_use_http_keep_alive(true),
+    d_mutex(new QMutex(QMutex::Recursive))
 {
+    QMutexLocker lk(d_mutex);
     pbcc_init(d_context.data(), d_pubkey.data(), d_keysub.data());
     connect(&d_qnam, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)),
             this, SLOT(sslErrors(QNetworkReply*,QList<QSslError>)));
@@ -39,7 +41,11 @@ pubnub_qt::pubnub_qt(QString pubkey, QString keysub)
 
 pubnub_qt::~pubnub_qt()
 {
-    pbcc_deinit(d_context.data());
+    {
+        QMutexLocker lk(d_mutex);
+        pbcc_deinit(d_context.data());
+    }
+    delete d_mutex;
 }
 
 
@@ -84,22 +90,29 @@ pubnub_res pubnub_qt::startRequest(pubnub_res result, pubnub_trans transaction)
     return result;
 }
 
-
 void pubnub_qt::set_uuid(QString const &uuid)
 {
-    d_uuid = uuid.toLatin1();
-    pbcc_set_uuid(d_context.data(), d_uuid.data());
+    QMutexLocker lk(d_mutex);
+    pbcc_set_uuid(d_context.data(), uuid.isEmpty() ? NULL : uuid.toLatin1().data());
 }
 
+QString pubnub_qt::uuid() const
+{
+    QMutexLocker lk(d_mutex);
+    char const* uuid = pbcc_uuid_get(d_context.data());
+    return QString((NULL == uuid) ? "" : uuid);
+}
 
 void pubnub_qt::set_auth(QString const &auth)
 {
+    QMutexLocker lk(d_mutex);
     d_auth = auth.toLatin1();
     pbcc_set_auth(d_context.data(), d_auth.data());
 }
 
 QString pubnub_qt::get() const
 {
+    QMutexLocker lk(d_mutex);
     return pbcc_get_msg(d_context.data());
 }
 
@@ -107,6 +120,7 @@ QString pubnub_qt::get() const
 QStringList pubnub_qt::get_all() const
 {
     QStringList all;
+    QMutexLocker lk(d_mutex);
     while (char const *msg = pbcc_get_msg(d_context.data())) {
         if (nullptr == msg) {
             break;
@@ -119,6 +133,7 @@ QStringList pubnub_qt::get_all() const
 
 QString pubnub_qt::get_channel() const
 {
+    QMutexLocker lk(d_mutex);
     return pbcc_get_channel(d_context.data());
 }
 
@@ -126,6 +141,7 @@ QString pubnub_qt::get_channel() const
 QStringList pubnub_qt::get_all_channels() const
 {
     QStringList all;
+    QMutexLocker lk(d_mutex);
     while (char const *msg = pbcc_get_channel(d_context.data())) {
         if (nullptr == msg) {
             break;
@@ -138,6 +154,7 @@ QStringList pubnub_qt::get_all_channels() const
 
 void pubnub_qt::cancel()
 {
+    QMutexLocker lk(d_mutex);
     if (d_reply) {
         d_reply->abort();
     }
@@ -146,6 +163,7 @@ void pubnub_qt::cancel()
 
 pubnub_res pubnub_qt::publish(QString const &channel, QString const &message)
 {
+    QMutexLocker lk(d_mutex);
     d_publish_method = pubnubPublishViaGET;
     return startRequest(
         pbcc_publish_prep(
@@ -163,6 +181,7 @@ pubnub_res pubnub_qt::publish(QString const &channel, QString const &message)
 
 pubnub_res pubnub_qt::publish_via_post(QString const &channel, QByteArray const &message)
 {
+    QMutexLocker lk(d_mutex);
     d_publish_method = pubnubPublishViaPOST;
     d_message_to_publish = message;
     return startRequest(
@@ -214,6 +233,7 @@ static QByteArray pack_message_to_gzip(QByteArray const &message)
 
 pubnub_res pubnub_qt::publish_via_post_with_gzip(QString const &channel, QByteArray const &message)
 {
+    QMutexLocker lk(d_mutex);
     d_message_to_publish = pack_message_to_gzip(message);
     d_publish_method = (d_message_to_publish.size() != message.size()) ?
                        pubnubPublishViaPOSTwithGZIP :
@@ -233,6 +253,7 @@ pubnub_res pubnub_qt::publish_via_post_with_gzip(QString const &channel, QByteAr
 
 pubnub_res pubnub_qt::subscribe(QString const &channel, QString const &channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_subscribe_prep(
             d_context.data(),
@@ -246,6 +267,7 @@ pubnub_res pubnub_qt::subscribe(QString const &channel, QString const &channel_g
 
 pubnub_res pubnub_qt::leave(QString const &channel, QString const &channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_leave_prep(
             d_context.data(),
@@ -258,12 +280,14 @@ pubnub_res pubnub_qt::leave(QString const &channel, QString const &channel_group
 
 pubnub_res pubnub_qt::time()
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(pbcc_time_prep(d_context.data()), PBTT_TIME);
 }
 
 
 pubnub_res pubnub_qt::history(QString const &channel, unsigned count, bool include_token)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_history_prep(
             d_context.data(),
@@ -279,8 +303,15 @@ pubnub_res pubnub_qt::history(QString const &channel, unsigned count, bool inclu
 }
 
 
-pubnub_res pubnub_qt::history(QString const &channel, unsigned count, bool include_token, QString const& start, bool reverse, QString const& end, bool string_token)
+pubnub_res pubnub_qt::history(QString const &channel,
+                              unsigned count,
+                              bool include_token,
+                              QString const& start,
+                              bool reverse,
+                              QString const& end,
+                              bool string_token)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_history_prep(
             d_context.data(),
@@ -298,6 +329,7 @@ pubnub_res pubnub_qt::history(QString const &channel, unsigned count, bool inclu
 
 pubnub_res pubnub_qt::here_now(QString const &channel, QString const &channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_here_now_prep(
             d_context.data(),
@@ -312,16 +344,23 @@ pubnub_res pubnub_qt::here_now(QString const &channel, QString const &channel_gr
 
 pubnub_res pubnub_qt::global_here_now()
 {
-    return startRequest(pbcc_here_now_prep(d_context.data(), 0, 0, pbccNotSet, pbccNotSet), PBTT_GLOBAL_HERENOW);
+    QMutexLocker lk(d_mutex);
+    return startRequest(pbcc_here_now_prep(d_context.data(),
+                                           0,
+                                           0,
+                                           pbccNotSet,
+                                           pbccNotSet),
+                        PBTT_GLOBAL_HERENOW);
 }
 
 
 pubnub_res pubnub_qt::where_now(QString const &uuid)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_where_now_prep(
             d_context.data(),
-            uuid.isEmpty() ? d_uuid.data() : uuid.toLatin1().data()
+            uuid.isEmpty() ? pbcc_uuid_get(d_context.data()) : uuid.toLatin1().data()
             ), PBTT_WHERENOW
         );
 }
@@ -329,12 +368,13 @@ pubnub_res pubnub_qt::where_now(QString const &uuid)
 
 pubnub_res pubnub_qt::set_state(QString const &channel, QString const& channel_group, QString const &uuid, QString const &state)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_set_state_prep(
             d_context.data(),
             channel.isEmpty() ? 0 : channel.toLatin1().data(),
             channel_group.isEmpty() ? 0 : channel_group.toLatin1().data(),
-            uuid.isEmpty() ? d_uuid.data() : uuid.toLatin1().data(),
+            uuid.isEmpty() ? pbcc_uuid_get(d_context.data()) : uuid.toLatin1().data(),
             state.toLatin1().data()
             ), PBTT_SET_STATE
         );
@@ -343,12 +383,13 @@ pubnub_res pubnub_qt::set_state(QString const &channel, QString const& channel_g
 
 pubnub_res pubnub_qt::state_get(QString const &channel, QString const& channel_group, QString const &uuid)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_state_get_prep(
             d_context.data(),
             channel.isEmpty() ? 0 : channel.toLatin1().data(),
             channel_group.isEmpty() ? 0 : channel_group.toLatin1().data(),
-            uuid.isEmpty() ? d_uuid.data() : uuid.toLatin1().data()
+            uuid.isEmpty() ? pbcc_uuid_get(d_context.data()) : uuid.toLatin1().data()
             ), PBTT_STATE_GET
         );
 }
@@ -356,6 +397,7 @@ pubnub_res pubnub_qt::state_get(QString const &channel, QString const& channel_g
 
 pubnub_res pubnub_qt::remove_channel_group(QString const& channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_remove_channel_group_prep(
             d_context.data(),
@@ -367,6 +409,7 @@ pubnub_res pubnub_qt::remove_channel_group(QString const& channel_group)
 
 pubnub_res pubnub_qt::remove_channel_from_group(QString const &channel, QString const& channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_channel_registry_prep(
             d_context.data(),
@@ -380,6 +423,7 @@ pubnub_res pubnub_qt::remove_channel_from_group(QString const &channel, QString 
 
 pubnub_res pubnub_qt::add_channel_to_group(QString const &channel, QString const& channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_channel_registry_prep(
             d_context.data(),
@@ -394,6 +438,7 @@ pubnub_res pubnub_qt::add_channel_to_group(QString const &channel, QString const
 
 pubnub_res pubnub_qt::list_channel_group(QString const& channel_group)
 {
+    QMutexLocker lk(d_mutex);
     return startRequest(
         pbcc_channel_registry_prep(
             d_context.data(),
@@ -407,12 +452,14 @@ pubnub_res pubnub_qt::list_channel_group(QString const& channel_group)
 
 int pubnub_qt::last_http_code() const
 {
+    QMutexLocker lk(d_mutex);
     return d_http_code;
 }
 
 
 QString pubnub_qt::last_publish_result() const
 {
+    QMutexLocker lk(d_mutex);
     if (PUBNUB_DYNAMIC_REPLY_BUFFER && (nullptr == d_context->http_reply)) {
         return "";
     }
@@ -435,12 +482,14 @@ pubnub_publish_res pubnub_qt::parse_last_publish_result()
 
 QString pubnub_qt::last_time_token() const
 {
+    QMutexLocker lk(d_mutex);
     return d_context->timetoken;
 }
 
 
 void pubnub_qt::set_ssl_options(ssl_opts options)
 {
+    QMutexLocker lk(d_mutex);
     if (options & useSSL) {
         if (d_origin.startsWith("http:")) {
             d_origin.replace(0, 5, "https:");
@@ -457,6 +506,7 @@ void pubnub_qt::set_ssl_options(ssl_opts options)
 
 void pubnub_qt::set_origin(QString const& origin)
 {
+    QMutexLocker lk(d_mutex);
     d_origin = origin;
     if (!origin.startsWith("http:") && !origin.startsWith("https:")) {
         d_origin.prepend("http://");
@@ -467,6 +517,7 @@ void pubnub_qt::set_origin(QString const& origin)
 
 pubnub_res pubnub_qt::finish(QByteArray const &data, int http_code)
 {
+    QMutexLocker lk(d_mutex);
     pubnub_res pbres = PNR_OK;
     if (PUBNUB_DYNAMIC_REPLY_BUFFER) {
         pbcc_realloc_reply_buffer(d_context.data(), data.size());
@@ -537,6 +588,7 @@ pubnub_res pubnub_qt::finish(QByteArray const &data, int http_code)
 
 void pubnub_qt::transactionTimeout()
 {
+    QMutexLocker lk(d_mutex);
     if (d_reply) {
         d_transaction_timed_out = true;
         d_reply->abort();
@@ -546,6 +598,7 @@ void pubnub_qt::transactionTimeout()
 
 void pubnub_qt::httpFinished()
 {
+    QMutexLocker lk(d_mutex);
     d_transactionTimer->stop();
 
     QNetworkReply::NetworkError error = d_reply->error();
@@ -595,6 +648,7 @@ void pubnub_qt::sslErrors(QNetworkReply* reply,const QList<QSslError> &errors)
 
     qDebug() << "SSL error: " << errorString;
 
+    QMutexLocker lk(d_mutex);
     if (d_ssl_opts & ignoreSecureConnectionRequirement) {
         reply->ignoreSslErrors();
     }

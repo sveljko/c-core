@@ -97,7 +97,10 @@ namespace pubnub {
     public:
         futres(context &ctx, pubnub_res initial);
 
-        ~futres() {}
+        ~futres()
+        {
+            delete d_mutex;
+        }
 
         /// Gets the last (or latest) result of the transaction.
         pubnub_res last_result();
@@ -139,9 +142,12 @@ namespace pubnub {
 
         /// Returns if the transaction is over
         bool is_ready() const {
-            //QMutexLocker lk(&d_mutex);
+            QMutexLocker lk(d_mutex);
             return d_triggered;
         }
+
+        /// Parses the last (or latest) result of the transaction 'publish'.
+        pubnub_publish_res parse_last_publish_result();
         
         // We can construct from a temporary
 #if __cplusplus >= 201103L
@@ -156,6 +162,7 @@ namespace pubnub {
         futres(futres &x);
 
         void signal(pubnub_res result) {
+            QMutexLocker lk(d_mutex);
             qDebug() << "signal" << result << d_triggered << this;
             d_triggered = true;
             d_result = result;
@@ -168,6 +175,8 @@ namespace pubnub {
         pubnub_res d_result;
 
         bool d_triggered;
+         
+        mutable QMutex* d_mutex;
     };
 	
     /** Options for Publish v2. These are designed to be used as
