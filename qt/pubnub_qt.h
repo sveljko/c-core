@@ -92,7 +92,7 @@ public:
     /** Returns the current auth key */
     QString auth() const
     {
-        QMutexLocker lk(d_mutex);
+        QMutexLocker lk(&d_mutex);
         return d_auth;
     }
 
@@ -123,7 +123,7 @@ public:
 
     /** Returns the current origin */
     QString const& origin() const {
-        QMutexLocker lk(d_mutex);
+        QMutexLocker lk(&d_mutex);
         return d_origin;
     }
 
@@ -807,7 +807,7 @@ private:
     /// Message to publish via POST method
     QByteArray d_message_to_publish;
 
-    mutable QMutex* d_mutex;
+    mutable QMutex d_mutex;
 };
 
 

@@ -118,6 +118,7 @@ void pbcc_set_uuid(struct pbcc_context* pb, const char* uuid)
     if (uuid != NULL) {
         PUBNUB_ASSERT_OPT(strlen(uuid) < sizeof pb->uuid);
         strncpy(pb->uuid, uuid, sizeof pb->uuid);
+        pb->uuid[(sizeof pb->uuid) - 1] = '\0';
     }
     else {
         pb->uuid[0] = '\0';

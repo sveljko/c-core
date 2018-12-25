@@ -26,7 +26,7 @@ struct pbcc_context {
     /** The subscribe key (to use when subscribing) */
     char const* subscribe_key;
     /** The UUID to be sent to server. If empty string, don't send any */
-    char uuid[UUID_STRING_LENGTH];
+    char uuid[UUID_SIZE];
     /** The `auth` parameter to be sent to server. If NULL, don't send
      * any */
     char const* auth;

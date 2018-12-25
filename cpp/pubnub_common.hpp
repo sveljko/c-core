@@ -350,7 +350,6 @@ public:
         , d_ksub(subkey)
     {
         pubnub_mutex_init(d_mutex);
-        lock_guard lck(d_mutex);
         d_pb = pubnub_alloc();
         if (0 == d_pb) {
             throw std::bad_alloc();
@@ -413,7 +412,6 @@ public:
      */
     void set_uuid(std::string const& uuid)
     {
-        lock_guard lck(d_mutex);
         pubnub_set_uuid(d_pb, uuid.empty() ? NULL : uuid.c_str());
     }
     /// Set the UUID to a random-generated one
@@ -430,7 +428,6 @@ public:
     /// Returns the current UUID
     std::string const uuid() const
     {
-        lock_guard lck(d_mutex);
         char const* uuid = pubnub_uuid_get(d_pb);
         return std::string((NULL == uuid) ? "" : uuid);
     }
@@ -440,7 +437,6 @@ public:
     /// @see pubnub_get
     std::string get() const
     {
-        lock_guard lck(d_mutex);
         char const* msg = pubnub_get(d_pb);
         return (NULL == msg) ? "" : msg;
     }
@@ -448,7 +444,6 @@ public:
     std::vector<std::string> get_all() const
     {
         std::vector<std::string> all;
-        lock_guard lck(d_mutex);
         while (char const* msg = pubnub_get(d_pb)) {
             if (NULL == msg) {
                 break;
@@ -465,7 +460,6 @@ public:
     /// @see pubnub_get
     std::string get_decrypted(std::string const& cipher_key) const
     {
-        lock_guard lck(d_mutex);
         pubnub_bymebl_t mebl =
             pubnub_get_decrypted_alloc(d_pb, cipher_key.c_str());
         if (NULL == mebl.ptr) {
@@ -482,7 +476,6 @@ public:
     std::vector<std::string> get_all_decrypted(std::string const& cipher_key) const
     {
         std::vector<std::string> all;
-        lock_guard lck(d_mutex);
         for (;;) {
             pubnub_bymebl_t mebl =
                 pubnub_get_decrypted_alloc(d_pb, cipher_key.c_str());
@@ -501,7 +494,6 @@ public:
     /// @see pubnub_get_channel
     std::string get_channel() const
     {
-        lock_guard lck(d_mutex);
         char const* chan = pubnub_get_channel(d_pb);
         return (NULL == chan) ? "" : chan;
     }
@@ -510,7 +502,6 @@ public:
     std::vector<std::string> get_all_channels() const
     {
         std::vector<std::string> all;
-        lock_guard lck(d_mutex);
         while (char const* msg = pubnub_get_channel(d_pb)) {
             if (NULL == msg) {
                 break;
@@ -525,7 +516,6 @@ public:
     /// @see pubnub_cancel
     enum pubnub_cancel_res cancel()
     {
-        lock_guard lck(d_mutex);
         return pubnub_cancel(d_pb);
     }
 
@@ -534,7 +524,6 @@ public:
     /// @see pubnub_publish
     inline futres publish(std::string const& channel, std::string const& message)
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_publish(d_pb, channel.c_str(), message.c_str()));
     }
 
@@ -564,7 +553,6 @@ public:
                              std::string const& message,
                              std::string const& cipher_key)
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_publish_encrypted(
             d_pb, channel.c_str(), message.c_str(), cipher_key.c_str()));
     }
@@ -577,7 +565,6 @@ public:
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
         char const* gr = channel_group.empty() ? 0 : channel_group.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_subscribe(d_pb, ch, gr));
     }
 
@@ -595,7 +582,6 @@ public:
     futres subscribe(std::string const& channel, subscribe_options opt)
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_subscribe_ex(d_pb, ch, opt.data()));
     }
 
@@ -612,7 +598,6 @@ public:
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
         char const* gr = channel_group.empty() ? 0 : channel_group.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_leave(d_pb, ch, gr));
     }
 
@@ -629,7 +614,6 @@ public:
     /// @see pubnub_time
     futres time()
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_time(d_pb));
     }
 
@@ -643,7 +627,6 @@ public:
                    bool               include_token = false)
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_history(d_pb, ch, count, include_token));
     }
 
@@ -652,7 +635,6 @@ public:
     futres history(std::string const& channel, history_options opt)
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_history_ex(d_pb, ch, opt.data()));
     }
 
@@ -664,7 +646,6 @@ public:
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
         char const* gr = channel_group.empty() ? 0 : channel_group.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_heartbeat(d_pb, ch, gr));
     }
 
@@ -684,7 +665,6 @@ public:
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
         char const* gr = channel_group.empty() ? 0 : channel_group.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_here_now(d_pb, ch, gr));
     }
 
@@ -702,7 +682,6 @@ public:
     futres here_now(std::string const& channel, here_now_options opt)
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_here_now_ex(d_pb, ch, opt.data()));
     }
 
@@ -718,7 +697,6 @@ public:
     /// @see pubnub_global_here_now
     futres global_here_now()
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_global_here_now(d_pb));
     }
 
@@ -728,7 +706,6 @@ public:
     /// @see pubnub_where_now
     futres where_now(std::string const& uuid = "")
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_where_now(d_pb, uuid.empty() ? NULL : uuid.c_str()));
     }
 
@@ -742,7 +719,6 @@ public:
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
         char const* gr = channel_group.empty() ? 0 : channel_group.c_str();
-        lock_guard lck(d_mutex);
         return doit(pubnub_set_state(d_pb, ch, gr, uuid.c_str(), state.c_str()));
     }
 
@@ -767,7 +743,6 @@ public:
     {
         char const* ch = channel.empty() ? 0 : channel.c_str();
         char const* gr = channel_group.empty() ? 0 : channel_group.c_str();
-        lock_guard lck(d_mutex);
         return doit(
             pubnub_state_get(d_pb, ch, gr, uuid.empty() ? NULL : uuid.c_str()));
     }
@@ -782,7 +757,6 @@ public:
     /// @see pubnub_remove_channel_group
     futres remove_channel_group(std::string const& channel_group)
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_remove_channel_group(d_pb, channel_group.c_str()));
     }
 
@@ -791,7 +765,6 @@ public:
     futres remove_channel_from_group(std::string const& channel,
                                      std::string const& channel_group)
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_remove_channel_from_group(
             d_pb, channel.c_str(), channel_group.c_str()));
     }
@@ -809,7 +782,6 @@ public:
     futres add_channel_to_group(std::string const& channel,
                                 std::string const& channel_group)
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_add_channel_to_group(
             d_pb, channel.c_str(), channel_group.c_str()));
     }
@@ -827,7 +799,6 @@ public:
     /// @see pubnub_list_channel_group
     futres list_channel_group(std::string const& channel_group)
     {
-        lock_guard lck(d_mutex);
         return doit(pubnub_list_channel_group(d_pb, channel_group.c_str()));
     }
 
@@ -835,7 +806,6 @@ public:
     /// @see pubnub_last_http_code
     int last_http_code() const
     {
-        lock_guard lck(d_mutex);
         return pubnub_last_http_code(d_pb);
     }
 
@@ -843,7 +813,6 @@ public:
     /// @see pubnub_last_publish_result
     std::string last_publish_result() const
     {
-        lock_guard lck(d_mutex);
         return pubnub_last_publish_result(d_pb);
     }
 
@@ -859,7 +828,6 @@ public:
     /// @see pubnub_last_time_token
     std::string last_time_token() const
     {
-        lock_guard lck(d_mutex);
         return pubnub_last_time_token(d_pb);
     }
 
@@ -867,7 +835,6 @@ public:
     /// @see pubnub_set_blocking_io, pubnub_set_non_blocking_io
     int set_blocking_io(blocking_io e)
     {
-        lock_guard lck(d_mutex);
         if (blocking == e) {
             return pubnub_set_blocking_io(d_pb);
         }
@@ -880,7 +847,6 @@ public:
     /// @see pubnub_set_ssl_options
     void set_ssl_options(ssl_opt options)
     {
-        lock_guard lck(d_mutex);
         pubnub_set_ssl_options(d_pb,
                                (options & useSSL) != 0,
                                (options & ignoreSecureConnectionRequirement) != 0);
@@ -890,7 +856,6 @@ public:
     /// @see pubnub_set_reuse_ssl_session
     void reuse_ssl_session()
     {
-        lock_guard lck(d_mutex);
         pubnub_set_reuse_ssl_session(d_pb, true);
     }
 
@@ -898,7 +863,6 @@ public:
     /// @see pubnub_set_reuse_ssl_session
     void dont_reuse_ssl_session()
     {
-        lock_guard lck(d_mutex);
         pubnub_set_reuse_ssl_session(d_pb, false);
     }
 
@@ -906,7 +870,6 @@ public:
     /// @see pubnub_use_http_keep_alive
     void use_http_keep_alive()
     {
-        lock_guard lck(d_mutex);
         pubnub_use_http_keep_alive(d_pb);
     }
 
@@ -914,7 +877,6 @@ public:
     /// @see pubnub_dont_use_http_keep_alive
     void dont_use_http_keep_alive()
     {
-        lock_guard lck(d_mutex);
         pubnub_dont_use_http_keep_alive(d_pb);
     }
 
@@ -926,7 +888,6 @@ public:
                          uint16_t           port)
     {
         pubnub_proxy_type ccore_proxy = ccore_proxy_type(protocol);
-        lock_guard lck(d_mutex);
         return pubnub_set_proxy_manual(
             d_pb, ccore_proxy, ip_address_or_url.c_str(), port);
     }
@@ -936,7 +897,6 @@ public:
     int set_proxy_from_system(proxy_type protocol)
     {
         pubnub_proxy_type ccore_proxy = ccore_proxy_type(protocol);
-        lock_guard lck(d_mutex);
         return pubnub_set_proxy_from_system(d_pb, ccore_proxy);
     }
 
@@ -945,7 +905,6 @@ public:
     int set_proxy_authentication_username_password(std::string const& username,
                                                    std::string const& password)
     {
-        lock_guard lck(d_mutex);
         return pubnub_set_proxy_authentication_username_password(
             d_pb, username.c_str(), password.c_str());
     }
@@ -954,7 +913,6 @@ public:
     /// @see pubnub_set_proxy_authentication_scheme_none
     int set_proxy_authentication_none()
     {
-        lock_guard lck(d_mutex);
         return pubnub_set_proxy_authentication_none(d_pb);
     }
 #endif
@@ -963,13 +921,11 @@ public:
     /// Sets the transaction timeout duration
     int set_transaction_timeout(std::chrono::milliseconds duration)
     {
-        lock_guard lck(d_mutex);
         return pubnub_set_transaction_timeout(d_pb, duration.count());
     }
     /// Returns the transaction timeout duration
     std::chrono::milliseconds transaction_timeout_get()
     {
-        lock_guard lck(d_mutex);
         std::chrono::milliseconds result(pubnub_transaction_timeout_get(d_pb));
         return result;
     }
@@ -977,12 +933,10 @@ public:
     /// Returns the transaction timeout duration
     int set_transaction_timeout(int duration_ms)
     {
-        lock_guard lck(d_mutex);
         return pubnub_set_transaction_timeout(d_pb, duration_ms);
     }
     int transaction_timeout_get()
     {
-        lock_guard lck(d_mutex);
         return pubnub_transaction_timeout_get(d_pb);
     }
 #endif
@@ -992,7 +946,6 @@ public:
     /// @see pubnub_free
     int free()
     {
-        lock_guard lck(d_mutex);
         int rslt = pubnub_free(d_pb);
         if (0 == rslt) {
             d_pb = 0;
@@ -1006,7 +959,6 @@ public:
     /// @see pubnub_free_with_timeout()
     int free_with_timeout(std::chrono::milliseconds duration)
     {
-        lock_guard lck(d_mutex);
         int rslt = pubnub_free_with_timeout(d_pb, duration.count());
         if (0 == rslt) {
             d_pb = 0;
@@ -1019,7 +971,6 @@ public:
     /// @see pubnub_free_with_timeout()
     int free_with_timeout(int duration_ms)
     {
-        lock_guard lck(d_mutex);
         int rslt = pubnub_free_with_timeout(d_pb, duration_ms);
         if (0 == rslt) {
             d_pb = 0;
@@ -1030,11 +981,8 @@ public:
 
     ~context()
     {
-        {
-            lock_guard lck(d_mutex);
-            if (d_pb) {
-                pubnub_free_with_timeout(d_pb, 1000);
-            }
+        if (d_pb) {
+            pubnub_free_with_timeout(d_pb, 1000);
         }
         pubnub_mutex_destroy(d_mutex);
     }

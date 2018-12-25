@@ -5,7 +5,7 @@ platform:
 environment:
   matrix:
     - BUILD_TYPE: nmake
-    - QT5: C:\Qt\5.11\mingw53_32
+      QT5: C:\Qt\5.11\mingw53_32
       MINGW: C:\Qt\Tools\mingw530_32
 
 before_build:
