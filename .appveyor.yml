@@ -24,6 +24,7 @@ build_script:
     mingw32-make &&
     qmake pubnub_gui.pro CONFIG+=release DESTDIR=. &&
     mingw32-make
+  - cd ..
 
 test_script:
   - core\pubnub_proxy_NTLM_test
