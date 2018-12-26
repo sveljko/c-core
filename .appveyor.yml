@@ -32,6 +32,6 @@ test_script:
   - openssl\pubnub_fntest
   - cpp\fntest_runner
   - cpp\openssl\fntest_runner
-  - qt\fn_test
+  - qt\release\fn_test
 
 deploy: off
