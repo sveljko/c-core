@@ -362,7 +362,6 @@ public:
         , d_ksub(subkey)
     {
         pubnub_mutex_init(d_mutex);
-        lock_guard lck(d_mutex);
         d_pb = pubnub_alloc();
         if (0 == d_pb) {
             throw std::bad_alloc();

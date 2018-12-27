@@ -12,7 +12,6 @@ using namespace pubnub;
 futres::futres(context &ctx, pubnub_res initial) :
     d_ctx(ctx), d_result(initial), d_triggered(false), d_mutex(QMutex::Recursive) 
 {
-    QMutexLocker lk(&d_mutex);
     connect(&ctx.d_pbqt, SIGNAL(outcome(pubnub_res)), this, SLOT(onOutcome(pubnub_res)));
 }
 
@@ -24,7 +23,6 @@ futres::futres(futres &&x) :
     d_triggered(x.d_triggered),
     d_mutex(QMutex::Recursive)
 {
-    QMutexLocker lk(&d_mutex);
     disconnect(&d_ctx.d_pbqt, SIGNAL(outcome(pubnub_res)), &x, SLOT(onOutcome(pubnub_res)));
     connect(&d_ctx.d_pbqt, SIGNAL(outcome(pubnub_res)), this, SLOT(onOutcome(pubnub_res)));
 }
@@ -35,7 +33,6 @@ futres::futres(futres const &x) :
     d_triggered(false),
     d_mutex(QMutex(QMutex::Recursive))
 {
-    QMutexLocker lk(&d_mutex);
     connect(&d_ctx.d_pbqt, SIGNAL(outcome(pubnub_res)), this, SLOT(onOutcome(pubnub_res)));
 }
 #endif
