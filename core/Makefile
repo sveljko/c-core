@@ -1,6 +1,6 @@
-PROJECT_SOURCEFILES = pubnub_pubsubapi.c pubnub_coreapi.c pubnub_ccore_pubsub.c pubnub_ccore.c pubnub_netcore.c pubnub_alloc_static.c pubnub_assert_std.c pubnub_json_parse.c pubnub_keep_alive.c pubnub_helper.c
+PROJECT_SOURCEFILES = pubnub_pubsubapi.c pubnub_coreapi.c pubnub_ccore_pubsub.c pubnub_ccore.c pubnub_netcore.c pubnub_alloc_static.c pubnub_assert_std.c pubnub_json_parse.c pubnub_keep_alive.c pubnub_helper.c pubnub_url_encode.c
 
-all: pubnub_proxy_unittest pubnub_timer_list_unittest unittest
+all: pubnub_proxy_unittest pubnub_timer_list_unittest unittest pubnub_dns_codec_unit_test
 
 OS := $(shell uname)
 # Coverage doesn't seem to work on MacOS for some reason, but, since
@@ -41,7 +41,7 @@ unittest: $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c
 TIMER_LIST_SOURCEFILES = pubnub_alloc_static.c pubnub_assert_std.c pubnub_timers.c
 
 pubnub_timer_list_unittest: pubnub_timer_list.c pubnub_timer_list_unit_test.c
-	gcc -o pubnub_timer_list_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_CALLBACK_API -D PUBNUB_ASSERT_LEVEL_NONE -Wall $(COVERAGE_FLAGS) -fPIC $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
+	gcc -o pubnub_timer_list_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_CALLBACK_API -Wall $(COVERAGE_FLAGS) -fPIC $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_timer_list_unit_testo  $(CFLAGS) -D PUBNUB_CALLBACK_API -Wall $(COVERAGE_FLAGS) $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_timer_list_unit_test.so
 	#$(GCOVR) -r . --html --html-details -o coverage.html
@@ -53,5 +53,13 @@ pubnub_proxy_unittest: $(PROJECT_SOURCEFILES) $(PROXY_PROJECT_SOURCEFILES) pubnu
 	$(CGREEN_RUNNER) ./pubnub_proxy_unit_test.so
 	#$(GCOVR) -r . --html --html-details -o coverage.html
 
+DNS_CODEC_SOURCE_FILES = pubnub_assert_std.c 
+
+pubnub_dns_codec_unit_test: ../lib/pubnub_dns_codec.c pubnub_dns_codec_unit_test.c
+	gcc -o pubnub_dns_codec_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -Wall $(COVERAGE_FLAGS) -fPIC $(DNS_CODEC_SOURCE_FILES) ../lib/pubnub_dns_codec.c pubnub_dns_codec_unit_test.c -lcgreen -lm
+#	gcc -o pubnub_dns_codec_unit_testo $(CFLAGS) -Wall $(COVERAGE_FLAGS) $(DNS_CODEC_SOURCE_FILES) ../lib/pubnub_dns_codec.c pubnub_dns_codec_unit_test.c -lcgreen -lm
+	$(CGREEN_RUNNER) ./pubnub_dns_codec_unit_test.so
+	#$(GCOVR) -r . --html --html-details -o coverage.html
+
 clean:
-	rm pubnub_core_unit_test.so pubnub_timer_list_unit_test.so pubnub_proxy_unit_test.so *.gcda *.gcno *.html
+	rm pubnub_core_unit_test.so pubnub_timer_list_unit_test.so pubnub_proxy_unit_test.so pubnub_dns_codec_unit_test.so *.gcda *.gcno *.html

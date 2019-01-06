@@ -5,12 +5,17 @@
 #include "pubnub_internal.h"
 #include "pubnub_assert.h"
 #include "pubnub_version.h"
+#include "pubnub_url_encode.h"
 
 #include <string.h>
 #include <stdio.h>
 
 
-static enum pubnub_res append_url_param(struct pbcc_context *pb, char const *param_name, size_t param_name_len, char const *param_val, char separator)
+static enum pubnub_res append_url_param(struct pbcc_context *pb,
+                                        char const *param_name,
+                                        size_t param_name_len,
+                                        char const *param_val,
+                                        char separator)
 {
     size_t param_val_len = strlen(param_val);
     if (pb->http_buf_len + 1 + param_name_len + 1 + param_val_len > sizeof pb->http_buf) {
@@ -37,8 +42,12 @@ static enum pubnub_res append_url_param(struct pbcc_context *pb, char const *par
         }                                                               \
     }
 
-static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p, const char *channel, const char *channel_group, char const *state)
+static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
+                                                      const char *channel,
+                                                      const char *channel_group,
+                                                      char const *state)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const *pmessage = state;
 
     if (NULL == channel) {
@@ -54,12 +63,13 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p, co
     p->http_content_len = 0;
     p->msg_ofs = p->msg_end = 0;
 
-    p->http_buf_len = snprintf(
-        p->http_buf, sizeof(p->http_buf),
-        "/subscribe/%s/%s/0/%s?pnsdk=%s&state=",
-        p->subscribe_key, channel, p->timetoken,
-        pubnub_uname()
-        );
+    p->http_buf_len = snprintf(p->http_buf,
+                               sizeof(p->http_buf),
+                               "/subscribe/%s/%s/0/%s?pnsdk=%s&state=",
+                               p->subscribe_key,
+                               pubnub_url_encode(buffer, channel),
+                               p->timetoken,
+                               pubnub_uname());
     while (pmessage[0]) {
         /* RFC 3986 Unreserved characters plus few
          * safe reserved ones. */

@@ -5,6 +5,7 @@
 #include "pubnub_internal.h"
 #include "pubnub_json_parse.h"
 #include "pubnub_log.h"
+#include "pubnub_url_encode.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -437,6 +438,7 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context*        pb,
                                   char const*                 meta,
                                   enum pubnub_publish_method  method)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* const uname = pubnub_uname();
     char const*       uuid = pbcc_uuid_get(pb);
     enum pubnub_res   rslt = PNR_OK;
@@ -449,7 +451,7 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context*        pb,
                                 "/publish/%s/%s/0/%s/0",
                                 pb->publish_key,
                                 pb->subscribe_key,
-                                channel);
+                                pubnub_url_encode(buffer, channel));
 
     if (pubnubPublishViaGET == method) {
         pb->http_buf[pb->http_buf_len++] = '/';
@@ -491,6 +493,7 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
                                     char const*          channel_group,
                                     unsigned*            heartbeat)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(p);
 
     if (NULL == channel) {
@@ -510,7 +513,7 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
                                sizeof(p->http_buf),
                                "/subscribe/%s/%s/0/%s?pnsdk=%s",
                                p->subscribe_key,
-                               channel,
+                               pubnub_url_encode(buffer, channel),
                                p->timetoken,
                                pubnub_uname());
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');

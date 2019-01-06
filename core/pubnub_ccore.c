@@ -6,6 +6,7 @@
 #include "pubnub_internal.h"
 #include "pubnub_json_parse.h"
 #include "pubnub_log.h"
+#include "pubnub_url_encode.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -100,6 +101,7 @@ enum pubnub_res pbcc_leave_prep(struct pbcc_context* pb,
                                 const char*          channel,
                                 const char*          channel_group)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(pb);
 
     if (NULL == channel) {
@@ -119,7 +121,7 @@ enum pubnub_res pbcc_leave_prep(struct pbcc_context* pb,
                  sizeof pb->http_buf,
                  "/v2/presence/sub-key/%s/channel/%s/leave?pnsdk=%s",
                  pb->subscribe_key,
-                 channel,
+                 pubnub_url_encode(buffer, channel),
                  pubnub_uname());
     APPEND_URL_PARAM_M(pb, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(pb, "uuid", uuid, '&');
@@ -158,6 +160,8 @@ enum pubnub_res pbcc_history_prep(struct pbcc_context* pb,
                                   char const*          start,
                                   char const*          end)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
+
     if (pb->msg_ofs < pb->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
@@ -169,7 +173,7 @@ enum pubnub_res pbcc_history_prep(struct pbcc_context* pb,
                                 sizeof pb->http_buf,
                                 "/v2/history/sub-key/%s/channel/%s?pnsdk=%s",
                                 pb->subscribe_key,
-                                channel,
+                                pubnub_url_encode(buffer, channel),
                                 pubnub_uname());
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
     APPEND_URL_PARAM_UNSIGNED_M(pb, "count", count, '&');
@@ -187,6 +191,7 @@ enum pubnub_res pbcc_heartbeat_prep(struct pbcc_context* pb,
                                     const char*          channel,
                                     const char*          channel_group)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(pb);
 
     if (NULL == channel) {
@@ -207,7 +212,7 @@ enum pubnub_res pbcc_heartbeat_prep(struct pbcc_context* pb,
                  sizeof pb->http_buf,
                  "/v2/presence/sub-key/%s/channel/%s/heartbeat?pnsdk=%s",
                  pb->subscribe_key,
-                 channel,
+                 pubnub_url_encode(buffer, channel),
                  pubnub_uname());
     APPEND_URL_PARAM_M(pb, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
@@ -223,6 +228,7 @@ enum pubnub_res pbcc_here_now_prep(struct pbcc_context* pb,
                                    enum pubnub_tribool  disable_uuids,
                                    enum pubnub_tribool  state)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(pb);
 
     if (NULL == channel) {
@@ -242,7 +248,7 @@ enum pubnub_res pbcc_here_now_prep(struct pbcc_context* pb,
                                 "/v2/presence/sub-key/%s%s%s?pnsdk=%s",
                                 pb->subscribe_key,
                                 channel ? "/channel/" : "",
-                                channel ? channel : "",
+                                channel ? pubnub_url_encode(buffer, channel) : "",
                                 pubnub_uname());
     APPEND_URL_PARAM_M(pb, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
@@ -282,6 +288,8 @@ enum pubnub_res pbcc_set_state_prep(struct pbcc_context* pb,
                                     const char*          uuid,
                                     char const*          state)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
+
     PUBNUB_ASSERT_OPT(uuid != NULL);
     PUBNUB_ASSERT_OPT(state != NULL);
 
@@ -300,7 +308,7 @@ enum pubnub_res pbcc_set_state_prep(struct pbcc_context* pb,
         sizeof pb->http_buf,
         "/v2/presence/sub-key/%s/channel/%s/uuid/%s/data?pnsdk=%s&state=%s",
         pb->subscribe_key,
-        channel,
+        pubnub_url_encode(buffer, channel),
         uuid,
         pubnub_uname(),
         state);
@@ -316,6 +324,8 @@ enum pubnub_res pbcc_state_get_prep(struct pbcc_context* pb,
                                     char const*          channel_group,
                                     const char*          uuid)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
+
     PUBNUB_ASSERT_OPT(uuid != NULL);
 
     if (NULL == channel) {
@@ -333,7 +343,7 @@ enum pubnub_res pbcc_state_get_prep(struct pbcc_context* pb,
                  sizeof pb->http_buf,
                  "/v2/presence/sub-key/%s/channel/%s/uuid/%s?pnsdk=%s",
                  pb->subscribe_key,
-                 channel,
+                 pubnub_url_encode(buffer, channel),
                  uuid,
                  pubnub_uname());
     APPEND_URL_PARAM_M(pb, "channel-group", channel_group, '&');
@@ -366,6 +376,8 @@ enum pubnub_res pbcc_channel_registry_prep(struct pbcc_context* pb,
                                            char const*          param,
                                            char const*          channel)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
+
     PUBNUB_ASSERT_OPT(channel_group != NULL);
 
     pb->http_buf_len = snprintf(
@@ -378,7 +390,11 @@ enum pubnub_res pbcc_channel_registry_prep(struct pbcc_context* pb,
     if (NULL != param) {
         enum pubnub_res rslt;
         PUBNUB_ASSERT_OPT(channel != NULL);
-        rslt = pbcc_append_url_param(pb, param, strlen(param), channel, '&');
+        rslt = pbcc_append_url_param(pb,
+                                     param,
+                                     strlen(param),
+                                     pubnub_url_encode(buffer, channel),
+                                     '&');
         if (rslt != PNR_OK) {
             return rslt;
         }

@@ -9,6 +9,7 @@
 #include "pubnub_log.h"
 #include "pubnub_version.h"
 #include "pubnub_json_parse.h"
+#include "pubnub_url_encode.h"
 
 #include "pbpal.h"
 
@@ -43,6 +44,7 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                          unsigned*            heartbeat,
                                          char const*          filter_expr)
 {
+    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char        region_str[20];
     char const* tr;
 
@@ -72,7 +74,7 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                sizeof(p->http_buf),
                                "/v2/subscribe/%s/%s/0?tt=%s&pnsdk=%s",
                                p->subscribe_key,
-                               channel,
+                               pubnub_url_encode(buffer, channel),
                                p->timetoken,
                                pubnub_uname());
     APPEND_URL_PARAM_M(p, "tr", tr, '&');
