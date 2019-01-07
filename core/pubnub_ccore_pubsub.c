@@ -445,13 +445,17 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context*        pb,
 
     PUBNUB_ASSERT_OPT(message != NULL);
 
+    if ((rslt = pubnub_url_encode(buffer, channel)) != PNR_OK) {
+        return rslt;
+    }
+
     pb->http_content_len = 0;
     pb->http_buf_len     = snprintf(pb->http_buf,
-                                sizeof pb->http_buf,
-                                "/publish/%s/%s/0/%s/0",
-                                pb->publish_key,
-                                pb->subscribe_key,
-                                pubnub_url_encode(buffer, channel));
+                                    sizeof pb->http_buf,
+                                    "/publish/%s/%s/0/%s/0",
+                                    pb->publish_key,
+                                    pb->subscribe_key,
+                                    buffer);
 
     if (pubnubPublishViaGET == method) {
         pb->http_buf[pb->http_buf_len++] = '/';
@@ -495,6 +499,7 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(p);
+    enum pubnub_res res;
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -505,6 +510,9 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
+    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
+        return res;
+    }
 
     p->http_content_len = 0;
     p->msg_ofs = p->msg_end = 0;
@@ -513,7 +521,7 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
                                sizeof(p->http_buf),
                                "/subscribe/%s/%s/0/%s?pnsdk=%s",
                                p->subscribe_key,
-                               pubnub_url_encode(buffer, channel),
+                               buffer,
                                p->timetoken,
                                pubnub_uname());
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');

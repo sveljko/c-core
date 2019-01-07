@@ -14,8 +14,8 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
 {
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name(this_test_name_));
+    std::string const ch(pnfntst_make_name("test|name"));
+    std::string const two(pnfntst_make_name("that(name)"));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string       two_three = two + comma + three;
 
@@ -41,8 +41,8 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
     std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name(this_test_name_));
-    std::string const three(pnfntst_make_name(this_test_name_));
+    std::string const two(pnfntst_make_name("?test&name"));
+    std::string const three(pnfntst_make_name("two_peaks^^name"));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       two_three = two + comma + three;
 
@@ -145,13 +145,20 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
 
     SENSE(pbp.publish(ch, "\"Test M4-2\"")).in(Td) == PNR_OK;
     SENSE(pbp.subscribe("", gr)).in(Td) == PNR_OK;
-
+/* On 'Qt' message published on a simple channel reaches its destination
+ * even though the transaction is canceled.
+ * Somehow it's quite probable that 'that' won't happen on posix.
+ */
+#if (!defined(INC_PUBNUB_QT) || !defined(_WIN32))
     if (PNR_CANCELLED == result) {
         EXPECT_TRUE(got_messages(pbp, {"\"Test M4-2\""}));
     }
     else {
+#endif
         EXPECT_TRUE(got_messages(pbp, {"\"Test M44\"", "\"Test M4-2\""}));
+#if (!defined(INC_PUBNUB_QT) || !defined(_WIN32))
     }
+#endif
 
     pbp.set_blocking_io(non_blocking);
     auto futr_2 = pbp.subscribe("", gr);

@@ -69,8 +69,8 @@ TEST_ENDDEF
 TEST_DEF_NEED_CHGROUP(connect_and_send_over_several_channels_in_group_simultaneously)
 {
     context           pbp(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name(this_test_name_));
+    std::string const ch(pnfntst_make_name("ch"));
+    std::string const two(pnfntst_make_name("two"));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       ch_two = ch + comma + two;
 
@@ -116,9 +116,9 @@ TEST_ENDDEF
 TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_multi_channel_simultaneously)
 {
     context           pbp(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name(this_test_name_));
-    std::string const three(pnfntst_make_name(this_test_name_));
+    std::string const ch(pnfntst_make_name("c>h"));
+    std::string const two(pnfntst_make_name("<two"));
+    std::string const three(pnfntst_make_name("<three>"));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       ch_two = ch + comma + two;
 
@@ -165,7 +165,7 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
 {
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name(this_test_name_));
+    std::string const ch(pnfntst_make_name("c?h"));
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string       ch_two = ch + comma + two;
 
@@ -212,8 +212,8 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_several_channels_in_group_simulta
 {
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name(this_test_name_));
+    std::string const ch(pnfntst_make_name("$ch"));
+    std::string const two(pnfntst_make_name("this#test!name"));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       ch_two = ch + comma + two;
 
@@ -263,8 +263,8 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_multi_channe
 {
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name(this_test_name_));
+    std::string const ch(pnfntst_make_name("this@name"));
+    std::string const two(pnfntst_make_name("that%name"));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       ch_two = ch + comma + two;

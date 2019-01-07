@@ -45,6 +45,7 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                          char const*          filter_expr)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
+    enum pubnub_res res;
     char        region_str[20];
     char const* tr;
 
@@ -56,6 +57,9 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
     }
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
+    }
+    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
+        return res;
     }
 
     if ('\0' == p->timetoken[0]) {
@@ -74,7 +78,7 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                sizeof(p->http_buf),
                                "/v2/subscribe/%s/%s/0?tt=%s&pnsdk=%s",
                                p->subscribe_key,
-                               pubnub_url_encode(buffer, channel),
+                               buffer,
                                p->timetoken,
                                pubnub_uname());
     APPEND_URL_PARAM_M(p, "tr", tr, '&');

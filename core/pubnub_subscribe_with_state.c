@@ -49,6 +49,7 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const *pmessage = state;
+    enum pubnub_res res;
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -59,6 +60,9 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
+    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
+        return res;
+    }
 
     p->http_content_len = 0;
     p->msg_ofs = p->msg_end = 0;
@@ -67,7 +71,7 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
                                sizeof(p->http_buf),
                                "/subscribe/%s/%s/0/%s?pnsdk=%s&state=",
                                p->subscribe_key,
-                               pubnub_url_encode(buffer, channel),
+                               buffer,
                                p->timetoken,
                                pubnub_uname());
     while (pmessage[0]) {

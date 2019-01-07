@@ -2,17 +2,18 @@
 #include "pubnub_internal.h"
 
 #include "pubnub_url_encode.h"
+#include "pubnub_log.h"
 
 #include <string.h>
 
-char* pubnub_url_encode(char* buffer, char const* what)
+enum pubnub_res pubnub_url_encode(char* buffer, char const* what)
 {
     unsigned i = 0;
-    bool forced_finish = false;
 
     PUBNUB_ASSERT_OPT(buffer != NULL);
     PUBNUB_ASSERT_OPT(what != NULL);
 
+    *buffer='\0';
     while (what[0]) {
         /* RFC 3986 Unreserved characters plus few
          * safe reserved ones. */
@@ -22,15 +23,22 @@ char* pubnub_url_encode(char* buffer, char const* what)
             ",=:;@[]");
         if (okspan > 0) {
             if (okspan >= PUBNUB_MAX_URL_ENCODED_CHANNEL - i - 1) {
-                okspan = PUBNUB_MAX_URL_ENCODED_CHANNEL - i - 1;
-                forced_finish = true;
+                PUBNUB_LOG_ERROR("Error:|Url-encoded string is longer than permited.\n"
+                                 "      |PUBNUB_MAX_URL_ENCODED_CHANNEL = %d\n"
+                                 "      |url-encoded_stretch = \"%s\"\n"
+                                 "      |url-encoded-stretch_length = %zu\n"
+                                 "      |rest_of_the_string_to_be_encoded = \"%s\"\n"
+                                 "      |length_of_the_rest_of_the_string_to_be_encoded = %zu\n",
+                                 PUBNUB_MAX_URL_ENCODED_CHANNEL,
+                                 buffer,
+                                 strlen(buffer),
+                                 what,
+                                 strlen(what));
+                return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
             }
             memcpy(buffer + i, what, okspan);
             i += okspan;
             buffer[i] = '\0';
-            if (forced_finish) {
-                break;
-            }
             what += okspan;
         }
         if (what[0]) {
@@ -39,10 +47,18 @@ char* pubnub_url_encode(char* buffer, char const* what)
             enc[1]      = "0123456789ABCDEF"[(unsigned char)what[0] / 16];
             enc[2]      = "0123456789ABCDEF"[(unsigned char)what[0] % 16];
             if (3 > PUBNUB_MAX_URL_ENCODED_CHANNEL - i - 1) {
-                /* If the character encoded has no room in the buffer, we'll excuse it
-                   and finish.
-                 */
-                break;
+                PUBNUB_LOG_ERROR("Error:|Url-encoded string is longer than permited.\n"
+                                 "      |PUBNUB_MAX_URL_ENCODED_CHANNEL = %d\n"
+                                 "      |url-encoded_stretch = \"%s\"\n"
+                                 "      |url-encoded-stretch_length = %zu\n"
+                                 "      |rest_of_the_string_to_be_encoded = \"%s\"\n"
+                                 "      |length_of_the_rest_of_the_string_to_be_encoded = %zu\n",
+                                 PUBNUB_MAX_URL_ENCODED_CHANNEL,
+                                 buffer,
+                                 strlen(buffer),
+                                 what,
+                                 strlen(what));
+                return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
             }
             /* Last copied character is '\0' */
             memcpy(buffer + i, enc, 4);
@@ -51,5 +67,5 @@ char* pubnub_url_encode(char* buffer, char const* what)
         }
     }
 
-    return buffer;
+    return PNR_OK;
 }
