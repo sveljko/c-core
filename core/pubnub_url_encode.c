@@ -26,14 +26,14 @@ enum pubnub_res pubnub_url_encode(char* buffer, char const* what)
                 PUBNUB_LOG_ERROR("Error:|Url-encoded string is longer than permited.\n"
                                  "      |PUBNUB_MAX_URL_ENCODED_CHANNEL = %d\n"
                                  "      |url-encoded_stretch = \"%s\"\n"
-                                 "      |url-encoded-stretch_length = %zu\n"
+                                 "      |url-encoded-stretch_length = %u\n"
                                  "      |rest_of_the_string_to_be_encoded = \"%s\"\n"
-                                 "      |length_of_the_rest_of_the_string_to_be_encoded = %zu\n",
+                                 "      |length_of_the_rest_of_the_string_to_be_encoded = %u\n",
                                  PUBNUB_MAX_URL_ENCODED_CHANNEL,
                                  buffer,
-                                 strlen(buffer),
+                                 (unsigned)strlen(buffer),
                                  what,
-                                 strlen(what));
+                                 (unsigned)strlen(what));
                 return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
             }
             memcpy(buffer + i, what, okspan);
@@ -50,14 +50,14 @@ enum pubnub_res pubnub_url_encode(char* buffer, char const* what)
                 PUBNUB_LOG_ERROR("Error:|Url-encoded string is longer than permited.\n"
                                  "      |PUBNUB_MAX_URL_ENCODED_CHANNEL = %d\n"
                                  "      |url-encoded_stretch = \"%s\"\n"
-                                 "      |url-encoded-stretch_length = %zu\n"
+                                 "      |url-encoded-stretch_length = %u\n"
                                  "      |rest_of_the_string_to_be_encoded = \"%s\"\n"
-                                 "      |length_of_the_rest_of_the_string_to_be_encoded = %zu\n",
+                                 "      |length_of_the_rest_of_the_string_to_be_encoded = %u\n",
                                  PUBNUB_MAX_URL_ENCODED_CHANNEL,
                                  buffer,
-                                 strlen(buffer),
+                                 (unsigned)strlen(buffer),
                                  what,
-                                 strlen(what));
+                                 (unsigned)strlen(what));
                 return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
             }
             /* Last copied character is '\0' */
