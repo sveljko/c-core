@@ -103,7 +103,6 @@ enum pubnub_res pbcc_leave_prep(struct pbcc_context* pb,
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(pb);
-    enum pubnub_res res;
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -111,8 +110,8 @@ enum pubnub_res pbcc_leave_prep(struct pbcc_context* pb,
         }
         channel = ",";
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
     pb->http_content_len = 0;
 
@@ -165,13 +164,12 @@ enum pubnub_res pbcc_history_prep(struct pbcc_context* pb,
                                   char const*          end)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    enum pubnub_res res;
 
     if (pb->msg_ofs < pb->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_content_len = 0;
@@ -201,7 +199,6 @@ enum pubnub_res pbcc_heartbeat_prep(struct pbcc_context* pb,
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(pb);
-    enum pubnub_res res;
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -212,8 +209,8 @@ enum pubnub_res pbcc_heartbeat_prep(struct pbcc_context* pb,
     if (pb->msg_ofs < pb->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_content_len = 0;
@@ -242,7 +239,6 @@ enum pubnub_res pbcc_here_now_prep(struct pbcc_context* pb,
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(pb);
-    enum pubnub_res res;
 
     if (NULL == channel) {
         if (channel_group != NULL) {
@@ -252,8 +248,8 @@ enum pubnub_res pbcc_here_now_prep(struct pbcc_context* pb,
     if (pb->msg_ofs < pb->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if (channel && ((res = pubnub_url_encode(buffer, channel)) != PNR_OK)) {
-        return res;
+    if (channel && (pubnub_url_encode(buffer, channel, sizeof buffer) < 0)) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_content_len = 0;
@@ -305,7 +301,6 @@ enum pubnub_res pbcc_set_state_prep(struct pbcc_context* pb,
                                     char const*          state)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    enum pubnub_res res;
 
     PUBNUB_ASSERT_OPT(uuid != NULL);
     PUBNUB_ASSERT_OPT(state != NULL);
@@ -319,8 +314,8 @@ enum pubnub_res pbcc_set_state_prep(struct pbcc_context* pb,
     if (pb->msg_ofs < pb->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_buf_len = snprintf(
@@ -345,7 +340,6 @@ enum pubnub_res pbcc_state_get_prep(struct pbcc_context* pb,
                                     const char*          uuid)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    enum pubnub_res res;
 
     PUBNUB_ASSERT_OPT(uuid != NULL);
 
@@ -358,8 +352,8 @@ enum pubnub_res pbcc_state_get_prep(struct pbcc_context* pb,
     if (pb->msg_ofs < pb->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_buf_len =
@@ -401,12 +395,11 @@ enum pubnub_res pbcc_channel_registry_prep(struct pbcc_context* pb,
                                            char const*          channel)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    enum pubnub_res rslt;
 
     PUBNUB_ASSERT_OPT(channel_group != NULL);
 
-    if (channel && ((rslt = pubnub_url_encode(buffer, channel)) != PNR_OK)) {
-        return rslt;
+    if (channel && (pubnub_url_encode(buffer, channel, sizeof buffer) < 0)) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_buf_len = snprintf(
@@ -417,6 +410,7 @@ enum pubnub_res pbcc_channel_registry_prep(struct pbcc_context* pb,
         channel_group,
         pubnub_uname());
     if (NULL != param) {
+        enum pubnub_res rslt;
         PUBNUB_ASSERT_OPT(channel != NULL);
         rslt = pbcc_append_url_param(pb, param, strlen(param), buffer, '&');
         if (rslt != PNR_OK) {

@@ -2,7 +2,6 @@
 #if !defined INC_PUBNUB_CONFIG
 #define INC_PUBNUB_CONFIG
 
-#include "core/pubnub_assert.h"
 
 /* -- Next few definitions can be tweaked by the user, but with care -- */
 
@@ -38,12 +37,11 @@
 #define PUBNUB_BUF_MAXLEN 32000
 
 /** Maximum url-encoded channel string size allowed.
- * Could be readjusted, but has to fulfill certain constraints.
- * Currently set to its optimal value
+ * Could be readjusted, but has to fulfill constraints of its minimum
+ * and maximum value permited(defined in 'pubnub_coreapi.c').
+ * Currently set as optimal
  */
 #define PUBNUB_MAX_URL_ENCODED_CHANNEL 128
-PUBNUB_STATIC_ASSERT(PUBNUB_MAX_URL_ENCODED_CHANNEL <= 277, max_url_encoded_channel_too_big);
-PUBNUB_STATIC_ASSERT(PUBNUB_MAX_URL_ENCODED_CHANNEL > 10, max_url_encoded_channel_too_small);
 
 /** Set to 0 to use a static buffer and then set its size via
     #PUBNUB_REPLY_MAXLEN.  Set to anything !=0 to use a dynamic

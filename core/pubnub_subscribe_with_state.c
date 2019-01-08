@@ -48,8 +48,7 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
                                                       char const *state)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    char const *pmessage = state;
-    enum pubnub_res res;
+    int  url_encoded_length;
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -60,8 +59,8 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     p->http_content_len = 0;
@@ -74,34 +73,15 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
                                buffer,
                                p->timetoken,
                                pubnub_uname());
-    while (pmessage[0]) {
-        /* RFC 3986 Unreserved characters plus few
-         * safe reserved ones. */
-        size_t okspan = strspn(pmessage, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~" ",=:;@[]");
-        if (okspan > 0) {
-            if (okspan > sizeof(p->http_buf)-1 - p->http_buf_len) {
-                p->http_buf_len = 0;
-                return PNR_TX_BUFF_TOO_SMALL;
-            }
-            memcpy(p->http_buf + p->http_buf_len, pmessage, okspan);
-            p->http_buf_len += okspan;
-            p->http_buf[p->http_buf_len] = 0;
-            pmessage += okspan;
-        }
-        if (pmessage[0]) {
-            /* %-encode a non-ok character. */
-            char enc[4] = {'%'};
-            enc[1] = "0123456789ABCDEF"[pmessage[0] / 16];
-            enc[2] = "0123456789ABCDEF"[pmessage[0] % 16];
-            if (3 > sizeof p->http_buf - 1 - p->http_buf_len) {
-                p->http_buf_len = 0;
-                return PNR_TX_BUFF_TOO_SMALL;
-            }
-            memcpy(p->http_buf + p->http_buf_len, enc, 4);
-            p->http_buf_len += 3;
-            ++pmessage;
-        }
+    url_encoded_length = pubnub_url_encode(pb->http_buf + pb->http_buf_len,
+                                           state,
+                                           sizeof pb->http_buf - pb->http_buf_len);
+    if (url_encoded_length < 0) {
+        pb->http_buf_len = 0;
+        return PNR_TX_BUFF_TOO_SMALL;
     }
+    pb->http_buf_len += url_encoded_length;
+
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(p, "uuid", p->uuid, '&');
     APPEND_URL_PARAM_M(p, "auth", p->auth, '&');

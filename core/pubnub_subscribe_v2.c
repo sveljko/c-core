@@ -45,7 +45,6 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                          char const*          filter_expr)
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    enum pubnub_res res;
     char        region_str[20];
     char const* tr;
 
@@ -58,8 +57,8 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     if ('\0' == p->timetoken[0]) {

@@ -346,46 +346,6 @@ enum pubnub_res pbcc_append_url_param(struct pbcc_context* pb,
 }
 
 
-static enum pubnub_res url_encode(struct pbcc_context* pb, char const* what)
-{
-    PUBNUB_ASSERT_OPT(pb != NULL);
-    PUBNUB_ASSERT_OPT(what != NULL);
-
-    while (what[0]) {
-        /* RFC 3986 Unreserved characters plus few
-         * safe reserved ones. */
-        size_t okspan = strspn(
-            what,
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~"
-            ",=:;@[]");
-        if (okspan > 0) {
-            if (okspan > sizeof(pb->http_buf) - 1 - pb->http_buf_len) {
-                pb->http_buf_len = 0;
-                return PNR_TX_BUFF_TOO_SMALL;
-            }
-            memcpy(pb->http_buf + pb->http_buf_len, what, okspan);
-            pb->http_buf_len += okspan;
-            pb->http_buf[pb->http_buf_len] = 0;
-            what += okspan;
-        }
-        if (what[0]) {
-            /* %-encode a non-ok character. */
-            char enc[4] = { '%' };
-            enc[1]      = "0123456789ABCDEF"[(unsigned char)what[0] / 16];
-            enc[2]      = "0123456789ABCDEF"[(unsigned char)what[0] % 16];
-            if (3 > sizeof pb->http_buf - 1 - pb->http_buf_len) {
-                pb->http_buf_len = 0;
-                return PNR_TX_BUFF_TOO_SMALL;
-            }
-            memcpy(pb->http_buf + pb->http_buf_len, enc, 4);
-            pb->http_buf_len += 3;
-            ++what;
-        }
-    }
-
-    return PNR_OK;
-}
-
 void pbcc_headers_for_publish_via_post(struct pbcc_context *pb, char *header, size_t max_length)
 {
     char lines[] = "Content-Type: application/json\r\nContent-Length: ";
@@ -410,6 +370,22 @@ void pbcc_headers_for_publish_via_post(struct pbcc_context *pb, char *header, si
     length = snprintf(header, max_length, "%zu", strlen(pb->message_to_publish));
     PUBNUB_ASSERT_OPT(max_length > length);
     return;
+}
+
+static enum pubnub_res url_encode(struct pbcc_context* pb, char const* what)
+{
+    int url_encoded_length;
+
+    url_encoded_length = pubnub_url_encode(pb->http_buf + pb->http_buf_len,
+                                           what,
+                                           sizeof pb->http_buf - pb->http_buf_len);
+    if (url_encoded_length < 0) {
+        pb->http_buf_len = 0;
+        return PNR_TX_BUFF_TOO_SMALL;
+    }
+    pb->http_buf_len += url_encoded_length;
+
+    return PNR_OK;
 }
 
 enum pubnub_res pbcc_append_url_param_encoded(struct pbcc_context* pb,
@@ -445,8 +421,8 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context*        pb,
 
     PUBNUB_ASSERT_OPT(message != NULL);
 
-    if ((rslt = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return rslt;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     pb->http_content_len = 0;
@@ -499,7 +475,6 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
 {
     char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char const* uuid = pbcc_uuid_get(p);
-    enum pubnub_res res;
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -510,8 +485,8 @@ enum pubnub_res pbcc_subscribe_prep(struct pbcc_context* p,
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if ((res = pubnub_url_encode(buffer, channel)) != PNR_OK) {
-        return res;
+    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
+        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     p->http_content_len = 0;
