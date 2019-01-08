@@ -17,7 +17,7 @@ void pbcc_init(struct pbcc_context* p, const char* publish_key, const char* subs
     p->subscribe_key = subscribe_key;
     p->timetoken[0]  = '0';
     p->timetoken[1]  = '\0';
-    p->uuid[0] = '\0'; 
+    p->uuid[0] = '\0';
     p->auth = NULL;
     p->msg_ofs = p->msg_end = 0;
 #if PUBNUB_DYNAMIC_REPLY_BUFFER
