@@ -120,6 +120,14 @@ struct pbcc_context {
         }                                                                      \
     }
 
+#define APPEND_URL_ENCODED_M(pbc, what)                                        \
+    if ((what) != NULL) {                                                      \
+        enum pubnub_res rslt_ = pbcc_url_encode((pbc), (what));                \
+        if (rslt_ != PNR_OK) {                                                 \
+            return rslt_;                                                      \
+        }                                                                      \
+    }
+
 #define APPEND_URL_PARAM_ENCODED_M(pbc, name, var, separator)                  \
     if ((var) != NULL) {                                                       \
         const char      param_[] = name;                                       \
@@ -270,6 +278,8 @@ enum pubnub_res pbcc_append_url_param(struct pbcc_context* pb,
                                       size_t               param_name_len,
                                       char const*          param_val,
                                       char                 separator);
+
+enum pubnub_res pbcc_url_encode(struct pbcc_context* pb, char const* what);
 
 enum pubnub_res pbcc_append_url_param_encoded(struct pbcc_context* pb,
                                               char const*          param_name,

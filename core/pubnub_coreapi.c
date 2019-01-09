@@ -17,9 +17,6 @@
 #warning This module is not useful if configured to use only the publish and subscribe API
 #endif
 
-/** Constraints for macro constant defined in 'pubnub_config.h' */
-PUBNUB_STATIC_ASSERT(PUBNUB_MAX_URL_ENCODED_CHANNEL <= 277, max_url_encoded_channel_too_big);
-PUBNUB_STATIC_ASSERT(PUBNUB_MAX_URL_ENCODED_CHANNEL > 10, max_url_encoded_channel_too_small);
 
 enum pubnub_res pubnub_leave(pubnub_t* p, const char* channel, const char* channel_group)
 {

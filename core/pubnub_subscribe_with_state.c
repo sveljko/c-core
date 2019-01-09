@@ -6,50 +6,17 @@
 #include "pubnub_assert.h"
 #include "pubnub_version.h"
 #include "pubnub_url_encode.h"
+#include "pubnub_ccore_pubsub.h"
 
 #include <string.h>
 #include <stdio.h>
 
-
-static enum pubnub_res append_url_param(struct pbcc_context *pb,
-                                        char const *param_name,
-                                        size_t param_name_len,
-                                        char const *param_val,
-                                        char separator)
-{
-    size_t param_val_len = strlen(param_val);
-    if (pb->http_buf_len + 1 + param_name_len + 1 + param_val_len > sizeof pb->http_buf) {
-        return PNR_TX_BUFF_TOO_SMALL;
-    }
-
-    pb->http_buf[pb->http_buf_len++] = separator;
-    memcpy(pb->http_buf + pb->http_buf_len, param_name, param_name_len);
-    pb->http_buf_len += param_name_len;
-    pb->http_buf[pb->http_buf_len++] = '=';
-    memcpy(pb->http_buf + pb->http_buf_len, param_val, param_val_len+1);
-    pb->http_buf_len += param_val_len;
-
-    return PNR_OK;
-}
-
-
-#define APPEND_URL_PARAM_M(pbc, name, var, separator)                   \
-    if ((var) != NULL) {                                                \
-        const char param_[] = name;                                 	\
-        enum pubnub_res rslt_ = append_url_param((pbc), param_, sizeof param_ - 1, (var), (separator)); \
-        if (rslt_ != PNR_OK) {                                          \
-            return rslt_;                                               \
-        }                                                               \
-    }
 
 static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
                                                       const char *channel,
                                                       const char *channel_group,
                                                       char const *state)
 {
-    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
-    int  url_encoded_length;
-
     if (NULL == channel) {
         if (NULL == channel_group) {
             return PNR_INVALID_CHANNEL;
@@ -67,21 +34,16 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
     p->msg_ofs = p->msg_end = 0;
 
     p->http_buf_len = snprintf(p->http_buf,
-                               sizeof(p->http_buf),
-                               "/subscribe/%s/%s/0/%s?pnsdk=%s&state=",
-                               p->subscribe_key,
-                               buffer,
-                               p->timetoken,
-                               pubnub_uname());
-    url_encoded_length = pubnub_url_encode(pb->http_buf + pb->http_buf_len,
-                                           state,
-                                           sizeof pb->http_buf - pb->http_buf_len);
-    if (url_encoded_length < 0) {
-        pb->http_buf_len = 0;
-        return PNR_TX_BUFF_TOO_SMALL;
-    }
-    pb->http_buf_len += url_encoded_length;
-
+                               sizeof p->http_buf,
+                               "/subscribe/%s/",
+                               p->subscribe_key);
+    APPEND_URL_ENCODED_M(pb, channel);
+    p->http_buf_len += snprintf(p->http_buf + p->http_buf_len,
+                                sizeof p->http_buf - p->http_buf_len,
+                                "/0/%s?pnsdk=%s&state=",
+                                p->timetoken,
+                                pubnub_uname());
+    APPEND_URL_ENCODED_M(pb, state);
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(p, "uuid", p->uuid, '&');
     APPEND_URL_PARAM_M(p, "auth", p->auth, '&');

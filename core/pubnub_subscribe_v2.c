@@ -9,7 +9,6 @@
 #include "pubnub_log.h"
 #include "pubnub_version.h"
 #include "pubnub_json_parse.h"
-#include "pubnub_url_encode.h"
 
 #include "pbpal.h"
 
@@ -44,7 +43,6 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                          unsigned*            heartbeat,
                                          char const*          filter_expr)
 {
-    char buffer[PUBNUB_MAX_URL_ENCODED_CHANNEL];
     char        region_str[20];
     char const* tr;
 
@@ -56,9 +54,6 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
     }
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
-    }
-    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
-        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
     }
 
     if ('\0' == p->timetoken[0]) {
@@ -74,12 +69,15 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
     p->msg_ofs = p->msg_end = 0;
 
     p->http_buf_len = snprintf(p->http_buf,
-                               sizeof(p->http_buf),
-                               "/v2/subscribe/%s/%s/0?tt=%s&pnsdk=%s",
-                               p->subscribe_key,
-                               buffer,
-                               p->timetoken,
-                               pubnub_uname());
+                               sizeof p->http_buf,
+                               "/v2/subscribe/%s/",
+                               p->subscribe_key);
+    APPEND_URL_ENCODED_M(p, channel);
+    p->http_buf_len += snprintf(p->http_buf + p->http_buf_len,
+                                sizeof p->http_buf - p->http_buf_len,
+                                "/0?tt=%s&pnsdk=%s",
+                                p->timetoken,
+                                pubnub_uname());
     APPEND_URL_PARAM_M(p, "tr", tr, '&');
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(p, "uuid", p->uuid, '&');

@@ -36,13 +36,6 @@
  * need to construct big messages, you may need to raise this.  */
 #define PUBNUB_BUF_MAXLEN 256
 
-/** Maximum url-encoded channel string size allowed.
- * Could be readjusted, but has to fulfill constraints of its minimum
- * and maximum value permited(defined in 'pubnub_coreapi.c').
- * Currently set as optimal
- */
-#define PUBNUB_MAX_URL_ENCODED_CHANNEL 128
-
 /** Maximum length of the HTTP reply. The other major component of the
  * memory size of the PubNub context, beside #PUBNUB_BUF_MAXLEN.
  * Replies of API calls longer than this will be discarded and
