@@ -41,7 +41,7 @@ unittest: $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c
 TIMER_LIST_SOURCEFILES = pubnub_alloc_static.c pubnub_assert_std.c pubnub_timers.c
 
 pubnub_timer_list_unittest: pubnub_timer_list.c pubnub_timer_list_unit_test.c
-	gcc -o pubnub_timer_list_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_CALLBACK_API -Wall $(COVERAGE_FLAGS) -fPIC $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
+	gcc -o pubnub_timer_list_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_CALLBACK_API -D PUBNUB_ASSERT_LEVEL_NONE -Wall $(COVERAGE_FLAGS) -fPIC $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_timer_list_unit_testo  $(CFLAGS) -D PUBNUB_CALLBACK_API -Wall $(COVERAGE_FLAGS) $(TIMER_LIST_SOURCEFILES) pubnub_timer_list.c pubnub_timer_list_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_timer_list_unit_test.so
 	#$(GCOVR) -r . --html --html-details -o coverage.html

@@ -8,7 +8,6 @@
 #include "pubnub_url_encode.h"
 #include "pubnub_ccore_pubsub.h"
 
-#include <string.h>
 #include <stdio.h>
 
 
@@ -26,10 +25,6 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
     if (p->msg_ofs < p->msg_end) {
         return PNR_RX_BUFF_NOT_EMPTY;
     }
-    if (pubnub_url_encode(buffer, channel, sizeof buffer) < 0) {
-        return PNR_URL_ENCODED_CHANNEL_TOO_LONG;
-    }
-
     p->http_content_len = 0;
     p->msg_ofs = p->msg_end = 0;
 
@@ -40,10 +35,10 @@ static enum pubnub_res pbcc_subscribe_with_state_prep(struct pbcc_context *p,
     APPEND_URL_ENCODED_M(pb, channel);
     p->http_buf_len += snprintf(p->http_buf + p->http_buf_len,
                                 sizeof p->http_buf - p->http_buf_len,
-                                "/0/%s?pnsdk=%s&state=",
+                                "/0/%s?pnsdk=%s",
                                 p->timetoken,
                                 pubnub_uname());
-    APPEND_URL_ENCODED_M(pb, state);
+    APPEND_URL_PARAM_ENCODED_M(pb, "state", state, '&');
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(p, "uuid", p->uuid, '&');
     APPEND_URL_PARAM_M(p, "auth", p->auth, '&');

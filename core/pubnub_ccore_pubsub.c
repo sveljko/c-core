@@ -7,7 +7,6 @@
 #include "pubnub_log.h"
 #include "pubnub_url_encode.h"
 
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -427,9 +426,7 @@ enum pubnub_res pbcc_publish_prep(struct pbcc_context*        pb,
                                 pb->publish_key,
                                 pb->subscribe_key);
     APPEND_URL_ENCODED_M(pb, channel);
-    pb->http_buf_len += snprintf(pb->http_buf + pb->http_buf_len,
-                                 sizeof pb->http_buf - pb->http_buf_len,
-                                 "/0");
+    APPEND_URL_LITERAL_M(pb, "/0");
     if (pubnubPublishViaGET == method) {
         pb->http_buf[pb->http_buf_len++] = '/';
         APPEND_URL_ENCODED_M(pb, message);

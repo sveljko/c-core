@@ -92,8 +92,6 @@ enum pubnub_res {
     PNR_CRYPTO_NOT_SUPPORTED,
     /** Bad compression format or compressed data corrupted */
     PNR_BAD_COMPRESSION_FORMAT,
-    /** Url-encoded channel string too long */
-    PNR_URL_ENCODED_CHANNEL_TOO_LONG
 };
 
 /** 'pubnub_cancel()' return value */

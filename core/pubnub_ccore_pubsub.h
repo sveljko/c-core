@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 /** @file pubnub_ccore_pubsub.h
@@ -120,6 +121,12 @@ struct pbcc_context {
         }                                                                      \
     }
 
+#define APPEND_URL_LITERAL_M(pbc, string_literal)                              \
+    {                                                                          \
+        strcpy((pbc)->http_buf + (pbc)->http_buf_len, (string_literal));       \
+        (pbc)->http_buf_len += sizeof(string_literal) - 1;                     \
+    }
+       
 #define APPEND_URL_ENCODED_M(pbc, what)                                        \
     if ((what) != NULL) {                                                      \
         enum pubnub_res rslt_ = pbcc_url_encode((pbc), (what));                \

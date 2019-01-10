@@ -14,8 +14,8 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
 {
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
-    std::string const ch(pnfntst_make_name("test|name"));
-    std::string const two(pnfntst_make_name("that(name)"));
+    std::string const ch(pnfntst_make_name(this_test_name_));
+    std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string       two_three = two + comma + three;
 
@@ -41,8 +41,8 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     context           pbp(pubkey, keysub, origin);
     context           pbp_2(pubkey, keysub, origin);
     std::string const ch(pnfntst_make_name(this_test_name_));
-    std::string const two(pnfntst_make_name("?test&name"));
-    std::string const three(pnfntst_make_name("two_peaks^^name"));
+    std::string const two(pnfntst_make_name(this_test_name_));
+    std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       two_three = two + comma + three;
 

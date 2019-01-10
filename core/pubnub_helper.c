@@ -61,7 +61,6 @@ char const* pubnub_res_2_string(enum pubnub_res e)
     case PNR_INTERNAL_ERROR: return "Internal error in processing";
     case PNR_CRYPTO_NOT_SUPPORTED: return "Encryption/decryption not supported";
     case PNR_BAD_COMPRESSION_FORMAT: return "Bad data compression format";
-    case PNR_URL_ENCODED_CHANNEL_TOO_LONG: return "Url-encoded chanel string too long";
     }
     return "!?!?!";
 }
@@ -91,7 +90,6 @@ enum pubnub_tribool pubnub_should_retry(enum pubnub_res e)
     case PNR_INTERNAL_ERROR: return pbccFalse; /* Sorry, something went wrong... */
     case PNR_CRYPTO_NOT_SUPPORTED: return pbccFalse; /* Use a platform that supports encryption, say OpenSSL */
     case PNR_BAD_COMPRESSION_FORMAT: return pbccNotSet; /* If bad compressing was transient, a retry might help */
-    case PNR_URL_ENCODED_CHANNEL_TOO_LONG: return pbccNotSet; /* Channels or channel-group names should be changed into shorter ones, or the corresponding macro constant increased(which enlarges possesion of stack memory) */
     }
     return pbccFalse;
 }
