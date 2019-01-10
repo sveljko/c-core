@@ -99,8 +99,7 @@ enum pubnub_res pbcc_leave_prep(struct pbcc_context* pb,
                                 const char*          channel,
                                 const char*          channel_group)
 {
-    char const* const uname = pubnub_uname();
-    char const*       uuid = pbcc_uuid_get(pb);
+    char const* uuid = pbcc_uuid_get(pb);
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -119,8 +118,10 @@ enum pubnub_res pbcc_leave_prep(struct pbcc_context* pb,
                                 "/v2/presence/sub-key/%s/channel/",
                                 pb->subscribe_key);
     APPEND_URL_ENCODED_M(pb, channel);
-    APPEND_URL_LITERAL_M(pb, "/leave");
-    APPEND_URL_PARAM_M(pb, "pnsdk", uname, '?');
+    pb->http_buf_len += snprintf(pb->http_buf + pb->http_buf_len,
+                                 sizeof pb->http_buf - pb->http_buf_len,
+                                 "/leave?pnsdk=%s",
+                                 pubnub_uname());
     APPEND_URL_PARAM_M(pb, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(pb, "uuid", uuid, '&');
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
@@ -189,8 +190,7 @@ enum pubnub_res pbcc_heartbeat_prep(struct pbcc_context* pb,
                                     const char*          channel,
                                     const char*          channel_group)
 {
-    char const* const uname = pubnub_uname();
-    char const*       uuid  = pbcc_uuid_get(pb);
+    char const* uuid = pbcc_uuid_get(pb);
 
     if (NULL == channel) {
         if (NULL == channel_group) {
@@ -210,8 +210,10 @@ enum pubnub_res pbcc_heartbeat_prep(struct pbcc_context* pb,
                                 "/v2/presence/sub-key/%s/channel/",
                                 pb->subscribe_key);
     APPEND_URL_ENCODED_M(pb, channel);
-    APPEND_URL_LITERAL_M(pb,"/heartbeat");
-    APPEND_URL_PARAM_M(pb, "pnsdk", uname, '?');
+    pb->http_buf_len  += snprintf(pb->http_buf + pb->http_buf_len,
+                                  sizeof pb->http_buf - pb->http_buf_len,
+                                  "/heartbeat?pnsdk=%s",
+                                  pubnub_uname());
     APPEND_URL_PARAM_M(pb, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(pb, "auth", pb->auth, '&');
     APPEND_URL_PARAM_M(pb, "uuid", uuid, '&');

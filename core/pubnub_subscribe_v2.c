@@ -41,7 +41,6 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                          unsigned*            heartbeat,
                                          char const*          filter_expr)
 {
-    char const* const uname = pubnub_uname();
     char        region_str[20];
     char const* tr;
 
@@ -72,9 +71,11 @@ static enum pubnub_res subscribe_v2_prep(struct pbcc_context* p,
                                "/v2/subscribe/%s/",
                                p->subscribe_key);
     APPEND_URL_ENCODED_M(p, channel);
-    APPEND_URL_LITERAL_M(p, "/0");
-    APPEND_URL_PARAM_M(p, "tt", p->timetoken, '?');
-    APPEND_URL_PARAM_M(p, "pnsdk", uname, '&');
+    p->http_buf_len += snprintf(p->http_buf + p->http_buf_len,
+                                sizeof p->http_buf - p->http_buf_len,
+                                "/0?tt=%s&pnsdk=%s",
+                                p->timetoken,
+                                pubnub_uname());
     APPEND_URL_PARAM_M(p, "tr", tr, '&');
     APPEND_URL_PARAM_M(p, "channel-group", channel_group, '&');
     APPEND_URL_PARAM_M(p, "uuid", p->uuid, '&');

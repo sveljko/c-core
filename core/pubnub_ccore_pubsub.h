@@ -123,6 +123,10 @@ struct pbcc_context {
 
 #define APPEND_URL_LITERAL_M(pbc, string_literal)                              \
     {                                                                          \
+        PUBNUB_ASSERT_OPT((string_literal) != NULL);                           \
+        if ((pbc)->http_buf_len + sizeof(string_literal) > sizeof (pbc)->http_buf) {\
+            return PNR_TX_BUFF_TOO_SMALL;                                      \
+        }                                                                      \
         strcpy((pbc)->http_buf + (pbc)->http_buf_len, (string_literal));       \
         (pbc)->http_buf_len += sizeof(string_literal) - 1;                     \
     }
