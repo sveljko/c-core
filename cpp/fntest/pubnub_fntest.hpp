@@ -323,7 +323,7 @@ namespace pubnub {
         char const *d_fname;
         long d_line;
     public:
-        sense_double(sense& left, sense& right) 
+        sense_double(sense& left, sense& right)
             : d_left(left.get_futres())
             , d_right(right.get_futres()) 
             , d_expr_left(left.expr())

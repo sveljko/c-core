@@ -172,7 +172,7 @@ namespace pubnub {
         pubnub_res d_result;
 
         bool d_triggered;
-         
+
         mutable QMutex d_mutex;
     };
 	
