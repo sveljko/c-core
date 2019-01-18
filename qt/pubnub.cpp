@@ -10,7 +10,7 @@ using namespace pubnub;
 
 
 futres::futres(context &ctx, pubnub_res initial) :
-    d_ctx(ctx), d_result(initial), d_triggered(false), d_mutex(QMutex::Recursive) 
+    d_ctx(ctx), d_result(initial), d_triggered(false), d_mutex(QMutex::Recursive)
 {
     connect(&ctx.d_pbqt, SIGNAL(outcome(pubnub_res)), this, SLOT(onOutcome(pubnub_res)));
 }
@@ -42,7 +42,7 @@ pubnub_res futres::last_result()
 {
     QCoreApplication::processEvents();
     QMutexLocker lk(&d_mutex);
-    return d_result; 
+    return d_result;
 }
 
 
@@ -51,7 +51,7 @@ void futres::start_await()
 }
 
 
-pubnub_res futres::end_await() 
+pubnub_res futres::end_await()
 {
     bool triggered;
     {

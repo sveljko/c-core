@@ -1,4 +1,5 @@
 /* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
+
 /** This macro does the common "stuff to do" on the outcome of a
     transaction. Should be used by all `pbntf_trans_outcome()`
     functions.
@@ -12,9 +13,7 @@
     do {                                                                           \
         pubnub_t*       M_pb_     = (pb);                                          \
         enum pubnub_res M_pbrslt_ = M_pb_->core.last_result;                       \
-        PUBNUB_LOG_INFO("Context %p Transaction outcome: %d\n",                    \
-                        M_pb_,                                                     \
-                        M_pbrslt_);                                                \
+        PUBNUB_LOG_INFO("Context %p Transaction outcome: %d\n", M_pb_, M_pbrslt_); \
         switch (M_pbrslt_) {                                                       \
         case PNR_FORMAT_ERROR:                                                     \
             PUBNUB_LOG_WARNING("Context %p Resetting time token\n", M_pb_);        \
