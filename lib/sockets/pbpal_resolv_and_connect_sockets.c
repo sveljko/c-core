@@ -5,7 +5,6 @@
 #include "core/pubnub_assert.h"
 #include "core/pubnub_log.h"
 #include "lib/sockets/pbpal_adns_sockets.h"
-#include "core/pubnub_dns_servers.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -23,7 +22,7 @@
 #define TLS_PORT 443
 
 #ifndef PUBNUB_CALLBACK_API
-#define send_dns_query(x,y,z) -1
+#define send_dns_query(x,y,z,v) -1
 #define read_response(x,y,z,v) -1
 #endif
 
@@ -70,22 +69,43 @@ static void get_dns_ip(struct sockaddr_in* addr)
 }
 
 static enum pbpal_resolv_n_connect_result connect_TCP_socket(pubnub_t *pb,
-                                                             struct sockaddr_in dest,
+                                                             struct sockaddr *dest,
                                                              const uint16_t port)
 {
-    pb->pal.socket  = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (SOCKET_INVALID == pb->pal.socket) {
+    size_t sockaddr_size;
 
+    PUBNUB_ASSERT_OPT(dest != NULL);
+
+    switch (dest->sa_family) {
+    case AF_INET: 
+        sockaddr_size = sizeof(struct sockaddr_in);
+        ((struct sockaddr_in*)dest)->sin_port = htons(port);
+        break;
+    case AF_INET6:
+        sockaddr_size = sizeof(struct sockaddr_in6);
+        ((struct sockaddr_in6*)dest)->sin6_port = htons(port);
+        break;
+    default:
+        PUBNUB_LOG_ERROR("connect_TCP_socket(pb=%p): invalid internet protokol "
+                         "dest->sa_family =%uh\n",
+                         pb,
+                         dest->sa_family);
+        free(dest);
+        return pbpal_connect_failed;
+    }
+    pb->pal.socket  = socket(dest->sa_family, SOCK_STREAM, IPPROTO_TCP);
+    if (SOCKET_INVALID == pb->pal.socket) {
+        free(dest);
         return pbpal_connect_resource_failure;
     }
     pb->options.use_blocking_io = false;
     pbpal_set_blocking_io(pb);
     socket_disable_SIGPIPE(pb->pal.socket);
-    dest.sin_port = htons(port);
-    if (SOCKET_ERROR == connect(pb->pal.socket, (struct sockaddr*)&dest, sizeof dest)) {
+    if (SOCKET_ERROR == connect(pb->pal.socket, dest, sockaddr_size)) {
+        free(dest);
         return socket_would_block() ? pbpal_connect_wouldblock : pbpal_connect_failed;
     }
-
+    free(dest);
     return pbpal_connect_success;
 }
 #endif
@@ -102,12 +122,16 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
     prepare_port_and_hostname(pb, &port, &origin);
 #if PUBNUB_PROXY_API
     if (0 != pb->proxy_ip_address.ipv4[0]) {
-        struct pubnub_ipv4_address* p_dest_addr = (struct pubnub_ipv4_address*)&(dest.sin_addr.s_addr);
-        memset(&dest, '\0', sizeof dest);
+        /* Dinamically allocated address structure for TCP connection */
+        struct sockaddr_in *p_dest = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in)); 
+        struct pubnub_ipv4_address* p_dest_addr = (struct pubnub_ipv4_address*)&(p_dest->sin_addr.s_addr);
+        memset(p_dest, '\0', sizeof *p_dest);
         memcpy(p_dest_addr->ipv4, pb->proxy_ip_address.ipv4, sizeof p_dest_addr->ipv4);
-        dest.sin_family = AF_INET;
-
-        return connect_TCP_socket(pb, dest, port);
+        p_dest->sin_family = AF_INET;
+        /* Dinamically allocated memory for address structure for TCP connection
+           is freed inside the calling function after 'connect' function call
+         */
+        return connect_TCP_socket(pb, (struct sockaddr*)p_dest, port);
     }
 #endif
 
@@ -122,7 +146,7 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
     dest.sin_family = AF_INET;
     dest.sin_port = htons(DNS_PORT);
     get_dns_ip(&dest);
-    error = send_dns_query(pb->pal.socket, (struct sockaddr*)&dest, origin);
+    error = send_dns_query(pb->pal.socket, (struct sockaddr*)&dest, origin, dnsA);
     if (error < 0) {
         return pbpal_resolv_failed_send;
     }
@@ -190,7 +214,7 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
 #ifdef PUBNUB_CALLBACK_API
 
     struct sockaddr_in dns_server;
-    struct sockaddr_in dest;
+    struct sockaddr* dest;
     uint16_t port = HTTP_PORT;
     pbpal_native_socket_t skt;
 
@@ -214,6 +238,10 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
     dns_server.sin_port = htons(DNS_PORT);
     get_dns_ip(&dns_server);
     memset(&dest, '\0', sizeof dest);
+    /* In case we've got valid dns response, memory for destination address
+       is allocated dinamically within the 'read_dns_response()' function call.
+       Has to be freed in the connecting function.
+     */
     switch (read_dns_response(skt, (struct sockaddr*)&dns_server, &dest)) {
     case -1:
 		return pbpal_resolv_failed_rcv;
@@ -223,7 +251,9 @@ enum pbpal_resolv_n_connect_result pbpal_check_resolv_and_connect(pubnub_t *pb)
         break;
     }
     socket_close(skt);
-
+    /* Dynamically allocated memory 'dest' is freed within the 'connect_TCP_socket()'
+       function call
+     */
     return connect_TCP_socket(pb, dest, port);
 #else
 
