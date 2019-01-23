@@ -8,6 +8,20 @@ struct pubnub_ipv4_address {
     uint8_t ipv4[4];
 };
 
+/** IPv6 Address, in binary format.
+ */
+struct pubnub_ipv6_address {
+    /** The 8 double octets of the IPv6 address */
+    uint8_t ipv6[16];
+};
+
+/** IPvX Address, in binary format.
+ */
+union pubnub_ipvX_address {
+    struct pubnub_ipv4_address ipv4;
+    struct pubnub_ipv6_address ipv6;
+};
+
 #include "pubnub_config.h"
 #if PUBNUB_SET_DNS_SERVERS
 #include <stdlib.h>
