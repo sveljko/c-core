@@ -212,7 +212,7 @@ int main()
     }
 #endif
     socket_close(skt);
-
+#if 0
     puts("=========================ADNS-AF_INET6========================");
 
     skt   = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
@@ -259,7 +259,7 @@ int main()
     }
 #endif
     socket_close(skt);
-
+#endif /* #if 0 */
     return 0;
 }
 //#endif
