@@ -168,6 +168,10 @@ int main()
     puts("===========================ADNS-AF_INET========================");
 
     int skt = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (SOCKET_INVALID == skt) {
+        PUBNUB_LOG_ERROR("Error: Couldnt't get Ipv4 socket.\n");
+        return -1;
+    }
 #if !defined(_WIN32)
     int flags = fcntl(skt, F_GETFL, 0);
     fcntl(skt, F_SETFL, flags | O_NONBLOCK);
@@ -212,6 +216,10 @@ int main()
     puts("=========================ADNS-AF_INET6========================");
 
     skt   = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (SOCKET_INVALID == skt) {
+        PUBNUB_LOG_ERROR("Error: Didn't get Ipv6 socket.\n");
+        return -1;
+    }
 #if !defined(_WIN32)
     flags = fcntl(skt, F_GETFL, 0);
     fcntl(skt, F_SETFL, flags | O_NONBLOCK);
@@ -220,10 +228,10 @@ int main()
 #endif
     dest6.sin6_family = AF_INET6;
     dest6.sin6_port   = htons(53);
-    inet_pton(AF_INET6, "2620:119:35::35", dest6.sin6_addr.s6_addr);
+    inet_pton(AF_INET6, "2001:4860:4860::8888", dest6.sin6_addr.s6_addr);
 
     if (-1 == send_dns_query(skt, (struct sockaddr*)&dest6, "facebook.com", dnsANY)) {
-        PUBNUB_LOG_ERROR("Error: Couldn't send datagram(Ipv6): errno = %d\n", errno);
+        PUBNUB_LOG_ERROR("Error: Couldn't send datagram(Ipv6).\n");
         
         return -1;
     }
