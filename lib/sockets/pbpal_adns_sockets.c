@@ -223,7 +223,8 @@ int main()
     inet_pton(AF_INET6, "2620:119:35::35", dest6.sin6_addr.s6_addr);
 
     if (-1 == send_dns_query(skt, (struct sockaddr*)&dest6, "facebook.com", dnsANY)) {
-        PUBNUB_LOG_ERROR("Error: Couldn't send datagram(Ipv6).\n");
+        PUBNUB_LOG_ERROR("Error: Couldn't send datagram(Ipv6): errno = %d\n", errno);
+        
         return -1;
     }
 
