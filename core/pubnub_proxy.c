@@ -21,8 +21,8 @@ int pubnub_set_proxy_manual(pubnub_t*              p,
     if (0 == strcmp("localhost", ip_address_or_url)) {
         ip_address_or_url = "127.0.0.1";
     }
-    if(0 != pubnub_parse_ipv4_addr(ip_address_or_url, &(p->proxy_ip_address))) {
-        memset(p->proxy_ip_address.ipv4, 0, sizeof p->proxy_ip_address.ipv4);
+    if(0 != pubnub_parse_ipv4_addr(ip_address_or_url, &(p->proxy_ipv4_address))) {
+        memset(p->proxy_ipv4_address.ipv4, 0, sizeof p->proxy_ipv4_address.ipv4);
     }
     switch (protocol) {
     case pbproxyHTTP_GET:

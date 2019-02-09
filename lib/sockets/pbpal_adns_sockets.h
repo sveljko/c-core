@@ -14,8 +14,8 @@ int send_dns_query(int skt,
                    char const*host,
                    enum DNSqueryType query_type);
 
-/** Read a DNS response from DNS server @p dest, putting it into @p resolved addr. */
-int read_dns_response(int skt, struct sockaddr *dest, struct sockaddr **resolved_addr);
+/** Reads response from DNS server @p dest, putting it into @p resolved addr. */
+int read_dns_response(int skt, struct sockaddr *dest, struct sockaddr *resolved_addr);
 
 
 

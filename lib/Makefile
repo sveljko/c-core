@@ -1,3 +1,6 @@
+ifndef USE_IPV6
+USE_IPV6 = 1
+endif
 
 all: pubnub_dns_codec_unit_test
 
@@ -17,7 +20,7 @@ generate_report: all
 	#$(GCOVR) -r . --html --html-details -o coverage.html
 	$(GCOVR) -r . --xml -o coverage.xml
 
-CFLAGS +=-g -D PUBNUB_ADVANCED_KEEP_ALIVE=1 -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_NONE -D PUBNUB_DYNAMIC_REPLY_BUFFER=1 -D PUBNUB_RECEIVE_GZIP_RESPONSE=$(RECEIVE_GZIP_RESPONSE) -I. -I../ -I ../core/test -I../lib/base64 -I../lib/md5 -I../lib/miniz -I../cgreen/include
+CFLAGS +=-g -D PUBNUB_ADVANCED_KEEP_ALIVE=1 -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_NONE -D PUBNUB_DYNAMIC_REPLY_BUFFER=1 -D PUBNUB_RECEIVE_GZIP_RESPONSE=$(RECEIVE_GZIP_RESPONSE) -D PUBNUB_USE_IPV6=$(USE_IPV6) -I. -I../ -I ../core/test -I../lib/base64 -I../lib/md5 -I../lib/miniz -I../cgreen/include
 
 LDFLAGS=-L../cgreen/build/src
 

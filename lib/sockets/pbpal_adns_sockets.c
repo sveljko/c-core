@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 
+#define DNS_PORT 53
 
 #if PUBNUB_LOG_LEVEL >= PUBNUB_LOG_LEVEL_TRACE
 #define TRACE_SOCKADDR(str, addr, sockaddr_size)                               \
@@ -48,10 +49,14 @@ int send_dns_query(int                    skt,
     switch (dest->sa_family) {
     case AF_INET:
         sockaddr_size = sizeof(struct sockaddr_in);
+        ((struct sockaddr_in*)dest)->sin_port = htons(DNS_PORT);
         break;
+#if PUBNUB_USE_IPV6
     case AF_INET6:
         sockaddr_size = sizeof(struct sockaddr_in6);
+        ((struct sockaddr_in6*)dest)->sin6_port = htons(DNS_PORT);
         break;
+#endif /* PUBNUB_USE_IPV6 */
     default:
         PUBNUB_LOG_ERROR("send_dns_query(socket=%d): invalid address family "
                          "dest->sa_family =%uh\n",
@@ -76,22 +81,33 @@ int send_dns_query(int                    skt,
     return 0;
 }
 
+#if PUBNUB_USE_IPV6
+#define P_ADDR_IPV6_ARGUMENT , &addr_ipv6
+#else
+#define P_ADDR_IPV6_ARGUMENT
+#endif
 
-int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr** resolved_addr)
+int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr* resolved_addr)
 {
-    uint8_t                   buf[8192];
-    int                       msg_size;
-    unsigned                  sockaddr_size;
-    union pubnub_ipvX_address temp_resolved_addr;
-    enum DNSqueryType         addr_type;
+    uint8_t                    buf[8192];
+    int                        msg_size;
+    unsigned                   sockaddr_size;
+    struct pubnub_ipv4_address addr_ipv4 = {0};
+#if PUBNUB_USE_IPV6
+    struct pubnub_ipv6_address addr_ipv6 = {0};
+#endif
 
     switch (dest->sa_family) {
     case AF_INET:
         sockaddr_size = sizeof(struct sockaddr_in);
+        ((struct sockaddr_in*)dest)->sin_port = htons(DNS_PORT);
         break;
+#if PUBNUB_USE_IPV6
     case AF_INET6:
         sockaddr_size = sizeof(struct sockaddr_in6);
+        ((struct sockaddr_in6*)dest)->sin6_port = htons(DNS_PORT);
         break;
+#endif /* PUBNUB_USE_IPV6 */
     default:
         PUBNUB_LOG_ERROR("read_dns_response(socket=%d): invalid address family "
                          "dest->sa_family =%uh\n",
@@ -103,47 +119,31 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr** resolved
     if (msg_size <= 0) {
         return socket_would_block() ? +1 : -1;
     }
-
-    if (pbdns_pick_resolved_address(buf, (size_t)msg_size, &temp_resolved_addr, &addr_type)
-        != 0) {
+    if (pbdns_pick_resolved_address(buf,
+                                    (size_t)msg_size,
+                                    &addr_ipv4
+                                    P_ADDR_IPV6_ARGUMENT) != 0) {
         return -1;
     }
-    switch (addr_type) {
-    case dnsA: {
-        /* This memory must be liberated(freed) in 'connecting' function */
-        struct sockaddr_in* p_addr_st =
-            (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
-
-        memcpy(&(p_addr_st->sin_addr.s_addr),
-               &(temp_resolved_addr.ipv4),
-               sizeof(struct pubnub_ipv4_address));
-        *resolved_addr              = (struct sockaddr*)p_addr_st;
-        (*resolved_addr)->sa_family = AF_INET;
+    if (addr_ipv4.ipv4[0] != 0) {
+        memcpy(&((struct sockaddr_in*)resolved_addr)->sin_addr.s_addr,
+               addr_ipv4.ipv4,
+               sizeof addr_ipv4.ipv4);
+        resolved_addr->sa_family = AF_INET;
     }
-        return 0;
-    case dnsAAAA: {
-        /* This memory must be liberated(freed) in 'connecting' function */
-        struct sockaddr_in6* p_addr_st =
-            (struct sockaddr_in6*)malloc(sizeof(struct sockaddr_in6));
-
-        memcpy(p_addr_st->sin6_addr.s6_addr,
-               &(temp_resolved_addr.ipv6),
-               sizeof(struct pubnub_ipv6_address));
-        *resolved_addr              = (struct sockaddr*)p_addr_st;
-        (*resolved_addr)->sa_family = AF_INET6;
+#if PUBNUB_USE_IPV6
+    else {
+        memcpy(((struct sockaddr_in6*)resolved_addr)->sin6_addr.s6_addr,
+               addr_ipv6.ipv6,
+               sizeof addr_ipv6.ipv6);
+        resolved_addr->sa_family = AF_INET6;
     }
-        return 0;
-    default:
-        PUBNUB_LOG_ERROR("read_dns_response(socket=%d): invalid address type "
-                         "addr_type=%uh\n",
-                         skt,
-                         addr_type);
-        return -1;
-    }
+#endif /* PUBNUB_USE_IPV6 */
+    return 0;
 }
 
 
-//#if 0
+#if 0
 #include <stdio.h>
 #if !defined(_WIN32)
 #include <fcntl.h>
@@ -228,7 +228,7 @@ int main()
 #endif
     dest6.sin6_family = AF_INET6;
     dest6.sin6_port   = htons(53);
-    inet_pton(AF_INET6, "2001:4860:4860::8888", dest6.sin6_addr.s6_addr);
+    inet_pton(AF_INET6, "2001:470:20::2", dest6.sin6_addr.s6_addr);
 
     if (-1 == send_dns_query(skt, (struct sockaddr*)&dest6, "facebook.com", dnsANY)) {
         PUBNUB_LOG_ERROR("Error: Couldn't send datagram(Ipv6).\n");
@@ -262,4 +262,4 @@ int main()
 
     return 0;
 }
-//#endif
+#endif

@@ -29,6 +29,14 @@ enum DNSqueryType {
     dnsANY = 255
 };
 
+#if PUBNUB_USE_IPV6
+#define IPV6_ADDR_ARGUMENT_DECLARATION , struct pubnub_ipv6_address* resolved_addr_ipv6
+#define IPV6_ADDR_ARGUMENT , resolved_addr_ipv6
+#else
+#define IPV6_ADDR_ARGUMENT_DECLARATION
+#define IPV6_ADDR_ARGUMENT
+#endif /* PUBNUB_USE_IPV6 */
+
 /** Prepares DNS @p query_type query request for @p host(name) in @p buf whose maximum available
     length is @p buf_size in octets.
     If function succeedes, @p to_send 'carries' the length of prepared message.
@@ -45,15 +53,16 @@ int pbdns_prepare_dns_request(uint8_t* buf,
 
 /** Picks valid resolved(Ipv4, or Ipv6) domain name address from the response from DNS server.
     @p buf points to the beginning of that response and @p msg_size is its length in octets.
-    Upon success resolved address is placed in the corresponing union structure pointed by
-    @p resolved_addr and @p addr_type carries the address type.
+    Upon success resolved address is placed in the corresponing structure pointed by
+    @p resolved_addr_ipv4 or @p resolved_addr_ipv6(whichever was found first and its structure
+    pointer was not NULL).
 
     @retval 0 success, -1 on error
  */
 int pbdns_pick_resolved_address(uint8_t const* buf,
                                 size_t msg_size,
-                                union pubnub_ipvX_address* resolved_addr,
-                                enum DNSqueryType* addr_type);
+                                struct pubnub_ipv4_address* resolved_addr_ipv4
+                                IPV6_ADDR_ARGUMENT_DECLARATION);
 
 
 #endif /* defined INC_PUBNUB_DNS_HANDLER */
