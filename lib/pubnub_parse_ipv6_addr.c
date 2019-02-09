@@ -29,7 +29,7 @@ int pubnub_parse_ipv6_addr(char const* addr, struct pubnub_ipv6_address* p)
     bool previous_colon = false;
     char const* pos = addr;
     /* Position in the address string where analisis stops */
-    char const* meeting_position = addr + strlen(addr);
+    char const* meeting_position;
     
     PUBNUB_ASSERT_OPT(addr != NULL);
     PUBNUB_ASSERT_OPT(p != NULL);
@@ -40,6 +40,7 @@ int pubnub_parse_ipv6_addr(char const* addr, struct pubnub_ipv6_address* p)
                          addr);
         return -1;
     }
+    meeting_position = addr + strlen(addr);
     while (pos != meeting_position) {
         if (':' == *pos) {
             ++colons;
