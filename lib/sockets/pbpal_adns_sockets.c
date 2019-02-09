@@ -92,9 +92,9 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr* resolved_
     uint8_t                    buf[8192];
     int                        msg_size;
     unsigned                   sockaddr_size;
-    struct pubnub_ipv4_address addr_ipv4 = {0};
+    struct pubnub_ipv4_address addr_ipv4 = {};
 #if PUBNUB_USE_IPV6
-    struct pubnub_ipv6_address addr_ipv6 = {0};
+    struct pubnub_ipv6_address addr_ipv6 = {};
 #endif
 
     switch (dest->sa_family) {
