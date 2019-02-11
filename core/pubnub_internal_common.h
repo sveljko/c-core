@@ -199,8 +199,8 @@ struct pubnub_ {
         bool use_http_keep_alive : 1;
 
 #if PUBNUB_USE_IPV6 && defined(PUBNUB_CALLBACK_API)
-        /* Connectivity type(true-Ipv6/false-Ipv4) chosen on a given contex */
-        bool ipv6_connectivity;
+        /* Connectivity type(true-Ipv6/false-Ipv4) chosen on a given context */
+        bool ipv6_connectivity : 1;
 #endif
 #if PUBNUB_USE_SSL
         /** Should the PubNub client establish the connection to

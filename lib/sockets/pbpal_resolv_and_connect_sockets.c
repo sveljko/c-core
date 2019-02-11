@@ -147,17 +147,14 @@ enum pbpal_resolv_n_connect_result pbpal_resolv_and_connect(pubnub_t *pb)
 #if PUBNUB_PROXY_API
     if (0 != pb->proxy_ipv4_address.ipv4[0]) {
         struct sockaddr_in dest = {0}; 
-        struct pubnub_ipv4_address* p_dest_addr = (struct pubnub_ipv4_address*)&(dest.sin_addr.s_addr);
-        memcpy(p_dest_addr->ipv4, pb->proxy_ipv4_address.ipv4, sizeof p_dest_addr->ipv4);
+        memcpy(&(dest.sin_addr.s_addr), pb->proxy_ipv4_address.ipv4, sizeof dest.sin_addr.s_addr);
         dest.sin_family = AF_INET;
         return connect_TCP_socket(pb, (struct sockaddr*)&dest, port);
     }
 #if PUBNUB_USE_IPV6
     else if ((0 != pb->proxy_ipv6_address.ipv6[0]) || (0 != pb->proxy_ipv6_address.ipv6[1])) {
         struct sockaddr_in6 dest = {0}; 
-        struct pubnub_ipv6_address* p_dest_addr;
-        p_dest_addr = (struct pubnub_ipv6_address*)dest.sin6_addr.s6_addr;
-        memcpy(p_dest_addr->ipv6, pb->proxy_ipv6_address.ipv6, sizeof p_dest_addr->ipv6);
+        memcpy(dest.sin6_addr.s6_addr, pb->proxy_ipv6_address.ipv6, sizeof dest.sin6_addr.s6_addr);
         dest.sin6_family = AF_INET6;
         return connect_TCP_socket(pb, (struct sockaddr*)&dest, port);
     }
