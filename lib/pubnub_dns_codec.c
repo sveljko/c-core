@@ -549,8 +549,8 @@ static int find_the_answer(uint8_t const* reader,
     PUBNUB_ASSERT_OPT(reader != NULL);
     PUBNUB_ASSERT_OPT(end != NULL);
     PUBNUB_ASSERT_OPT(buf < reader);
-    PUBNUB_ASSERT_OPT(reader < end);    
-    
+    PUBNUB_ASSERT_OPT(reader < end);
+
     for (i = 0; i < ans_count; ++i) {
         uint8_t  name[256];
         size_t   to_skip;

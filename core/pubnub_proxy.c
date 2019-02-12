@@ -2,8 +2,12 @@
 #include "pubnub_proxy.h"
 
 #include "pubnub_assert.h"
+#include "core/pubnub_log.h"
 #include "pubnub_internal.h"
 #include "lib/pubnub_parse_ipv4_addr.h"
+#if PUBNUB_USE_IPV6
+#include "lib/pubnub_parse_ipv6_addr.h"
+#endif
 
 #include <string.h>
 
@@ -21,8 +25,17 @@ int pubnub_set_proxy_manual(pubnub_t*              p,
     if (0 == strcmp("localhost", ip_address_or_url)) {
         ip_address_or_url = "127.0.0.1";
     }
-    if(0 != pubnub_parse_ipv4_addr(ip_address_or_url, &(p->proxy_ipv4_address))) {
-        memset(p->proxy_ipv4_address.ipv4, 0, sizeof p->proxy_ipv4_address.ipv4);
+    /* If we haven't got numerical address for proxy we'll have to do DNS resolution(from proxy
+       host name) later on, but in order to do that we have to have all proxy addresses(on the
+       given context) set to zeros.
+    */
+    if (0 != pubnub_parse_ipv4_addr(ip_address_or_url, &(p->proxy_ipv4_address))) {
+        memset(&(p->proxy_ipv4_address), 0, sizeof p->proxy_ipv4_address);
+#if PUBNUB_USE_IPV6
+        if (0 != pubnub_parse_ipv6_addr(ip_address_or_url, &(p->proxy_ipv6_address))) {
+            memset(&(p->proxy_ipv6_address), 0, sizeof p->proxy_ipv6_address);
+        }
+#endif
     }
     switch (protocol) {
     case pbproxyHTTP_GET:
@@ -44,6 +57,22 @@ int pubnub_set_proxy_manual(pubnub_t*              p,
     return 0;
 }
 
+
+void pubnub_set_proxy_none(pubnub_t* p)
+{
+    PUBNUB_ASSERT_OPT(p != NULL);
+
+    memset(&(p->proxy_ipv4_address), 0, sizeof p->proxy_ipv4_address);
+#if PUBNUB_USE_IPV6
+    memset(&(p->proxy_ipv6_address), 0, sizeof p->proxy_ipv6_address);
+#endif
+    p->proxy_type = pbproxyNONE;
+    p->proxy_port = 0;
+    p->proxy_hostname[0] = '\0';
+
+    return;
+}
+    
 
 enum pubnub_proxy_type pubnub_proxy_protocol_get(pubnub_t* p)
 {

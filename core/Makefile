@@ -40,7 +40,7 @@ unittest: $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c
 	gcc -o pubnub_core_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_ORIGIN_SETTABLE=1 -Wall $(COVERAGE_FLAGS) -fPIC $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_core_unit_testo  $(CFLAGS) -Wall $(COVERAGE_FLAGS) $(PROJECT_SOURCEFILES) pubnub_core_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_core_unit_test.so
-#	$(GCOVR) -r . --html --html-details -o coverage.html
+	#$(GCOVR) -r . --html --html-details -o coverage.html
 
 TIMER_LIST_SOURCEFILES = pubnub_alloc_static.c pubnub_assert_std.c pubnub_timers.c
 
@@ -50,7 +50,7 @@ pubnub_timer_list_unittest: pubnub_timer_list.c pubnub_timer_list_unit_test.c
 	$(CGREEN_RUNNER) ./pubnub_timer_list_unit_test.so
 	#$(GCOVR) -r . --html --html-details -o coverage.html
 
-PROXY_PROJECT_SOURCEFILES = pubnub_proxy_core.c pubnub_proxy.c pbhttp_digest.c pbntlm_core.c pbntlm_packer_std.c pubnub_generate_uuid_v4_random_std.c ../lib/pubnub_parse_ipv4_addr.c ../lib/base64/pbbase64.c ../lib/md5/md5.c
+PROXY_PROJECT_SOURCEFILES = pubnub_proxy_core.c pubnub_proxy.c pbhttp_digest.c pbntlm_core.c pbntlm_packer_std.c pubnub_generate_uuid_v4_random_std.c ../lib/pubnub_parse_ipv4_addr.c ../lib/pubnub_parse_ipv6_addr.c ../lib/base64/pbbase64.c ../lib/md5/md5.c
 
 pubnub_proxy_unittest: $(PROJECT_SOURCEFILES) $(PROXY_PROJECT_SOURCEFILES) pubnub_proxy_unit_test.c
 	gcc -o pubnub_proxy_unit_test.so -shared $(CFLAGS) $(LDFLAGS) -D PUBNUB_PROXY_API=1 -Wall $(COVERAGE_FLAGS) -fPIC $(PROJECT_SOURCEFILES) $(PROXY_PROJECT_SOURCEFILES) pubnub_proxy_unit_test.c -lcgreen -lm

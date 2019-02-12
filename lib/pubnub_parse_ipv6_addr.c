@@ -21,9 +21,9 @@ int pubnub_parse_ipv6_addr(char const* addr, struct pubnub_ipv6_address* p)
     /* hex digit value */
     uint8_t digit_value;
     /* Number of hex digits in numerical value */
-    uint8_t hex_digits = 0;
+    int hex_digits = 0;
     /* Number of colons found in address string */
-    uint8_t colons = 0;
+    int colons = 0;
     /* Index of hex number(between two colons) in the array of eight 'unsigned short' members */
     unsigned i = 0;
     /* Defines the step forward(+1), or backward(-1).
