@@ -25,18 +25,6 @@ int pubnub_set_proxy_manual(pubnub_t*              p,
     if (0 == strcmp("localhost", ip_address_or_url)) {
         ip_address_or_url = "127.0.0.1";
     }
-    /* If we haven't got numerical address for proxy we'll have to do DNS resolution(from proxy
-       host name) later on, but in order to do that we have to have all proxy addresses(on the
-       given context) set to zeros.
-    */
-    if (0 != pubnub_parse_ipv4_addr(ip_address_or_url, &(p->proxy_ipv4_address))) {
-        memset(&(p->proxy_ipv4_address), 0, sizeof p->proxy_ipv4_address);
-#if PUBNUB_USE_IPV6
-        if (0 != pubnub_parse_ipv6_addr(ip_address_or_url, &(p->proxy_ipv6_address))) {
-            memset(&(p->proxy_ipv6_address), 0, sizeof p->proxy_ipv6_address);
-        }
-#endif
-    }
     switch (protocol) {
     case pbproxyHTTP_GET:
     case pbproxyHTTP_CONNECT:
@@ -52,6 +40,18 @@ int pubnub_set_proxy_manual(pubnub_t*              p,
     }
     p->proxy_type = protocol;
     p->proxy_port = port;
+    /* If we haven't got numerical address for proxy we'll have to do DNS resolution(from proxy
+       host name) later on, but in order to do that we have to have all proxy addresses(on the
+       given context) set to zeros.
+     */
+    if (0 != pubnub_parse_ipv4_addr(ip_address_or_url, &(p->proxy_ipv4_address))) {
+        memset(&(p->proxy_ipv4_address), 0, sizeof p->proxy_ipv4_address);
+#if PUBNUB_USE_IPV6
+        if (0 != pubnub_parse_ipv6_addr(ip_address_or_url, &(p->proxy_ipv6_address))) {
+            memset(&(p->proxy_ipv6_address), 0, sizeof p->proxy_ipv6_address);
+        }
+#endif
+    }
     memcpy(p->proxy_hostname, ip_address_or_url, ip_or_url_len + 1);
 
     return 0;
@@ -69,8 +69,6 @@ void pubnub_set_proxy_none(pubnub_t* p)
     p->proxy_type = pbproxyNONE;
     p->proxy_port = 0;
     p->proxy_hostname[0] = '\0';
-
-    return;
 }
     
 
