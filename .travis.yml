@@ -3,7 +3,7 @@ os:
   - linux
   - osx
 dist: trusty
-sudo: false
+sudo: true
 compiler:
   - clang
   - gcc
@@ -11,7 +11,7 @@ before_install:
 # Getting the latest version of "Codacy coverage reporter" often fails.
 # Until we figure out why and how to handle it, it's commented out
 #  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install jq ; fi
-#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url) ; fi 
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url) ; fi
 install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip install --user gcovr ; fi
 script:
