@@ -23,6 +23,10 @@ extern "C" {
 #if PUBNUB_CRYPTO_API
 #include "core/pubnub_crypto.h"
 #endif
+#if PUBNUB_USE_ADVANCED_HISTORY
+#include "core/pubnub_advanced_history.h"
+#define MAX_ERROR_MESSAGE_LENGTH 100
+#endif    
 #if PUBNUB_USE_EXTERN_C
 }
 #endif
@@ -32,6 +36,7 @@ extern "C" {
 #include <string>
 #include <cstring>
 #include <vector>
+#include <map>
 #include <stdexcept>
 
 #if __cplusplus >= 201103L
@@ -625,8 +630,10 @@ public:
                    unsigned           count         = 100,
                    bool               include_token = false)
     {
-        char const* ch = channel.empty() ? 0 : channel.c_str();
-        return doit(pubnub_history(d_pb, ch, count, include_token));
+        return doit(pubnub_history(d_pb,
+                                   channel.empty() ? 0 : channel.c_str(),
+                                   count,
+                                   include_token));
     }
 
     /// Starts a "history" with extended (full) options
@@ -637,6 +644,122 @@ public:
         return doit(pubnub_history_ex(d_pb, ch, opt.data()));
     }
 
+#if PUBNUB_USE_ADVANCED_HISTORY
+    /// In case the server reported en error in the response,
+    /// we'll read the error message using this function
+    /// @retval 0 on success,
+    /// @retval -1 on error
+    int get_error_message(std::string& o_message)
+    {
+        pubnub_chamebl_t msg;
+        msg.ptr = new char[MAX_ERROR_MESSAGE_LENGTH + 1];
+        if (pubnub_get_error_message(d_pb, &msg) != 0) {
+            return -1;
+        }
+//        PUBNUB_ASSERT(p_msg.size < MAX_ERROR_MESSAGE_LENGTH + 1)
+        msg.ptr[msg.size] = '\0';
+        o_message = std::string(msg.ptr);
+        delete[] msg.ptr;
+        return 0;    
+    }
+
+    /// Starts 'advanced history' pubnub_message_counts operation
+    /// for unread messages on @p channel(channel list) starting from
+    /// the given @p timetoken
+    futres message_counts(std::string const& channel, std::string const& timetoken)
+    {
+        return doit(pubnub_message_counts(d_pb,
+                                          channel.empty() ? 0 : channel.c_str(),
+                                          timetoken.empty() ? 0 : timetoken.c_str(),
+                                          0));
+    }
+    
+    /// Starts 'advanced history' pubnub_message_counts operation
+    /// for unread messages on @p channel(channel list) starting from
+    /// the given @p timetoken
+    futres message_counts(std::vector<std::string> const& channel,
+                          std::string const& timetoken)
+    {
+        return message_counts(join(channel), timetoken);
+    }
+    
+    /// Starts 'advanced history' pubnub_message_counts operation
+    /// for unread messages on @p channel(channel list) starting from
+    /// the given @p channel_timetokens(per channel)
+    futres message_counts(std::string const& channel,
+                          std::vector<std::string> const& channel_timetokens)
+    {
+        std::string tt_list = join(channel_timetokens);
+        return doit(pubnub_message_counts(d_pb,
+                                          channel.empty() ? 0 : channel.c_str(),
+                                          0,
+                                          tt_list.empty() ? 0 : tt_list.c_str()));
+    }
+    
+    /// Starts 'advanced history' pubnub_message_counts operation
+    /// for unread messages on @p channel(channel list) starting from
+    /// the given @p channel_timetokens(per channel)
+    futres message_counts(std::vector<std::string> const& channel,
+                          std::vector<std::string> const& channel_timetokens)
+    {
+        return message_counts(join(channel), channel_timetokens);
+    }
+    
+    /// Starts 'advanced history' pubnub_message_counts operation
+    /// for unread messages on @p channel_timetokens(channel, ch_timetoken pairs)
+    futres message_counts(
+        std::vector<std::pair<std::string, std::string>> const& channel_timetokens)
+    {
+        std::string ch_list("");
+        std::string tt_list("");
+        unsigned    n = channel_timetokens.empty() ? 0 : channel_timetokens.size(); 
+        unsigned    i;
+        for (i = 0; i < n; i++) {
+            std::string separator = ((i+1) < n) ? "," : "";
+            ch_list += channel_timetokens[i].first + separator;
+            tt_list += channel_timetokens[i].second + separator;
+        }
+        return doit(pubnub_message_counts(d_pb,
+                                          ch_list.empty() ? 0 : ch_list.c_str(),
+                                          0,
+                                          tt_list.empty() ? 0 : tt_list.c_str()));
+    }
+
+    /// Extracts channel-message_count paired map from the response on
+    /// 'advanced history' pubnub_message_counts operation
+    std::map<std::string, size_t> get_channel_message_counts()
+    {
+        std::map<std::string, size_t> map;
+        struct pubnub_chan_msg_count* chan_msg_counters;
+        int i;
+        int count = pubnub_get_chan_msg_counts_size(d_pb);
+        if (count <= 0) {
+            return map;
+        }
+        chan_msg_counters = new struct pubnub_chan_msg_count [count];
+        for (i = 0; i < count; i++) {
+            chan_msg_counters[i].channel.ptr = new char[PUBNUB_MAX_CHANNEL_NAME_LENGTH + 1];
+        }
+        if (pubnub_get_chan_msg_counts(d_pb, (size_t*)&count, chan_msg_counters) != 0) {
+            for (i = 0; i < count; i++) {
+                delete[] chan_msg_counters[i].channel.ptr;
+            }
+            delete[] chan_msg_counters;
+            return map;
+        }
+        for (i = 0; i < count; i++) {
+            chan_msg_counters[i].channel.ptr[chan_msg_counters[i].channel.size] = '\0';
+            map.insert(std::make_pair(chan_msg_counters[i].channel.ptr,
+                                      chan_msg_counters[i].message_count));
+        }
+        for (i = 0; i < count; i++) {
+            delete[] chan_msg_counters[i].channel.ptr;
+        }
+        delete[] chan_msg_counters;
+        return map;
+    }
+#endif /* PUBNUB_USE_ADVANCED_HISTORY */
+    
     /// Starts a transaction to inform Pubnub we're working
     /// on a @p channel and/or @p channel_group
     /// @see pubnub_heartbeat
