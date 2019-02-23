@@ -162,10 +162,6 @@ static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
                                                     char const* timetoken,
                                                     char const* channel_timetokens)
 {
-    char const* next;
-    char const* next_within_timetokens;
-    char const* previous_channel;
-    char const* previous_timetoken;
     /** Length of 'this' and 'that' */
     size_t len;
 
@@ -201,10 +197,10 @@ static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
         }
     }
     if (channel_timetokens != NULL) {
-        previous_channel = channel;
-        previous_timetoken = channel_timetokens;
-        next = strchr(previous_channel, ',');
-        next_within_timetokens = strchr(previous_timetoken, ',');
+        char const* previous_channel = channel;
+        char const* previous_timetoken = channel_timetokens;
+        char const* next = strchr(previous_channel, ',');
+        char const* next_within_timetokens = strchr(previous_timetoken, ',');
         while (next != NULL) {
             if (NULL == next_within_timetokens) {                
                 PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Number of channels and "
