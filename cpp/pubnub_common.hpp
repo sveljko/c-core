@@ -708,7 +708,7 @@ public:
     /// Starts 'advanced history' pubnub_message_counts operation
     /// for unread messages on @p channel_timetokens(channel, ch_timetoken pairs)
     futres message_counts(
-        std::vector<std::pair<std::string, std::string>> const& channel_timetokens)
+        std::vector<std::pair<std::string, std::string> > const& channel_timetokens)
     {
         std::string ch_list("");
         std::string tt_list("");
