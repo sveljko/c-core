@@ -25,8 +25,6 @@
 
 #if !defined(PUBNUB_USE_ADVANCED_HISTORY)
 #define PUBNUB_USE_ADVANCED_HISTORY 0
-#elif PUBNUB_USE_ADVANCED_HISTORY
-#include "core/pubnub_advanced_history.h"
 #endif
 
 #if !defined PUBNUB_USE_SSL

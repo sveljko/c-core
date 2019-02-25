@@ -154,9 +154,9 @@ enum pubnub_trans {
     /** Subscribe V2 operation/transaction */
     PBTT_SUBSCRIBE_V2,
     /** Message counts(get counters of unread messages to a user, identified by UUID,
-        for the list of channels specified) staring from given timetoken, or(exclusive or)
+        for the list of channels specified) starting from given timetoken, or(exclusive or)
         list of timetokens per channel.
-        If nither timetoken, nor channel_timetokens are specified, gets entire message
+        If neither timetoken, nor channel_timetokens are specified, gets entire message
         history counts for channels listed.
      */
     PBTT_MESSAGE_COUNTS,
@@ -184,11 +184,19 @@ enum pubnub_publish_method {
     pubnubPublishViaGET
 };
 
+/** Enum that describes an error when checking parameters passed to a function */
 enum pubnub_parameter_error {
+    /** All parameters checked are valid */
     pnarg_PARAMS_OK,
+    /** Indicates simultaneous presence of parameters which exclude each other */
     pnarg_PRESENT_EXCLUSIVE_ARGUMENTS,
+    /** Invalid channel name */
     pnarg_INVALID_CHANNEL,
+    /** Invalid timetoken parameter */
     pnarg_INVALID_TIMETOKEN,
+    /** Number of channels and number of timetokens from corresponding lists are
+        not equal(when they should be).
+      */
     pnarg_CHANNEL_TIMETOKEN_COUNT_MISMATCH
 };
 

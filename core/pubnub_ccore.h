@@ -65,6 +65,25 @@ enum pubnub_res pbcc_parse_presence_response(struct pbcc_context* p);
 */
 enum pubnub_res pbcc_parse_channel_registry_response(struct pbcc_context* p);
 
+#if PUBNUB_USE_ADVANCED_HISTORY
+/** Parses server response on 'message_counts' operation request and prepares
+    msg offset for reading the content of json object for 'channels' key containing
+    '"channel":nessage_count' pairs.
+    @retval PNR_OK no error reported(parsing successful)
+    @retval PNR_FORMAT_ERROR something's wrong with message format
+    @retval PNR_ERROR_ON_SERVER server reported an error
+ */
+enum pubnub_res pbcc_parse_message_counts_response(struct pbcc_context* p);
+
+/** Prepares the 'message_counts' operation (transaction), mostly by
+    formatting the URI of the HTTP request.
+ */
+enum pubnub_res pbcc_message_counts_prep(struct pbcc_context* p,
+                                         char const*          channel,
+                                         char const*          timetoken,
+                                         char const*          channel_timetokens);
+#endif /* PUBNUB_USE_ADVANCED_HISTORY */
+
 /** Prepares the Leave operation (transaction), mostly by
     formatting the URI of the HTTP request.
  */

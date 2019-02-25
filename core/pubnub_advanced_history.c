@@ -2,6 +2,7 @@
 #include "pubnub_internal.h"
 
 #if PUBNUB_USE_ADVANCED_HISTORY
+#include "pubnub_advanced_history.h"
 #include "pubnub_version.h"
 #include "pubnub_json_parse.h"
 #include "pubnub_url_encode.h"
@@ -38,7 +39,7 @@ int pubnub_get_error_message(pubnub_t* pb, pubnub_chamebl_t* o_msg)
     jpresult = pbjson_get_object_value(&el, "error_message", &found);
     if (jonmpOK == jpresult) {
         o_msg->size = found.end - found.start + 1;
-        memcpy(o_msg->ptr, found.start, o_msg->size);
+        o_msg->ptr = (char*)found.start;
         rslt = 0;
     }
     else {
@@ -80,15 +81,6 @@ enum pubnub_res pbcc_parse_message_counts_response(struct pbcc_context* p)
         if (pbjson_elem_equals_string(&found, "false")) {
             jpresult = pbjson_get_object_value(&el, "channels", &found);
             if (jonmpOK == jpresult) {
-                if ((*found.start != '{') || (found.end[-1] != '}')) {
-                    PUBNUB_LOG_ERROR("Error: pbcc_parse_message_counts_response(pbcc=%p) - "
-                                     "Array 'channels' in response is not a json object\n"
-                                     "'channels'='%.*s'\n",
-                                     p,
-                                     (int)(found.end - found.start),
-                                     found.start);
-                    return PNR_FORMAT_ERROR;
-                }
                 p->msg_ofs = found.start - reply + 1;
                 p->msg_end = found.end - reply - 1;
             }
@@ -143,12 +135,10 @@ int pubnub_get_chan_msg_counts_size(pubnub_t* pb)
         pubnub_mutex_unlock(pb->monitor);
         return 0;
     }
-    /* replacing json object end bracket with string end('\0') */
-    *(end + 1) = '\0';
-    next = strchr(next, ',');
-    while (next != NULL) {
-        ++number_of_key_value_pairs;
-        next = strchr(next + 1, ',');
+    for (;next < end; next++) {
+        if (',' == *next) {
+            ++number_of_key_value_pairs;
+        }
     }
     ++number_of_key_value_pairs;
     
@@ -157,14 +147,127 @@ int pubnub_get_chan_msg_counts_size(pubnub_t* pb)
 }
 
 
+static enum pubnub_parameter_error check_timetoken(struct pbcc_context* p,
+                                                   char const* timetoken)
+{
+    size_t len = strlen(timetoken);
+    if (len < PUBNUB_MIN_TIMETOKEN_LEN) {
+        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
+                         "Timetoken shorter than minimal permited.\n"
+                         "PUBNUB_MIN_TIMETOKEN_LEN=%d\n"
+                         "timetoken='%s'",
+                         p,
+                         PUBNUB_MIN_TIMETOKEN_LEN,
+                         timetoken);
+        return pnarg_INVALID_TIMETOKEN;
+    }
+    else if (strspn(timetoken, OK_SPAN_CHARACTERS) != len) {
+        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
+                         "Invalid timetoken.(timetoken='%s')\n",
+                         p,
+                         timetoken);
+        return pnarg_INVALID_TIMETOKEN;
+    }
+    return pnarg_PARAMS_OK;
+}
+
+
+static enum pubnub_parameter_error check_channel_timetokens(struct pbcc_context* p,
+                                                            char const* channel,
+                                                            char const* channel_timetokens)
+{
+    size_t len;
+    char const* previous_channel = channel;
+    char const* previous_timetoken = channel_timetokens;
+    char const* next = strchr(previous_channel, ',');
+    char const* next_within_timetokens = strchr(previous_timetoken, ',');
+    while (next != NULL) {
+        if (NULL == next_within_timetokens) {                
+            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Number of channels and "
+                             "number of channel_timetokens don't match: "
+                             "More channels than channel_timetokens.\n"
+                             "channel='%s'\n"
+                             "channel_timetokens='%s')\n",
+                             p,
+                             channel,
+                             channel_timetokens);
+            return pnarg_CHANNEL_TIMETOKEN_COUNT_MISMATCH;
+        }
+        if ((next - previous_channel > PUBNUB_MAX_CHANNEL_NAME_LENGTH) ||
+            (next - previous_channel < 1)) {
+            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
+                             "Channel name within the channel list too long(or missing):\n"
+                             "PUBNUB_MAX_CHANNEL_NAME_LENGTH=%d\n"
+                             "channel='%.*s'\n",
+                             p,
+                             PUBNUB_MAX_CHANNEL_NAME_LENGTH,
+                             (int)(next - previous_channel),
+                             previous_channel);
+            return pnarg_INVALID_CHANNEL;
+        }
+        if (next_within_timetokens - previous_timetoken < PUBNUB_MIN_TIMETOKEN_LEN) {
+            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
+                             "Timetoken within the list shorter than minimal permited.\n"
+                             "PUBNUB_MIN_TIMETOKEN_LEN=%d\n"
+                             "timetoken='%.*s'",
+                             p,
+                             PUBNUB_MIN_TIMETOKEN_LEN,
+                             (int)(next_within_timetokens - previous_timetoken),
+                             previous_timetoken);
+            return pnarg_INVALID_TIMETOKEN;
+        }
+        previous_channel = next + 1;
+        previous_timetoken = next_within_timetokens + 1;
+        next = strchr(previous_channel, ',');
+        next_within_timetokens = strchr(previous_timetoken, ',');
+    }
+    if (next_within_timetokens != NULL) {                
+        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Number of channels and "
+                         "number of channel_timetokens don't match: "
+                         "More channel_timetokens than channels.\n"
+                         "channel='%s'\n"
+                         "channel_timetokens='%s')\n",
+                         p,
+                         channel,
+                         channel_timetokens);
+        return pnarg_CHANNEL_TIMETOKEN_COUNT_MISMATCH;
+    }
+    len = strlen(previous_channel);
+    if ((len > PUBNUB_MAX_CHANNEL_NAME_LENGTH) || (len < 1)) {
+        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
+                         "Channel name at the end of the channel list is too long(or missing):\n"
+                         "PUBNUB_MAX_CHANNEL_NAME_LENGTH=%d\n"
+                         "channel='%s'\n",
+                         p,
+                         PUBNUB_MAX_CHANNEL_NAME_LENGTH,
+                         previous_channel);
+        return pnarg_INVALID_CHANNEL;
+    }
+    if (strlen(previous_timetoken) < PUBNUB_MIN_TIMETOKEN_LEN) {
+        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
+                         "Timetoken at the end of the list is shorter than minimal permited.\n"
+                         "PUBNUB_MIN_TIMETOKEN_LEN=%d\n"
+                         "timetoken='%s'",
+                         p,
+                         PUBNUB_MIN_TIMETOKEN_LEN,
+                         previous_timetoken);
+        return pnarg_INVALID_TIMETOKEN;
+    }
+    if (strspn(channel_timetokens, OK_SPAN_CHARACTERS) != strlen(channel_timetokens)) {
+        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Invalid channel_timetokens."
+                         "(channel_timetokens='%s')\n",
+                         p,
+                         channel_timetokens);
+        return pnarg_INVALID_TIMETOKEN;
+    }
+    return pnarg_PARAMS_OK;
+}
+
 static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
                                                     char const* channel,
                                                     char const* timetoken,
                                                     char const* channel_timetokens)
 {
-    /** Length of 'this' and 'that' */
-    size_t len;
-
     if ((timetoken != NULL) && (channel_timetokens != NULL)) {
         PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
                          "Both 'timetoken' and 'channel_timetokens'"
@@ -176,109 +279,13 @@ static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
                          channel_timetokens);
         return pnarg_PRESENT_EXCLUSIVE_ARGUMENTS;
     }
-    if (timetoken != NULL) {
-        len = strlen(timetoken);
-        if (len < PUBNUB_MIN_TIMETOKEN_LEN) {
-            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                             "Timetoken shorter than minimal permited.\n"
-                             "PUBNUB_MIN_TIMETOKEN_LEN=%d\n"
-                             "timetoken='%s'",
-                             p,
-                             PUBNUB_MIN_TIMETOKEN_LEN,
-                             timetoken);
-            return pnarg_INVALID_TIMETOKEN;
-        }
-        else if (strspn(timetoken, OK_SPAN_CHARACTERS) != len) {
-            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                             "Invalid timetoken.(timetoken='%s')\n",
-                             p,
-                             timetoken);
-            return pnarg_INVALID_TIMETOKEN;
-        }
+    if ((timetoken != NULL) && (check_timetoken(p, timetoken) != pnarg_PARAMS_OK)) {
+        return pnarg_INVALID_TIMETOKEN;  
     }
     if (channel_timetokens != NULL) {
-        char const* previous_channel = channel;
-        char const* previous_timetoken = channel_timetokens;
-        char const* next = strchr(previous_channel, ',');
-        char const* next_within_timetokens = strchr(previous_timetoken, ',');
-        while (next != NULL) {
-            if (NULL == next_within_timetokens) {                
-                PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Number of channels and "
-                                 "number of channel_timetokens don't match: "
-                                 "More channels than channel_timetokens.\n"
-                                 "channel='%s'\n"
-                                 "channel_timetokens='%s')\n",
-                                 p,
-                                 channel,
-                                 channel_timetokens);
-                return pnarg_CHANNEL_TIMETOKEN_COUNT_MISMATCH;
-            }
-            if ((next - previous_channel > PUBNUB_MAX_CHANNEL_NAME_LENGTH) ||
-                (next - previous_channel < 1)) {
-                PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                                 "Channel name within the channel list too long(or missing):\n"
-                                 "PUBNUB_MAX_CHANNEL_NAME_LENGTH=%d\n"
-                                 "channel='%.*s'\n",
-                                 p,
-                                 PUBNUB_MAX_CHANNEL_NAME_LENGTH,
-                                 (int)(next - previous_channel),
-                                 previous_channel);
-                return pnarg_INVALID_CHANNEL;
-            }
-            if (next_within_timetokens - previous_timetoken < PUBNUB_MIN_TIMETOKEN_LEN) {
-                PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                                 "Timetoken within the list shorter than minimal permited.\n"
-                                 "PUBNUB_MIN_TIMETOKEN_LEN=%d\n"
-                                 "timetoken='%.*s'",
-                                 p,
-                                 PUBNUB_MIN_TIMETOKEN_LEN,
-                                 (int)(next_within_timetokens - previous_timetoken),
-                                 previous_timetoken);
-                return pnarg_INVALID_TIMETOKEN;
-            }
-            previous_channel = next + 1;
-            previous_timetoken = next_within_timetokens + 1;
-            next = strchr(previous_channel, ',');
-            next_within_timetokens = strchr(previous_timetoken, ',');
-        }
-        if (next_within_timetokens != NULL) {                
-            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Number of channels and "
-                             "number of channel_timetokens don't match: "
-                             "More channel_timetokens than channels.\n"
-                             "channel='%s'\n"
-                             "channel_timetokens='%s')\n",
-                             p,
-                             channel,
-                             channel_timetokens);
-            return pnarg_CHANNEL_TIMETOKEN_COUNT_MISMATCH;
-        }
-        len = strlen(previous_channel);
-        if ((len > PUBNUB_MAX_CHANNEL_NAME_LENGTH) || (len < 1)) {
-            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                             "Channel name at the end of the channel list is too long(or missing):\n"
-                             "PUBNUB_MAX_CHANNEL_NAME_LENGTH=%d\n"
-                             "channel='%s'\n",
-                             p,
-                             PUBNUB_MAX_CHANNEL_NAME_LENGTH,
-                             previous_channel);
-            return pnarg_INVALID_CHANNEL;
-        }
-        if (strlen(previous_timetoken) < PUBNUB_MIN_TIMETOKEN_LEN) {
-            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                             "Timetoken at the end of the list is shorter than minimal permited.\n"
-                             "PUBNUB_MIN_TIMETOKEN_LEN=%d\n"
-                             "timetoken='%s'",
-                             p,
-                             PUBNUB_MIN_TIMETOKEN_LEN,
-                             previous_timetoken);
-            return pnarg_INVALID_TIMETOKEN;
-        }
-        if (strspn(channel_timetokens, OK_SPAN_CHARACTERS) != strlen(channel_timetokens)) {
-            PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - Invalid channel_timetokens."
-                             "(channel_timetokens='%s')\n",
-                             p,
-                             channel_timetokens);
-            return pnarg_INVALID_TIMETOKEN;
+        enum pubnub_parameter_error rslt = check_channel_timetokens(p, channel, channel_timetokens);
+        if (rslt != pnarg_PARAMS_OK) {
+            return rslt;
         }
     }
 
@@ -294,10 +301,8 @@ enum pubnub_res pbcc_message_counts_prep(struct pbcc_context* p,
     char const* const uname = pubnub_uname();
     char const*       uuid  = pbcc_uuid_get(p);
     
-    if (NULL == channel) {
-        return PNR_INVALID_CHANNEL;
-    }
-    if (check_parameters(p, channel, timetoken, channel_timetokens) != pnarg_PARAMS_OK) {
+    if ((NULL == channel) ||
+        (check_parameters(p, channel, timetoken, channel_timetokens) != pnarg_PARAMS_OK)) {
         return PNR_INVALID_PARAMETERS;
     }
     if (p->msg_ofs < p->msg_end) {
@@ -377,45 +382,44 @@ int pubnub_get_chan_msg_counts(pubnub_t* pb,
         pubnub_mutex_unlock(pb->monitor);
         return 0;
     }
-    /* replacing json object end bracket with string end('\0') */
-    *end = '\0';
     ch_start = pbjson_skip_whitespace(ch_start, end);
-    while((*ch_start != '\0') && (count < *io_count)) {
+    while ((ch_start < end) && (count < *io_count)) {
         char const* ch_end;
 
         ch_end = pbjson_find_end_element(ch_start, end);
         chan_msg_counters[count].channel.size = ch_end - ch_start - 1;
-        memcpy(chan_msg_counters[count].channel.ptr,
-               ch_start + 1,
-               chan_msg_counters[count].channel.size);
+        chan_msg_counters[count].channel.ptr = (char*)(ch_start + 1),
         ch_start = pbjson_skip_whitespace(ch_end + 1, end);
         if (*ch_start != ':') {
-            PUBNUB_LOG_ERROR("Error: pubnub_get_chan_msg_counts(pb=%p) - "
-                             "colon missing after channel name\n"
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_chan_msg_counts(pb=%p) - "
+                             "colon missing after channel name=%*.s\n"
                              "characters after channel name='%s'",
                              pb,
+                             (int)chan_msg_counters[count].channel.size,
+                             chan_msg_counters[count].channel.ptr,
                              ch_start);
-            pubnub_mutex_unlock(pb->monitor);
-            return -1;
         }
-        if (sscanf(++ch_start, "%u", (unsigned*)&(chan_msg_counters[count].message_count)) != 1) {
-            PUBNUB_LOG_ERROR("Error: pubnub_get_chan_msg_counts(pb=%p) - "
-                             "failed to read the message count.\n"
+        else if (sscanf(++ch_start, "%u", (unsigned*)&(chan_msg_counters[count].message_count)) != 1) {
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_chan_msg_counts(pb=%p) - "
+                             "failed to read the message count for channel='%*.s'\n"
                              "got these characters instead='%s'\n",
                              pb,
-                             ch_start);
-            pubnub_mutex_unlock(pb->monitor);
-            return -1;
+                             (int)chan_msg_counters[count].channel.size,
+                             chan_msg_counters[count].channel.ptr,                             
+                             ch_start - 1);
         }
-        ++count;
-        ch_start = strchr(ch_start, ',');
-        if (NULL == ch_start) {
-            ch_start = end;
+        else {
+            ++count;
+        }
+        while((*ch_start != ',') && (ch_start < end)) {
+            ch_start++;
+        }
+        if (ch_start == end) {
             break;
         }
         ch_start = pbjson_skip_whitespace(ch_start + 1, end);
     }
-    if ((count == *io_count) && (*ch_start != '\0')) {
+    if ((count == *io_count) && (ch_start != end)) {
         PUBNUB_LOG_DEBUG("Note: pubnub_get_chan_msg_counts(pb=%p) - "
                          "more than expected message counters,\n"
                          "unhandled part of the response='%s'\n",
@@ -432,7 +436,7 @@ int pubnub_get_chan_msg_counts(pubnub_t* pb,
 }
 
 
-int pubnub_get_message_counts(pubnub_t* pb, char const*channel, size_t* o_count)
+int pubnub_get_message_counts(pubnub_t* pb, char const* channel, int* o_count)
 {
     char const* ch_start;
     char*       end;
@@ -452,11 +456,26 @@ int pubnub_get_message_counts(pubnub_t* pb, char const*channel, size_t* o_count)
                          pb);
         return -1;
     }
-    /* Initilazing all counters to zeros */
-    for (next = strchr(channel, ','); next != NULL; next = strchr(next + 1, ','), n++) {
-        o_count[n] = 0;
+    next = channel;
+    while (' ' == *next) {
+        next++;
     }
-    o_count[n++] = 0;
+    o_count[n++] = -(next - channel) - 1;    
+    /* Initilazing all counters to zeros */
+    for (next = strchr(next, ','); next != NULL; next = strchr(next + 1, ','), n++) {
+        ++next;
+        while (' ' == *next) {
+            next++;
+        }
+        /* Saving negative channel offsets(-1) in the array of counters.
+           That is, if channel name from the 'channel' list is not found in the answer
+           corresponding array member stays negative, while when channel name(from the
+           'channel' list) is found in the response this value is used for locating
+           channnel name within the list od channels before it is changed to its
+           corresponding message counter value(which could, also, be zero).
+         */
+        o_count[n] = -(next - channel) - 1;
+    }
 
     ch_start = pb->core.http_reply + pb->core.msg_ofs;
     end = pb->core.http_reply + pb->core.msg_end + 1;
@@ -465,10 +484,8 @@ int pubnub_get_message_counts(pubnub_t* pb, char const*channel, size_t* o_count)
         pubnub_mutex_unlock(pb->monitor);
         return 0;
     }
-    /* replacing json object end bracket with string end('\0') */
-    *end = '\0';
     ch_start = pbjson_skip_whitespace(ch_start, end);
-    while((*ch_start != '\0') && (counts < n)) {
+    while((ch_start < end) && (counts < n)) {
         /* index in the array of message counters */
         int         i = 0;
         /* channel name length */
@@ -476,62 +493,54 @@ int pubnub_get_message_counts(pubnub_t* pb, char const*channel, size_t* o_count)
         char const* ptr_ch;
         char*       ch_end;
         ch_end = (char*)pbjson_find_end_element(ch_start++, end);
-        /* Preparing channel found in response message for search in @p 'channel' list,
-           changing its quotation mark into string end('\0')
-         */
-        *ch_end = '\0';
         len = ch_end - ch_start;
-        for (ptr_ch = strstr(channel, ch_start); ptr_ch != NULL;) {
-            if (((',' == *(ptr_ch - 1)) || (' ' == *(ptr_ch - 1)))
-                && ((',' == *(ptr_ch + len)) || (' ' == *(ptr_ch + len)))) {
-                /* Finding the channel index in the @p channel list */
-                for (next = strchr(channel, ','); next != NULL; next = strchr(next + 1, ','), i++) {
-                    if (next > ptr_ch) {
-                        break;
-                    }
-                }                
+        for (i = 0, ptr_ch = channel - o_count[0] - 1; i < n ; i++) {
+            /* Comparing channel name found in response message with name from 'channel' list. */
+            if ((memcmp(ptr_ch, ch_start, len) == 0) &&
+                ((*(ptr_ch + len) == ',') || (*(ptr_ch + len) == ' '))) {
                 break;
             }
-            ptr_ch = strstr(ptr_ch + len, ch_start);
+            ptr_ch = channel - o_count[i] - 1;
         }
-        if (NULL == ptr_ch) {
+        if (i == n) {
             PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pb=%p) - "
                              "channel not present in the query list 'channel',\n"
-                             "unhandled part of the response='%s'\n",
+                             "unhandled channel from the response='%*.s'\n",
                              pb,
+                             len,
                              ch_start);
         }
-        /* Returning end character to its original quotation mark('\"') */
-        *ch_end = '\"';
         ch_start = pbjson_skip_whitespace(ch_end + 1, end);
         if (*ch_start != ':') {
-            PUBNUB_LOG_ERROR("Error: pubnub_get_msg_counts(pb=%p) - "
-                             "colon missing after channel name\n"
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pb=%p) - "
+                             "colon missing after channel name='%*.s'\n"
                              "characters after channel name='%s'",
                              pb,
+                             len,
+                             ptr_ch,
                              ch_start);
-            pubnub_mutex_unlock(pb->monitor);
-            return -1;
-        }
-        /* Saving messages count value found within array provided */
-        if (sscanf(++ch_start, "%u", (unsigned*)(o_count + i)) != 1) {
-            PUBNUB_LOG_ERROR("Error: pubnub_get_msg_counts(pb=%p) - "
-                             "failed to read the message count.\n"
+        }    /* Saving message count value in the array provided */
+        else if (sscanf(++ch_start, "%u", (unsigned*)(o_count + i)) != 1) {
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pb=%p) - "
+                             "failed to read the message count for channel='%*.s'\n"
                              "got these characters instead='%s'\n",
                              pb,
-                             ch_start);
-            pubnub_mutex_unlock(pb->monitor);
-            return -1;
+                             len,
+                             ptr_ch,
+                             ch_start - 1);
         }
-        ++counts;
-        ch_start = strchr(ch_start, ',');
-        if (NULL == ch_start) {
-            ch_start = end;
+        else {
+            ++counts;
+        }
+        while((*ch_start != ',') && (ch_start < end)) {
+            ch_start++;
+        }
+        if (ch_start == end) {
             break;
         }
         ch_start = pbjson_skip_whitespace(ch_start + 1, end);
     }
-    if ((counts == n) && (*ch_start != '\0')) {
+    if ((counts == n) && (ch_start != end)) {
         PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pb=%p) - "
                          "more than expected message counters,\n"
                          "unhandled part of the response='%s'\n",

@@ -407,13 +407,12 @@ public:
                        bool string_token);
     
 #if PUBNUB_USE_ADVANCED_HISTORY
-        /* In case the server reported en error in the response,
+    /* In case the server reported en error in the response,
        we'll read the error message using this function
-       @retval 0 on success,
-       @retval -1 on error(couldn't find "error_message" key,
-                  or transaction in progres(not finished))
+       @retval error_message on successfully read error message,
+       @retval empty_string otherwise
      */
-    int get_error_message(QString& o_message);
+    QString get_error_message();
     /* Get counts of received(unread) messages for each channel from
        @p channel list starting(in time) with @p timetoken(Meanning
        'initiates 'advanced history' message_counts operation/transaction')
@@ -470,7 +469,7 @@ public:
        If there is no key "channels" in the respnse, or the corresponding
        json value is empty returns empty map.
      */
-    QMap<QString, size_t> pubnub_qt::get_channel_message_counts();
+    QMap<QString, size_t> get_channel_message_counts();
 #endif /* PUBNUB_USE_ADVANCED_HISTORY */
 
     /** Get the currently present users on a @p channel and/or @p
