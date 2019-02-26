@@ -34,8 +34,7 @@ int pubnub_get_error_message(pubnub_t* pb, pubnub_chamebl_t* o_msg)
     }
     
     el.start    = pb->core.http_reply;
-    el.end      = pb->core.http_reply + pb->core.http_buf_len;
-    
+    el.end      = pb->core.http_reply + pb->core.http_buf_len;    
     jpresult = pbjson_get_object_value(&el, "error_message", &found);
     if (jonmpOK == jpresult) {
         o_msg->size = found.end - found.start + 1;
