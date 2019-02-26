@@ -436,32 +436,19 @@ int pubnub_get_chan_msg_counts(pubnub_t* pb,
 }
 
 
-int pubnub_get_message_counts(pubnub_t* pb, char const* channel, int* o_count)
+static int initialize_msg_counters(char const* channel, int* o_count)
 {
-    char const* ch_start;
-    char*       end;
     int         n = 0;
-    int         counts = 0;
     char const* next;
 
-    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     PUBNUB_ASSERT_OPT(channel != NULL);
     PUBNUB_ASSERT_OPT(o_count != NULL);
-
-    pubnub_mutex_lock(pb->monitor);
-    if (!pbnc_can_start_transaction(pb)) {
-        pubnub_mutex_unlock(pb->monitor);
-        PUBNUB_LOG_ERROR("Error: pubnub_get_message_counts(pb=%p) - "
-                         "Transacton in progress on the context",
-                         pb);
-        return -1;
-    }
+    
     next = channel;
     while (' ' == *next) {
         next++;
     }
     o_count[n++] = -(next - channel) - 1;    
-    /* Initilazing all counters to zeros */
     for (next = strchr(next, ','); next != NULL; next = strchr(next + 1, ','), n++) {
         ++next;
         while (' ' == *next) {
@@ -471,12 +458,34 @@ int pubnub_get_message_counts(pubnub_t* pb, char const* channel, int* o_count)
            That is, if channel name from the 'channel' list is not found in the answer
            corresponding array member stays negative, while when channel name(from the
            'channel' list) is found in the response this value is used for locating
-           channnel name within the list od channels before it is changed to its
+           channel name within the list od channels before it is changed to its
            corresponding message counter value(which could, also, be zero).
          */
         o_count[n] = -(next - channel) - 1;
     }
+    return n;
+}
 
+
+int pubnub_get_message_counts(pubnub_t* pb, char const* channel, int* o_count)
+{
+    char const* ch_start;
+    char*       end;
+    int         n;
+    int         counts = 0;
+
+    PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+
+    pubnub_mutex_lock(pb->monitor);
+    if (!pbnc_can_start_transaction(pb)) {
+        pubnub_mutex_unlock(pb->monitor);
+        PUBNUB_LOG_ERROR("Error: pubnub_get_message_counts(pb=%p) - "
+                         "Transacton in progress on the context",
+                         pb);
+        return -1;
+    }
+
+    n = initialize_msg_counters(channel, o_count);
     ch_start = pb->core.http_reply + pb->core.msg_ofs;
     end = pb->core.http_reply + pb->core.msg_end + 1;
     if (ch_start >= end) {
