@@ -2,17 +2,7 @@
 #if !defined INC_PUBNUB_ADVANCED_HISTORY
 #define INC_PUBNUB_ADVANCED_HISTORY
 
-#include "pubnub_memory_block.h"
-
-/** Structure containing channel name as char memory block and field with
-    message count for messages received on the channel since given point in time
-    (defined by parameters passed to the function).
-    Used to store information retrieved by 'advanced history' message_counts operation
- */
-struct pubnub_chan_msg_count {
-    pubnub_chamebl_t channel;
-    size_t message_count;
-};
+#include "pbcc_advanced_history.h"
 
 /** Extracts 'error_message' attribute value from the transaction response on the
     context @p pb into @p o_msg.
@@ -32,11 +22,10 @@ int pubnub_get_chan_msg_counts_size(pubnub_t* pb);
     list of channels @p channel for unread messages counts starting from @p timeoken,
     or (exclusive or) list of @p channel_timetokens(corresponding to the list
     'channel').
-    @retval PNR_STARTED request has been sent but transaction still in progress
+    @retval PNR_STARTED request has been sent, but transaction is still in progress
     @retval PNR_IN_PROGRESS can't start transaction because previous one is still
                             in progress(hasn't finished yet)
     @retval PNR_OK transaction is successfully accomplished and ready for analysis
-    @retval PNR_INVALID_CHANNEL @p channel is NULL pointer
     @retval PNR_INVALID_PARAMETERS on invalid parameters
     @retval PNR_RX_BUFF_NOT_EMPTY buffer on the previous transaction left unread
                                   in full
@@ -63,8 +52,8 @@ int pubnub_get_chan_msg_counts(pubnub_t* pb,
     @p channel and it('o_count' array) has to be provided by the user.
     Message counts order in `o_count` is corresponding to channel order in `channel`
     list respectively, even if the answer itself is different. If the requested
-    channel(from 'o_count' array) is not in the answer, the message counter in
-    the respective 'o_count' array member has negative value. 
+    channel(from 'o_count' array) is not found in the answer, the message counter
+    in the respective 'o_count' array member has negative value. 
     If there is a channel name in the answer, not to be found in requested
     `channel` list, that won't be considered an error. It will be reported as
     PUBNUB_LOG_DEBUG().

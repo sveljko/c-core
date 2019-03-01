@@ -407,12 +407,14 @@ public:
                        bool string_token);
     
 #if PUBNUB_USE_ADVANCED_HISTORY
+
     /* In case the server reported en error in the response,
        we'll read the error message using this function
        @retval error_message on successfully read error message,
        @retval empty_string otherwise
      */
     QString get_error_message();
+
     /* Get counts of received(unread) messages for each channel from
        @p channel list starting(in time) with @p timetoken(Meanning
        'initiates 'advanced history' message_counts operation/transaction')
@@ -434,7 +436,7 @@ public:
     pubnub_res message_counts(QStringList const& channel, QString const& timetoken);
 
     /* Get counts of received(unread) messages for each channel from
-       @p channel list starting(in time) with @p timetoken(per channel) list.
+       @p channel list starting(in time) with @p channel_timetoken(per channel) list.
        (Meanning 'initiates 'advanced history' message_counts operation/transaction')
        
        If successful message will be available through get_channel_message_counts()
@@ -445,7 +447,7 @@ public:
                               QStringList const& channel_timetoken);
 
     /* Get counts of received(unread) messages for each channel from
-       @p channel list starting(in time) with @p timetoken(per channel) list.
+       @p channel list starting(in time) with @p channel_timetoken(per channel) list.
        (Meanning 'initiates 'advanced history' message_counts operation/transaction')
        
        If successful message will be available through get_channel_message_counts()
@@ -455,7 +457,7 @@ public:
     pubnub_res message_counts(QStringList const& channel,
                               QStringList const& channel_timetoken);
 
-    /* Starts 'advanced history' pubnub_message_counts operation
+    /* Starts 'advanced history' pubnub_message_counts transaction
        for unread messages on @p channel_timetokens(channel, ch_timetoken pairs)
        
        If successful message will be available through get_channel_message_counts()
@@ -465,9 +467,9 @@ public:
     pubnub_res message_counts(QVector<QPair<QString, QString>> const& channel_timetokens);
     
     /* Extracts channel-message_count paired map from the response on
-       'advanced history' pubnub_message_counts operation.
+       'advanced history' pubnub_message_counts transaction.
        If there is no key "channels" in the respnse, or the corresponding
-       json value is empty returns empty map.
+       json value is empty returns an empty map.
      */
     QMap<QString, size_t> get_channel_message_counts();
 #endif /* PUBNUB_USE_ADVANCED_HISTORY */
