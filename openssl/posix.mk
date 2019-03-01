@@ -52,8 +52,8 @@ OBJFILES += miniz_tinfl.o pbgzip_decompress.o
 endif
 
 ifeq ($(USE_ADVANCED_HISTORY), 1)
-SOURCEFILES += ../core/pubnub_advanced_history.c
-OBJFILES += pubnub_advanced_history.o
+SOURCEFILES += ../core/pbcc_advanced_history.c ../core/pubnub_advanced_history.c
+OBJFILES += pbcc_advanced_history.o pubnub_advanced_history.o
 endif
 
 CFLAGS = -g -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_WARNING  -Wall -D PUBNUB_THREADSAFE -D PUBNUB_PROXY_API=$(USE_PROXY) -D PUBNUB_USE_IPV6=$(USE_IPV6)

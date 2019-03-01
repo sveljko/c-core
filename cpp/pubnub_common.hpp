@@ -647,20 +647,15 @@ public:
 #if PUBNUB_USE_ADVANCED_HISTORY
     /// In case the server reported en error in the response,
     /// we'll read the error message using this function
-    /// @retval 0 on success,
-    /// @retval -1 on error
-    int get_error_message(std::string& o_message)
+    /// @retval error_message on successfully read error message,
+    /// @retval empty_string otherwise
+    std::string get_error_message()
     {
         pubnub_chamebl_t msg;
-        msg.ptr = new char[MAX_ERROR_MESSAGE_LENGTH + 1];
         if (pubnub_get_error_message(d_pb, &msg) != 0) {
-            return -1;
+            return std::string("");
         }
-//        PUBNUB_ASSERT(p_msg.size < MAX_ERROR_MESSAGE_LENGTH + 1)
-        msg.ptr[msg.size] = '\0';
-        o_message = std::string(msg.ptr);
-        delete[] msg.ptr;
-        return 0;    
+        return std::string(msg.ptr, msg.size);
     }
 
     /// Starts 'advanced history' pubnub_message_counts operation
@@ -730,32 +725,21 @@ public:
     std::map<std::string, size_t> get_channel_message_counts()
     {
         std::map<std::string, size_t> map;
-        struct pubnub_chan_msg_count* chan_msg_counters;
+        std::vector<struct pubnub_chan_msg_count> chan_msg_counters;
         int i;
         int count = pubnub_get_chan_msg_counts_size(d_pb);
         if (count <= 0) {
             return map;
         }
-        chan_msg_counters = new struct pubnub_chan_msg_count [count];
-        for (i = 0; i < count; i++) {
-            chan_msg_counters[i].channel.ptr = new char[PUBNUB_MAX_CHANNEL_NAME_LENGTH + 1];
-        }
-        if (pubnub_get_chan_msg_counts(d_pb, (size_t*)&count, chan_msg_counters) != 0) {
-            for (i = 0; i < count; i++) {
-                delete[] chan_msg_counters[i].channel.ptr;
-            }
-            delete[] chan_msg_counters;
+        chan_msg_counters = std::vector<struct pubnub_chan_msg_count>(count);
+        if (pubnub_get_chan_msg_counts(d_pb, (size_t*)&count, &chan_msg_counters[0]) != 0) {
             return map;
         }
         for (i = 0; i < count; i++) {
-            chan_msg_counters[i].channel.ptr[chan_msg_counters[i].channel.size] = '\0';
-            map.insert(std::make_pair(chan_msg_counters[i].channel.ptr,
+            map.insert(std::make_pair(std::string(chan_msg_counters[i].channel.ptr,
+                                                  chan_msg_counters[i].channel.size),
                                       chan_msg_counters[i].message_count));
         }
-        for (i = 0; i < count; i++) {
-            delete[] chan_msg_counters[i].channel.ptr;
-        }
-        delete[] chan_msg_counters;
         return map;
     }
 #endif /* PUBNUB_USE_ADVANCED_HISTORY */

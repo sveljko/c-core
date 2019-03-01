@@ -8,7 +8,9 @@
 #include "core/pbpal.h"
 #include "core/pubnub_version_internal.h"
 #include "core/pubnub_helper.h"
-
+#if PUBNUB_USE_ADVANCED_HISTORY
+#include "core/pbcc_advanced_history.h"
+#endif
 #include "core/pubnub_proxy_core.h"
 
 #include <string.h>
