@@ -192,6 +192,119 @@ int pbcc_get_chan_msg_counts(struct pbcc_context* p,
 }
 
 
+static int initialize_msg_counters(char const* channel, int* o_count)
+{
+    int         n = 0;
+    char const* next;
+
+    PUBNUB_ASSERT_OPT(channel != NULL);
+    PUBNUB_ASSERT_OPT(o_count != NULL);
+    
+    next = channel;
+    while (' ' == *next) {
+        next++;
+    }
+    o_count[n++] = -(next - channel) - 1;    
+    for (next = strchr(next, ','); next != NULL; next = strchr(next + 1, ','), n++) {
+        ++next;
+        while (' ' == *next) {
+            next++;
+        }
+        /* Saving negative channel offsets(-1) in the array of counters.
+           That is, if channel name from the 'channel' list is not found in the answer
+           corresponding array member stays negative, while when channel name(from the
+           'channel' list) is found in the response this value is used for locating
+           channel name within the list od channels before it is changed to its
+           corresponding message counter value(which could, also, be zero).
+         */
+        o_count[n] = -(next - channel) - 1;
+    }
+    return n;
+}
+
+
+int pbcc_get_message_counts(struct pbcc_context* p, char const* channel, int* o_count)
+{
+    char const* ch_start;
+    char*       end;
+    int         n;
+    int         counts = 0;
+
+    n = initialize_msg_counters(channel, o_count);
+    ch_start = p->http_reply + p->msg_ofs;
+    end = p->http_reply + p->msg_end + 1;
+    if (ch_start >= end - 1) {
+        /* Response message carries no counters */
+        return 0;
+    }
+    ch_start = pbjson_skip_whitespace(ch_start, end);
+    while((ch_start < end) && (counts < n)) {
+        /* index in the array of message counters */
+        int         i = 0;
+        /* channel name length */
+        unsigned    len;
+        char const* ptr_ch;
+        char*       ch_end;
+        ch_end = (char*)pbjson_find_end_element(ch_start++, end);
+        len = ch_end - ch_start;
+        for (i = 0; i < n ; i++) {
+            ptr_ch = channel - o_count[i] - 1;
+            /* Comparing channel name found in response message with name from 'channel' list. */
+            if ((memcmp(ptr_ch, ch_start, len) == 0) &&
+                ((' ' == *(ptr_ch + len)) || (',' == *(ptr_ch + len)) || ('\0' == *(ptr_ch + len)))) {
+                break;
+            }
+        }
+        if (i == n) {
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pbcc=%p) - "
+                             "channel not present in the query list 'channel',\n"
+                             "unhandled channel from the response='%*.s'\n",
+                             p,
+                             len,
+                             ch_start);
+        }
+        ch_start = pbjson_skip_whitespace(ch_end + 1, end);
+        if (*ch_start != ':') {
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pbcc=%p) - "
+                             "colon missing after channel name='%*.s'\n"
+                             "characters after channel name='%s'",
+                             p,
+                             len,
+                             ptr_ch,
+                             ch_start);
+        }    /* Saving message count value in the array provided */
+        else if (sscanf(++ch_start, "%u", (unsigned*)(o_count + i)) != 1) {
+            PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pbcc=%p) - "
+                             "failed to read the message count for channel='%*.s'\n"
+                             "got these characters instead='%s'\n",
+                             p,
+                             len,
+                             ptr_ch,
+                             ch_start - 1);
+        }
+        else {
+            ++counts;
+        }
+        while((*ch_start != ',') && (ch_start < end)) {
+            ch_start++;
+        }
+        if (ch_start == end) {
+            break;
+        }
+        ch_start = pbjson_skip_whitespace(ch_start + 1, end);
+    }
+    if ((counts == n) && (ch_start != end)) {
+        PUBNUB_LOG_DEBUG("Note: pubnub_get_msg_counts(pbcc=%p) - "
+                         "more than expected message counters,\n"
+                         "unhandled part of the response='%s'\n",
+                         p,
+                         ch_start);
+    }
+    p->msg_ofs = ch_start - p->http_reply;
+    return 0;
+}
+
+
 static enum pubnub_parameter_error check_timetoken(struct pbcc_context* p,
                                                    char const* timetoken)
 {

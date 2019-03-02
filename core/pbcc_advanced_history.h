@@ -62,6 +62,16 @@ int pbcc_get_chan_msg_counts(struct pbcc_context* p,
                              size_t* io_count, 
                              struct pubnub_chan_msg_count* chan_msg_counters);
 
+/** @p io_count is the array allocated by the user that has the same number of elements as
+    the corresponding @p channel(s string) has channel names. The array is filled upon
+    successful retrieval of message counters from the response.
+    If some of the channels are not found in the answer, corresponding @p o_count elemets
+    have negative values.
+    
+    @retval 0 on success
+    @retval -1 on error
+ */
+int pbcc_get_message_counts(struct pbcc_context* p, char const* channel, int* o_count);
 
 /** Prepares the 'message_counts' operation (transaction), mostly by
     formatting the URI of the HTTP request.
