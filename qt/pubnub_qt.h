@@ -406,7 +406,6 @@ public:
                        QString const& end,
                        bool string_token);
     
-#if PUBNUB_USE_ADVANCED_HISTORY
     /* In case the server reported en error in the response,
        we'll read the error message using this function
        @retval error_message on successfully read error message,
@@ -467,11 +466,10 @@ public:
     
     /* Extracts channel-message_count paired map from the response on
        'advanced history' pubnub_message_counts transaction.
-       If there is no key "channels" in the respnse, or the corresponding
+       If there is no key "channels" in the response, or the corresponding
        json value is empty returns an empty map.
      */
     QMap<QString, size_t> get_channel_message_counts();
-#endif /* PUBNUB_USE_ADVANCED_HISTORY */
 
     /** Get the currently present users on a @p channel and/or @p
         channel_group. This actually means "initiate a here_now

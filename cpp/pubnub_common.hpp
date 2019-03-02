@@ -23,10 +23,8 @@ extern "C" {
 #if PUBNUB_CRYPTO_API
 #include "core/pubnub_crypto.h"
 #endif
-#if PUBNUB_USE_ADVANCED_HISTORY
 #include "core/pubnub_advanced_history.h"
 #define MAX_ERROR_MESSAGE_LENGTH 100
-#endif    
 #if PUBNUB_USE_EXTERN_C
 }
 #endif
@@ -644,7 +642,6 @@ public:
         return doit(pubnub_history_ex(d_pb, ch, opt.data()));
     }
 
-#if PUBNUB_USE_ADVANCED_HISTORY
     /// In case the server reported en error in the response,
     /// we'll read the error message using this function
     /// @retval error_message on successfully read error message,
@@ -725,13 +722,13 @@ public:
     std::map<std::string, size_t> get_channel_message_counts()
     {
         std::map<std::string, size_t> map;
-        std::vector<struct pubnub_chan_msg_count> chan_msg_counters;
+        std::vector<pubnub_chan_msg_count> chan_msg_counters;
         int i;
         int count = pubnub_get_chan_msg_counts_size(d_pb);
         if (count <= 0) {
             return map;
         }
-        chan_msg_counters = std::vector<struct pubnub_chan_msg_count>(count);
+        chan_msg_counters = std::vector<pubnub_chan_msg_count>(count);
         if (pubnub_get_chan_msg_counts(d_pb, (size_t*)&count, &chan_msg_counters[0]) != 0) {
             return map;
         }
@@ -742,7 +739,6 @@ public:
         }
         return map;
     }
-#endif /* PUBNUB_USE_ADVANCED_HISTORY */
     
     /// Starts a transaction to inform Pubnub we're working
     /// on a @p channel and/or @p channel_group

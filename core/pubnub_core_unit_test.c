@@ -6,6 +6,7 @@
 #include "pubnub_pubsubapi.h"
 #include "pubnub_coreapi.h"
 #if PUBNUB_USE_ADVANCED_HISTORY
+#include "pubnub_memory_block.h"
 #include "pubnub_advanced_history.h"
 #endif
 #include "pubnub_assert.h"
@@ -1524,13 +1525,13 @@ Ensure(single_context_pubnub, gets_advanced_history_message_counts_for_two_chann
     expect_have_dns_for_pubnub_origin();
 
     expect_outgoing_with_url("/v3/history/sub-key/sub-pinta/message-counts/"
-                             "some,%20other?pnsdk=unit-test-0.1&timetoken=14378854953886727");
+                             "some,other?pnsdk=unit-test-0.1&timetoken=14378854953886727");
     incoming("HTTP/1.1 200\r\nContent-Length: 85\r\n\r\n"
              "{\"status\":200, \"error\": false, \"error_message\": \"\", \"channels\": {\"some\":1,\"other\":5}}",
              NULL);
     expect(pbntf_lost_socket, when(pb, equals(pbp)));
     expect(pbntf_trans_outcome, when(pb, equals(pbp)));
-    attest(pubnub_message_counts(pbp, "some, other", "14378854953886727", NULL), equals(PNR_OK));
+    attest(pubnub_message_counts(pbp, "some,other", "14378854953886727", NULL), equals(PNR_OK));
 
     attest(pubnub_get_chan_msg_counts_size(pbp), equals(2));
     attest(pubnub_get_chan_msg_counts(pbp, &io_count, chan_msg_counters), equals(0));
@@ -1558,7 +1559,7 @@ Ensure(single_context_pubnub, gets_message_counts_for_two_channels_since_channel
     expect_have_dns_for_pubnub_origin();
 
     expect_outgoing_with_url("/v3/history/sub-key/sub-santa-maria/message-counts/"
-                             "ocean%20,%20wind?pnsdk=unit-test-0.1&channelsTimetoken="
+                             "ocean,wind?pnsdk=unit-test-0.1&channelsTimetoken="
                              "14378854953886727,14378856783886727");
     incoming("HTTP/1.1 200\r\nContent-Length: 87\r\n\r\n"
              "{\"status\":200, \"error\": false, \"error_message\": \"\", \"channels\": {\"wind\":18,\"ocean\":76}}",
@@ -1566,7 +1567,7 @@ Ensure(single_context_pubnub, gets_message_counts_for_two_channels_since_channel
     expect(pbntf_lost_socket, when(pb, equals(pbp)));
     expect(pbntf_trans_outcome, when(pb, equals(pbp)));
     attest(pubnub_message_counts(pbp,
-                                 "ocean , wind",
+                                 "ocean,wind",
                                  NULL,
                                  "14378854953886727,14378856783886727"),
            equals(PNR_OK));
@@ -1580,7 +1581,7 @@ Ensure(single_context_pubnub, gets_message_counts_for_two_channels_since_channel
     attest(strncmp(chan_msg_counters[1].channel.ptr, channel_1.ptr, channel_1.size), equals(0));
     attest(chan_msg_counters[1].channel.size, equals(channel_1.size));
     attest(chan_msg_counters[1].message_count, equals(76));
-    /* Message is read in full */
+    /* Message is read */
     attest(pubnub_get_chan_msg_counts(pbp, &io_count, chan_msg_counters), equals(0));
     attest(io_count, equals(0));
     
@@ -1598,7 +1599,7 @@ Ensure(single_context_pubnub,
     expect_have_dns_for_pubnub_origin();
 
     expect_outgoing_with_url("/v3/history/sub-key/sub-echo/message-counts/"
-                             "%20bravo%20,alfa%20,%20charlie%20?pnsdk=unit-test-0.1&channelsTimetoken="
+                             "bravo,alfa,charlie?pnsdk=unit-test-0.1&channelsTimetoken="
                              "15378854953886727,15378856783886727,15378856783886727");
     incoming("HTTP/1.1 200\r\nContent-Length: 106\r\n\r\n"
              "{\"status\":200, \"error\": false, \"error_message\": \"\", \"channels\": {\"charlie\":25,\"alfa\":196 ,  \"bravo\":3 }  }",
@@ -1606,13 +1607,13 @@ Ensure(single_context_pubnub,
     expect(pbntf_lost_socket, when(pb, equals(pbp)));
     expect(pbntf_trans_outcome, when(pb, equals(pbp)));
     attest(pubnub_message_counts(pbp,
-                                 " bravo ,alfa , charlie ",
+                                 "bravo,alfa,charlie",
                                  NULL,
                                  "15378854953886727,15378856783886727,15378856783886727"),
            equals(PNR_OK));
 
     attest(pubnub_get_chan_msg_counts_size(pbp), equals(sizeof o_count/sizeof o_count[0]));
-    attest(pubnub_get_message_counts(pbp, " alfa , charlie,bravo", o_count), equals(0));
+    attest(pubnub_get_message_counts(pbp, "alfa,charlie,bravo", o_count), equals(0));
     attest(o_count[0], equals(196));
     attest(o_count[1], equals(25));
     attest(o_count[2], equals(3));
@@ -1656,7 +1657,7 @@ Ensure(single_context_pubnub,
        pubnub_get_message_counts() will set corresponding array members(message counters) to
        negative values.
      */
-    attest(pubnub_get_message_counts(pbp, "kilo, lima ,mike ", o_count), equals(0));
+    attest(pubnub_get_message_counts(pbp, "kilo,lima,mike ", o_count), equals(0));
     attest(o_count[0], is_less_than(0));
     attest(o_count[1], is_less_than(0));
     attest(o_count[2], is_less_than(0));
@@ -1763,7 +1764,7 @@ Ensure(single_context_pubnub,
     expect_have_dns_for_pubnub_origin();
 
     expect_outgoing_with_url("/v3/history/sub-key/sub-juliett/message-counts/"
-                             "kilo,%20lima%20,mike%20?pnsdk=unit-test-0.1&channelsTimetoken="
+                             "kilo,lima,mike?pnsdk=unit-test-0.1&channelsTimetoken="
                              "15378856783886727,15378856783886727,15378854953886727");
     incoming("HTTP/1.1 200\r\nContent-Length: 130\r\n\r\n"
              "{\"status\":200, \"error\": false, \"error_message\"",
@@ -1771,7 +1772,7 @@ Ensure(single_context_pubnub,
     /* incoming empty string simulates conditions for PNR_IN_PROGRESS */
     incoming("", NULL);
     attest(pubnub_message_counts(pbp,
-                                 "kilo, lima ,mike ",
+                                 "kilo,lima,mike",
                                  NULL,
                                  "15378856783886727,15378856783886727,15378854953886727"),
            equals(PNR_STARTED));
@@ -1779,9 +1780,9 @@ Ensure(single_context_pubnub,
     attest(pubnub_get_error_message(pbp, &o_msg), equals(-1));
     attest(pubnub_get_chan_msg_counts_size(pbp), equals(-1));
     attest(pubnub_get_chan_msg_counts(pbp, &io_count, chan_msg_counters), equals(-1));
-    attest(pubnub_get_message_counts(pbp, "kilo, lima, mike", o_count), equals(-1));
+    attest(pubnub_get_message_counts(pbp, "kilo,lima,mike", o_count), equals(-1));
     attest(pubnub_message_counts(pbp,
-                                 "bravo, alfa, charlie",
+                                 "bravo,alfa,charlie",
                                  NULL,
                                  "15378856783886727,15378856783886727,15378854953886727"),
            equals(PNR_IN_PROGRESS));
@@ -1794,7 +1795,7 @@ Ensure(single_context_pubnub,
     attest(pbnc_fsm(pbp), equals(0));
 
     attest(pubnub_get_chan_msg_counts_size(pbp), equals(sizeof o_count/sizeof o_count[0]));
-    attest(pubnub_get_message_counts(pbp, "kilo, lima ,mike ", o_count), equals(0));
+    attest(pubnub_get_message_counts(pbp, "kilo,lima,mike ", o_count), equals(0));
     attest(o_count[0], equals(75));
     attest(o_count[1], equals(0));
     attest(o_count[2], equals(52));
@@ -1810,14 +1811,13 @@ Ensure(single_context_pubnub,
     size_t io_count = sizeof chan_msg_counters/sizeof chan_msg_counters[0];
     pubnub_chamebl_t channel_1 = {"tango", sizeof "tango" - 1};
     pubnub_chamebl_t channel_2 = {"sierra", sizeof "sierra" - 1};
-    pubnub_chamebl_t channel_3 = {"uniform", sizeof "uniform" - 1};
     
     pubnub_init(pbp, "pub-quebeq", "sub-romeo");
 
     expect_have_dns_for_pubnub_origin();
 
     expect_outgoing_with_url("/v3/history/sub-key/sub-romeo/message-counts/"
-                             "%20sierra%20,%20tango%20?pnsdk=unit-test-0.1&channelsTimetoken="
+                             "sierra,tango?pnsdk=unit-test-0.1&channelsTimetoken="
                              "15378854953886727,15378856783886727");
     incoming("HTTP/1.1 200\r\nContent-Length: 112\r\n\r\n"
              "{\"status\":200, \"error\": false, \"error_message\": \"\", \"channels\": { \"tango\":38 ,  \"sierra\":17 , \"uniform\": 51 }  }",
@@ -1825,7 +1825,7 @@ Ensure(single_context_pubnub,
     expect(pbntf_lost_socket, when(pb, equals(pbp)));
     expect(pbntf_trans_outcome, when(pb, equals(pbp)));
     attest(pubnub_message_counts(pbp,
-                                 " sierra , tango ",
+                                 "sierra,tango",
                                  NULL,
                                  "15378854953886727,15378856783886727"),
            equals(PNR_OK));
@@ -1840,19 +1840,7 @@ Ensure(single_context_pubnub,
     attest(chan_msg_counters[1].channel.size, equals(channel_2.size));
     attest(chan_msg_counters[1].message_count, equals(17));
 
-    /* One channel is left unhandled in the response.*/
-    attest(pubnub_message_counts(pbp,
-                                 "victor, whiskey",
-                                 NULL,
-                                 "15378854953886727,15378856783886727"),
-           equals(PNR_RX_BUFF_NOT_EMPTY));
-    attest(pubnub_get_chan_msg_counts_size(pbp), equals(1));
-    attest(pubnub_get_chan_msg_counts(pbp, &io_count, chan_msg_counters), equals(0));
-    attest(io_count, equals(1));
-    attest(strncmp(chan_msg_counters[0].channel.ptr, channel_3.ptr, channel_3.size), equals(0));
-    attest(chan_msg_counters[0].channel.size, equals(channel_3.size));
-    attest(chan_msg_counters[0].message_count, equals(51));
-    /* Message is read in full */
+    /* Message is read */
     attest(pubnub_get_chan_msg_counts_size(pbp), equals(0));
     
     attest(pubnub_last_http_code(pbp), equals(200));
@@ -1871,17 +1859,17 @@ Ensure(single_context_pubnub,
                                  NULL),
            equals(PNR_INVALID_PARAMETERS));
     attest(pubnub_message_counts(pbp,
-                                 "victor, whiskey",
+                                 "victor,whiskey",
                                  NULL,
                                  "15378854953886727 ,15378856783886727"),
            equals(PNR_INVALID_PARAMETERS));
     attest(pubnub_message_counts(pbp,
-                                 "victor, whiskey",
+                                 "victor,whiskey",
                                  NULL,
                                  "15378854953886727,727"),
            equals(PNR_INVALID_PARAMETERS));
     attest(pubnub_message_counts(pbp,
-                                 "victor, whiskey",
+                                 "victor,whiskey",
                                  NULL,
                                  "727,15378854953886727"),
            equals(PNR_INVALID_PARAMETERS));

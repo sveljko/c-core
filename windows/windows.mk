@@ -12,7 +12,7 @@ CFLAGS = -Zi -MP -W3 $(DEFINES)
 
 INCLUDES=-I .. -I . -I ..\core\c99 
 
-all: pubnub_sync_sample.exe metadata.exe cancel_subscribe_sync_sample.exe pubnub_publish_via_post_sample.exe subscribe_publish_callback_sample.exe pubnub_advanced_history_sample.exe pubnub_callback_sample.exe pubnub_callback_subloop_sample.exe pubnub_fntest.exe pubnub_console_sync.exe pubnub_console_callback.exe subscribe_publish_from_callback.exe publish_callback_subloop_sample.exe publish_queue_callback_subloop.exe
+all: pubnub_sync_sample.exe metadata.exe cancel_subscribe_sync_sample.exe pubnub_publish_via_post_sample.exe subscribe_publish_callback_sample.exe pubnub_callback_sample.exe pubnub_callback_subloop_sample.exe pubnub_fntest.exe pubnub_console_sync.exe pubnub_advanced_history_sample.exe pubnub_console_callback.exe subscribe_publish_from_callback.exe publish_callback_subloop_sample.exe publish_queue_callback_subloop.exe
 
 SYNC_INTF_SOURCEFILES= ..\core\pubnub_ntf_sync.c ..\core\pubnub_sync_subscribe_loop.c ..\core\srand_from_pubnub_time.c
 SYNC_INTF_OBJFILES=pubnub_ntf_sync.obj pubnub_sync_subscribe_loop.obj srand_from_pubnub_time.obj
@@ -50,6 +50,9 @@ metadata.exe: $(METADATA_SOURCEFILES)  pubnub_sync.lib
 cancel_subscribe_sync_sample.exe: ..\core\samples\cancel_subscribe_sync_sample.c pubnub_sync.lib
 	$(CC) $(CFLAGS) $(INCLUDES) ..\core\samples\cancel_subscribe_sync_sample.c pubnub_sync.lib  $(LDLIBS)
 
+pubnub_advanced_history_sample.exe: ..\core\samples\pubnub_advanced_history_sample.c pubnub_sync.lib
+	$(CC) $(CFLAGS) $(INCLUDES) ..\core\samples\pubnub_advanced_history_sample.c pubnub_sync.lib  $(LDLIBS)
+
 pubnub_publish_via_post_sample.exe: ..\core\samples\pubnub_publish_via_post_sample.c pubnub_sync.lib
 	$(CC) $(CFLAGS) $(INCLUDES) ..\core\samples\pubnub_publish_via_post_sample.c pubnub_sync.lib $(LDLIBS)
 
@@ -58,9 +61,6 @@ pubnub_callback_sample.exe: ..\core\samples\pubnub_callback_sample.c pubnub_call
 
 subscribe_publish_callback_sample.exe: ..\core\samples\subscribe_publish_callback_sample.c pubnub_callback.lib
 	$(CC) $(CFLAGS) -DPUBNUB_CALLBACK_API $(INCLUDES) ..\core\samples\subscribe_publish_callback_sample.c  pubnub_callback.lib  $(LDLIBS)
-
-pubnub_advanced_history_sample.exe: ..\core\samples\pubnub_advanced_history_sample.c pubnub_callback.lib
-	$(CC) $(CFLAGS) -D PUBNUB_CALLBACK_API $(INCLUDES) ..\core\samples\pubnub_advanced_history_sample.c pubnub_callback.lib  $(LDLIBS)
 
 subscribe_publish_from_callback.exe: ..\core\samples\subscribe_publish_from_callback.c pubnub_callback.lib
 	$(CC) $(CFLAGS) -DPUBNUB_CALLBACK_API $(INCLUDES) ..\core\samples\subscribe_publish_from_callback.c  pubnub_callback.lib  $(LDLIBS)

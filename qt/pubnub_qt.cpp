@@ -5,10 +5,9 @@ extern "C" {
 #include "core/pubnub_ccore.h"
 #include "core/pubnub_assert.h"
 #include "lib/pbcrc32.c"
-#if PUBNUB_USE_ADVANCED_HISTORY
-#include "core/pbcc_advanced_history.h"
+#include "core/pubnub_memory_block.h"
+#include "core/pubnub_advanced_history.h"
 #define MAX_ERROR_MESSAGE_LENGTH 100
-#endif
 }
 
 #include "pubnub_qt.h"
@@ -352,7 +351,7 @@ pubnub_res pubnub_qt::message_counts(QString const& channel, QString const& time
 
 pubnub_res pubnub_qt::message_counts(QStringList const& channel, QString const& timetoken)
 {
-    return pubnub_qt::message_counts(channel.join(","), timetoken);
+    return message_counts(channel.join(","), timetoken);
 }
 
 
@@ -373,7 +372,7 @@ pubnub_res pubnub_qt::message_counts(QString const& channel,
 pubnub_res pubnub_qt::message_counts(QStringList const& channel,
                                      QStringList const& channel_timetoken)
 {
-    return pubnub_qt::message_counts(channel.join(","), channel_timetoken);
+    return message_counts(channel.join(","), channel_timetoken);
 }
 
 
@@ -385,7 +384,7 @@ pubnub_res pubnub_qt::message_counts(QVector<QPair<QString, QString>> const& cha
     unsigned i;
     KEEP_THREAD_SAFE();
     for (i = 0; i < n; i++) {
-        QString const& separator(((i+1) < n) ? "," : "");
+        QString separator(((i+1) < n) ? "," : "");
         ch_list += channel_timetokens[i].first + separator;
         tt_list += channel_timetokens[i].second + separator;
     }
@@ -401,12 +400,12 @@ pubnub_res pubnub_qt::message_counts(QVector<QPair<QString, QString>> const& cha
 QMap<QString, size_t> pubnub_qt::get_channel_message_counts()
 {
     QMap<QString, size_t> map;
-    QVector<struct pubnub_chan_msg_count> chan_msg_counters;
+    QVector<pubnub_chan_msg_count> chan_msg_counters;
     int count = pbcc_get_chan_msg_counts_size(d_context.data());
     if (count <= 0) {
         return map;
     }
-    chan_msg_counters = QVector<struct pubnub_chan_msg_count>(count);
+    chan_msg_counters = QVector<pubnub_chan_msg_count>(count);
     if (pbcc_get_chan_msg_counts(d_context.data(), (size_t*)&count, &chan_msg_counters[0]) != 0) {
         return map;
     }

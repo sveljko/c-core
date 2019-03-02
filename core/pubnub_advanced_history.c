@@ -2,6 +2,7 @@
 #include "pubnub_internal.h"
 
 #if PUBNUB_USE_ADVANCED_HISTORY
+#include "pubnub_memory_block.h"
 #include "pubnub_advanced_history.h"
 #include "pubnub_json_parse.h"
 
@@ -19,9 +20,6 @@ int pubnub_get_error_message(pubnub_t* pb, pubnub_chamebl_t* o_msg)
     pubnub_mutex_lock(pb->monitor);
     if (!pbnc_can_start_transaction(pb)) {
         pubnub_mutex_unlock(pb->monitor);
-        PUBNUB_LOG_ERROR("Error: pubnub_get_error_message(pb=%p) - "
-                         "Transacton in progress on the context",
-                         pb);
         return -1;
     }
     rslt = pbcc_get_error_message(&(pb->core), o_msg);
@@ -41,9 +39,6 @@ int pubnub_get_chan_msg_counts_size(pubnub_t* pb)
     pubnub_mutex_lock(pb->monitor);
     if (!pbnc_can_start_transaction(pb)) {
         pubnub_mutex_unlock(pb->monitor);
-        PUBNUB_LOG_ERROR("Error: pubnub_get_chan_msg_counts_size(pb=%p) - "
-                         "Transacton in progress on the context",
-                         pb);
         return -1;
     }
     rslt = pbcc_get_chan_msg_counts_size(&(pb->core));
@@ -94,9 +89,6 @@ int pubnub_get_chan_msg_counts(pubnub_t* pb,
     pubnub_mutex_lock(pb->monitor);
     if (!pbnc_can_start_transaction(pb)) {
         pubnub_mutex_unlock(pb->monitor);
-        PUBNUB_LOG_ERROR("Error: pubnub_get_chan_msg_counts_size(pb=%p) - "
-                         "Transacton in progress on the context",
-                         pb);
         return -1;
     }
     rslt = pbcc_get_chan_msg_counts(&(pb->core), io_count, chan_msg_counters);
@@ -111,13 +103,12 @@ int pubnub_get_message_counts(pubnub_t* pb, char const* channel, int* o_count)
     int rslt;
     
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+    PUBNUB_ASSERT_OPT(channel != NULL);
+    PUBNUB_ASSERT_OPT(o_count != NULL);
 
     pubnub_mutex_lock(pb->monitor);
     if (!pbnc_can_start_transaction(pb)) {
         pubnub_mutex_unlock(pb->monitor);
-        PUBNUB_LOG_ERROR("Error: pubnub_get_message_counts(pb=%p) - "
-                         "Transacton in progress on the context",
-                         pb);
         return -1;
     }
     rslt = pbcc_get_message_counts(&(pb->core), channel, o_count);

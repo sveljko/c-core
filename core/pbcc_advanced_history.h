@@ -9,20 +9,9 @@
     requests and responses for 'advanced history' transactions
 */
 
-#include "pubnub_memory_block.h"
+typedef struct pubnub_char_mem_block pubnub_chamebl_t;
 
-/** Structure containing channel name as char memory block and field with
-    message count for messages received on the channel since given point in time
-    (defined by parameters passed to the function).
-    Used to store information retrieved by 'advanced history' message_counts operation
- */
-struct pubnub_chan_msg_count {
-    /* Channel name as char memory block */
-    pubnub_chamebl_t channel;
-    /* Message count for the corresponding channel since given point in time */
-    size_t message_count;
-};
-
+struct pubnub_chan_msg_count;
 
 struct pbcc_context;
 

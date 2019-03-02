@@ -1,8 +1,12 @@
 /* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
 #include "pubnub_internal.h"
 
-#if PUBNUB_USE_ADVANCED_HISTORY
-#include "pbcc_advanced_history.h"
+#if !PUBNUB_USE_ADVANCED_HISTORY
+#error this module can only be used if PUBNUB_USE_ADVANCED_HISTORY is defined
+#endif
+
+#include "pubnub_memory_block.h"
+#include "pubnub_advanced_history.h"
 #include "pubnub_version.h"
 #include "pubnub_json_parse.h"
 #include "pubnub_url_encode.h"
@@ -103,9 +107,8 @@ int pbcc_get_error_message(struct pbcc_context* p, pubnub_chamebl_t* o_msg)
 
 int pbcc_get_chan_msg_counts_size(struct pbcc_context* p)
 {
-    char* next;
-    char* end;
-    /* Number of '"channel":message_count' pairs */
+    char const* next;
+    char const* end;
     int number_of_key_value_pairs = 0;
 
     end = p->http_reply + p->msg_end;
@@ -128,7 +131,7 @@ int pbcc_get_chan_msg_counts(struct pbcc_context* p,
                              struct pubnub_chan_msg_count* chan_msg_counters)
 {
     char const*  ch_start;
-    char*  end;
+    char const*  end;
     size_t count = 0;
 
     ch_start = p->http_reply + p->msg_ofs;
@@ -139,9 +142,8 @@ int pbcc_get_chan_msg_counts(struct pbcc_context* p,
     }
     ch_start = pbjson_skip_whitespace(ch_start, end);
     while ((ch_start < end) && (count < *io_count)) {
-        char const* ch_end;
-
-        ch_end = pbjson_find_end_element(ch_start, end);
+        char const* ch_end = pbjson_find_end_element(ch_start, end);
+        
         chan_msg_counters[count].channel.size = ch_end - ch_start - 1;
         chan_msg_counters[count].channel.ptr = (char*)(ch_start + 1),
         ch_start = pbjson_skip_whitespace(ch_end + 1, end);
@@ -186,7 +188,7 @@ int pbcc_get_chan_msg_counts(struct pbcc_context* p,
     else {
         *io_count = count;
     }
-    p->msg_ofs = ch_start - p->http_reply;
+    p->msg_ofs = p->msg_end;
     
     return 0;
 }
@@ -196,20 +198,11 @@ static int initialize_msg_counters(char const* channel, int* o_count)
 {
     int         n = 0;
     char const* next;
-
-    PUBNUB_ASSERT_OPT(channel != NULL);
-    PUBNUB_ASSERT_OPT(o_count != NULL);
     
-    next = channel;
-    while (' ' == *next) {
-        next++;
-    }
+    for (next = channel; ' ' == *next; next++) continue;
     o_count[n++] = -(next - channel) - 1;    
     for (next = strchr(next, ','); next != NULL; next = strchr(next + 1, ','), n++) {
-        ++next;
-        while (' ' == *next) {
-            next++;
-        }
+        for (++next; ' ' == *next; next++) continue ;
         /* Saving negative channel offsets(-1) in the array of counters.
            That is, if channel name from the 'channel' list is not found in the answer
            corresponding array member stays negative, while when channel name(from the
@@ -226,11 +219,10 @@ static int initialize_msg_counters(char const* channel, int* o_count)
 int pbcc_get_message_counts(struct pbcc_context* p, char const* channel, int* o_count)
 {
     char const* ch_start;
-    char*       end;
-    int         n;
+    char const* end;
+    int         n = initialize_msg_counters(channel, o_count);
     int         counts = 0;
 
-    n = initialize_msg_counters(channel, o_count);
     ch_start = p->http_reply + p->msg_ofs;
     end = p->http_reply + p->msg_end + 1;
     if (ch_start >= end - 1) {
@@ -244,7 +236,7 @@ int pbcc_get_message_counts(struct pbcc_context* p, char const* channel, int* o_
         /* channel name length */
         unsigned    len;
         char const* ptr_ch;
-        char*       ch_end;
+        char const* ch_end;
         ch_end = (char*)pbjson_find_end_element(ch_start++, end);
         len = ch_end - ch_start;
         for (i = 0; i < n ; i++) {
@@ -300,7 +292,7 @@ int pbcc_get_message_counts(struct pbcc_context* p, char const* channel, int* o_
                          p,
                          ch_start);
     }
-    p->msg_ofs = ch_start - p->http_reply;
+    p->msg_ofs = p->msg_end;
     return 0;
 }
 
@@ -524,6 +516,3 @@ enum pubnub_res pbcc_message_counts_prep(struct pbcc_context* p,
 
     return PNR_STARTED;
 }
-
-
-#endif /* PUBNUB_USE_ADVANCED_HISTORY */
