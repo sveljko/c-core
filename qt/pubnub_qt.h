@@ -407,7 +407,6 @@ public:
                        bool string_token);
     
 #if PUBNUB_USE_ADVANCED_HISTORY
-
     /* In case the server reported en error in the response,
        we'll read the error message using this function
        @retval error_message on successfully read error message,

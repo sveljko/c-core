@@ -630,8 +630,10 @@ public:
                    unsigned           count         = 100,
                    bool               include_token = false)
     {
-        char const* ch = channel.empty() ? 0 : channel.c_str();
-        return doit(pubnub_history(d_pb, ch, count, include_token));
+        return doit(pubnub_history(d_pb,
+                                   channel.empty() ? 0 : channel.c_str(),
+                                   count,
+                                   include_token));
     }
 
     /// Starts a "history" with extended (full) options

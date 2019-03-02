@@ -336,6 +336,8 @@ QString pubnub_qt::get_error_message()
     }
     return QString(QByteArray(msg.ptr, msg.size));    
 }
+
+
 pubnub_res pubnub_qt::message_counts(QString const& channel, QString const& timetoken)
 {
     KEEP_THREAD_SAFE();

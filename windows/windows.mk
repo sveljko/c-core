@@ -59,7 +59,7 @@ pubnub_callback_sample.exe: ..\core\samples\pubnub_callback_sample.c pubnub_call
 subscribe_publish_callback_sample.exe: ..\core\samples\subscribe_publish_callback_sample.c pubnub_callback.lib
 	$(CC) $(CFLAGS) -DPUBNUB_CALLBACK_API $(INCLUDES) ..\core\samples\subscribe_publish_callback_sample.c  pubnub_callback.lib  $(LDLIBS)
 
-pubnub_advanced_history_sample.exe: ..\core\samples\pubnub_advanced_history_sample.c pubnub_callback.a
+pubnub_advanced_history_sample.exe: ..\core\samples\pubnub_advanced_history_sample.c pubnub_callback.lib
 	$(CC) $(CFLAGS) -D PUBNUB_CALLBACK_API $(INCLUDES) ..\core\samples\pubnub_advanced_history_sample.c pubnub_callback.lib  $(LDLIBS)
 
 subscribe_publish_from_callback.exe: ..\core\samples\subscribe_publish_from_callback.c pubnub_callback.lib
