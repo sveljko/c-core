@@ -662,8 +662,7 @@ public:
     {
         return doit(pubnub_message_counts(d_pb,
                                           channel.empty() ? 0 : channel.c_str(),
-                                          timetoken.empty() ? 0 : timetoken.c_str(),
-                                          0));
+                                          timetoken.empty() ? 0 : timetoken.c_str()));
     }
     
     /// Starts 'advanced history' pubnub_message_counts operation
@@ -681,11 +680,7 @@ public:
     futres message_counts(std::string const& channel,
                           std::vector<std::string> const& channel_timetokens)
     {
-        std::string tt_list = join(channel_timetokens);
-        return doit(pubnub_message_counts(d_pb,
-                                          channel.empty() ? 0 : channel.c_str(),
-                                          0,
-                                          tt_list.empty() ? 0 : tt_list.c_str()));
+        return message_counts(channel, join(channel_timetokens));
     }
     
     /// Starts 'advanced history' pubnub_message_counts operation
@@ -711,10 +706,7 @@ public:
             ch_list += channel_timetokens[i].first + separator;
             tt_list += channel_timetokens[i].second + separator;
         }
-        return doit(pubnub_message_counts(d_pb,
-                                          ch_list.empty() ? 0 : ch_list.c_str(),
-                                          0,
-                                          tt_list.empty() ? 0 : tt_list.c_str()));
+        return message_counts(ch_list, tt_list);
     }
 
     /// Extracts channel-message_count paired map from the response on

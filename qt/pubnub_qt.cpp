@@ -343,8 +343,7 @@ pubnub_res pubnub_qt::message_counts(QString const& channel, QString const& time
     return startRequest(
         pbcc_message_counts_prep(d_context.data(),
                                  channel.isEmpty() ? 0 : channel.toLatin1().data(),
-                                 timetoken.isEmpty() ? 0 : timetoken.toLatin1().data(),
-                                 0),
+                                 timetoken.isEmpty() ? 0 : timetoken.toLatin1().data()),
         PBTT_MESSAGE_COUNTS);
 }
 
@@ -358,14 +357,7 @@ pubnub_res pubnub_qt::message_counts(QStringList const& channel, QString const& 
 pubnub_res pubnub_qt::message_counts(QString const& channel,
                                      QStringList const& channel_timetoken)
 {
-    QString ch_timetokens = channel_timetoken.join(",");
-    KEEP_THREAD_SAFE();
-    return startRequest(
-        pbcc_message_counts_prep(d_context.data(),
-                                 channel.isEmpty() ? 0 : channel.toLatin1().data(),
-                                 0,
-                                 ch_timetokens.isEmpty() ? 0 : ch_timetokens.toLatin1().data()),
-        PBTT_MESSAGE_COUNTS);
+    return message_counts(channel, channel_timetoken.join(","));
 }
 
 
@@ -388,12 +380,7 @@ pubnub_res pubnub_qt::message_counts(QVector<QPair<QString, QString>> const& cha
         ch_list += channel_timetokens[i].first + separator;
         tt_list += channel_timetokens[i].second + separator;
     }
-    return startRequest(
-        pbcc_message_counts_prep(d_context.data(),
-                                 ch_list.isEmpty() ? 0 : ch_list.toLatin1().data(),
-                                 0,
-                                 tt_list.isEmpty() ? 0 : tt_list.toLatin1().data()),
-        PBTT_MESSAGE_COUNTS);
+    return message_counts(ch_list, tt_list);
 }
 
 
