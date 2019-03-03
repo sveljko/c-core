@@ -42,8 +42,7 @@ int pbcc_get_chan_msg_counts_size(struct pbcc_context* p);
 /** On input, @p io_count is the number of allocated "counters per channel"(array
     dimension of @p chan_msg_counters). On output(@p io_count), number of counters per
     channel in the answer. If there are more in the answer than there are in the allocated
-    array("can't fit all"), wan't be considered an error. It will be reported as
-    PUBNUB_LOG_DEBUG().
+    array("can't fit all"), wan't be considered an error.
     @retval 0 on success
     @retval -1 on error
  */
@@ -67,8 +66,7 @@ int pbcc_get_message_counts(struct pbcc_context* p, char const* channel, int* o_
  */
 enum pubnub_res pbcc_message_counts_prep(struct pbcc_context* p,
                                          char const*          channel,
-                                         char const*          timetoken,
-                                         char const*          channel_timetokens);
+                                         char const*          timetoken);
 #endif /* INC_PBCC_ADVANCED_HISTORY */
 #endif /* PUBNUB_USE_ADVANCED_HISTORY */
 

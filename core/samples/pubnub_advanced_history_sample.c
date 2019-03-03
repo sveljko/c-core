@@ -4,23 +4,20 @@
 #include "core/pubnub_advanced_history.c"
 #include "core/pubnub_helper.h"
 #include "core/pubnub_timers.h"
-//#include "core/pubnub_generate_uuid.h"
 
 #include <stdio.h>
 #include <time.h>
 
-
-char* make_rand_name(char const* s)
-{
-    unsigned grn  = rand();
-    char*    rslt = malloc(PUBNUB_MAX_CHANNEL_NAME_LENGTH + 1);
-    if (NULL == rslt) {
-        return rslt;
-    }
-    snprintf(rslt, PUBNUB_MAX_CHANNEL_NAME_LENGTH + 1, "%s_%X", s, grn);
-
-    return rslt;
-}
+/* If you don't like these channel names you can change them,
+   but they have to remain the same in number */
+static char* m_channel[] = {"pool_player",
+                            "lucky_hand",
+                            "wild_card",
+                            "fast_draw",
+                            "long_shot"};
+static int m_msg_sent[sizeof m_channel/sizeof m_channel[0]]
+                     [sizeof m_channel/sizeof m_channel[0]];
+static char m_timetokens[sizeof m_channel/sizeof m_channel[0]][30];
 
 
 static void generate_uuid(pubnub_t* pbp)
@@ -92,56 +89,49 @@ static int get_timetoken(pubnub_t* pbp, char* timetoken)
 }
 
 
-int main(int argc, char* argv[])
+static void print_msg_counts_table(int n)
 {
-    time_t          t0;
-    char*           channel[5];
-    int             msg_counts[sizeof channel/sizeof channel[0]];
-    char            string_channels[500];
-    int             timetoken_index[sizeof channel/sizeof channel[0]];
-    char            timetokens[sizeof channel/sizeof channel[0]][30];
-    char            string_timetokens[150];
-    int msg_sent[sizeof channel/sizeof channel[0]][sizeof channel/sizeof channel[0]] = {{0},};
-    enum pubnub_res res;
-    char const*     pubkey = (argc > 1) ? argv[1] : "demo";
-    char const*     keysub = (argc > 2) ? argv[2] : "demo";
-    char const*     origin = (argc > 3) ? argv[3] : "pubsub.pubnub.com";
-    pubnub_t*       pbp   = pubnub_alloc();
-    pubnub_t*       pbp_2 = pubnub_alloc();
-    int             n     = sizeof channel/sizeof channel[0];
-    int             i;
+    int i;
     
-    if ((NULL == pbp) || (NULL == pbp_2)) {
-        printf("Failed to allocate Pubnub context!\n");
-        return -1;
+    puts("--------------------------------------------message counts table-----------------------------------------");
+    printf("               \\channels:  %s  |  %s   |   %s   |   %s   |   %s   |\n",
+           m_channel[0],
+           m_channel[1],
+           m_channel[2],
+           m_channel[3],
+           m_channel[4]);
+    for (i = 0 ; i < n; i++) {
+        printf("tt[%d]'%s':       %d       |       %d       |       %d       |       %d       |       %d       |\n",
+               i + 1,
+               m_timetokens[i],
+               m_msg_sent[i][0],
+               m_msg_sent[i][1],
+               m_msg_sent[i][2],
+               m_msg_sent[i][3],
+               m_msg_sent[i][4]);        
     }
+}
 
-    channel[0] = make_rand_name("pool");
-    channel[1] = make_rand_name("lucky");
-    channel[2] = make_rand_name("wild");
-    channel[3] = make_rand_name("fast");
-    channel[4] = make_rand_name("shot");
+
+static void publish_on_channels(pubnub_t* pbp)
+{
+    int n = sizeof m_channel/sizeof m_channel[0];
+    int i;
     
-    pubnub_init(pbp, pubkey, keysub);
-    pubnub_init(pbp_2, pubkey, keysub);
-    generate_uuid(pbp);
-    generate_uuid(pbp_2);
-    pubnub_origin_set(pbp, origin);
-    pubnub_origin_set(pbp_2, origin);
-
     for (i = 0; i < n; i++) {
-        int j;
-        
-        while (get_timetoken(pbp, timetokens[i]) != 0) {
+        int j;        
+        while (get_timetoken(pbp, m_timetokens[i]) != 0) {
             /* wait in microseconds */
             wait_useconds(1000);
         }
         for (j = i; j < n; j++) {
+            enum pubnub_res res;
             puts("-----------------------");
             puts("Publishing...");
             puts("-----------------------");
-            res = pubnub_publish(
-                pbp, channel[j], "\"Hello world from message_counts callback sample!\"");
+            res = pubnub_publish(pbp,
+                                 m_channel[j],
+                                 "\"Hello world from message_counts sample!\"");
             if (res == PNR_STARTED) {
                 puts("Await publish");
                 res = pubnub_await(pbp);
@@ -149,7 +139,7 @@ int main(int argc, char* argv[])
             if (PNR_OK == res) {
                 printf("Published! Response from Pubnub: %s\n",
                        pubnub_last_publish_result(pbp));
-                ++msg_sent[i][j];
+                m_msg_sent[i][j] = 1;
             }
             else if (PNR_PUBLISH_FAILED == res) {
                 printf("Published failed on Pubnub, description: %s\n",
@@ -160,83 +150,167 @@ int main(int argc, char* argv[])
             }
         }
     }
-    puts("--------------------------------------------message counts table-----------------------------------------");
-    printf("               \\channels: %s |%s | %s | %s | %s |\n",
-           channel[0],
-           channel[1],
-           channel[2],
-           channel[3],
-           channel[4]);
-    for (i = 0 ; i < n; i++) {
-        printf("tt[%d]'%s':       %d       |       %d       |       %d       |       %d       |       %d       |\n",
-               i + 1,
-               timetokens[i],
-               msg_sent[i][0],
-               msg_sent[i][1],
-               msg_sent[i][2],
-               msg_sent[i][3],
-               msg_sent[i][4]);        
-    }
-    sprintf(string_channels,
-            "%s,%s,%s,%s,%s",
-           channel[0],
-           channel[1],
-           channel[2],
-           channel[3],
-           channel[4]);
-    // Use current time as seed for random generator 
-    srand(time(0)); 
-    for (i = 0; i < 2; i++) {
-        int  internal_msg_counts[sizeof channel/sizeof channel[0]] = {0};
-        int j;
+    print_msg_counts_table(n);
+}
 
-        if (0 == i) {
-            int start_index =  rand() % (sizeof channel/sizeof channel[0]);
-            timetoken_index[0] = start_index + 1;
-            /* Internal message count used to compare against information obtained from response */
-            for (j = start_index; j < n; j++) {
-                int k;
-                for (k = start_index; k <= j; k++) {
-                    internal_msg_counts[j] += msg_sent[k][j];
-                }
-            }
+/* calculates internal message counts used to compare against information
+   obtained from the transaction response for single timetoken
+ */
+static void calculate_internal_msg_counts_for_a_single_timetoken(int* internal_msg_counts,
+                                                                 int n,
+                                                                 int timetoken_index)
+{
+    int j;
+    /* Internal message count used to compare against information obtained from response */
+    for (j = timetoken_index - 1; j < n; j++) {
+        int k;
+        for (k = timetoken_index - 1; k <= j; k++) {
+            internal_msg_counts[j] += m_msg_sent[k][j];
+        }
+    }
+}
+
+/* calculates internal message counts used to compare against information
+   obtained from the transaction response for the timetoken list
+ */
+static void calculate_internal_msg_counts_for_timetoken_list(int* internal_msg_counts,
+                                                             int  n,
+                                                             int* timetoken_index)
+{
+    int j;
+    for (j = 0; j < n; j++) {
+        int k;
+        for (k = timetoken_index[j] - 1; k <= j; k++) {
+            internal_msg_counts[j] += m_msg_sent[k][j];
+        }
+    }
+}
+
+
+static void print_message_counts(pubnub_t* pbp,
+                                 int i,
+                                 int* msg_counts,
+                                 int* internal_msg_counts,
+                                 int* timetoken_index)
+{
+    int n = sizeof m_channel/sizeof m_channel[0];
+    int j;
+    if (0 == i) {
+        printf("tt[%d]='%s':", timetoken_index[0], m_timetokens[timetoken_index[0] - 1]);
+    }
+    else {
+        printf("tt[%d]='%s'|tt[%d]='%s'|tt[%d]='%s'|tt[%d]='%s'|tt[%d]='%s'|\n",
+               timetoken_index[0],
+               m_timetokens[timetoken_index[0] - 1],
+               timetoken_index[1],
+               m_timetokens[timetoken_index[1] - 1],
+               timetoken_index[2],
+               m_timetokens[timetoken_index[2] - 1],
+               timetoken_index[3],
+               m_timetokens[timetoken_index[3] - 1],
+               timetoken_index[4],
+               m_timetokens[timetoken_index[4] - 1]);
+    }
+    for (j = 0 ; j < n; j++) {
+        if ((msg_counts[j] > 0) && (msg_counts[j] != internal_msg_counts[j])) {
+            printf("Message counter mismatch! - "
+                   "msg_counts[%d]=%d, "
+                   "internal_msg_counts[%d]=%d |",
+                   j,
+                   msg_counts[j],
+                   j,
+                   internal_msg_counts[j]);
         }
         else {
-            for (j = 0; j < n; j++) {
-                int k;
-                int start_index =  rand() % (sizeof channel/sizeof channel[0]);
-                timetoken_index[j] = start_index + 1;
-                for (k = start_index; k <= j; k++) {
-                    internal_msg_counts[j] += msg_sent[k][j];
-                }
-                // Use current time as seed for random generator 
-                srand(time(0) + n - j); 
-            }
+            printf("%s   %d   %s|",
+                   (0 == i) ? "" : "         ",
+                   msg_counts[j],
+                   (0 == i) ? "" : "         ");
         }
-        time(&t0);
+    }
+    putchar('\n');
+}
+
+
+int main(int argc, char* argv[])
+{
+    time_t          t0;
+    int             msg_counts[sizeof m_channel/sizeof m_channel[0]];
+    char            string_channels[500];
+    /* List of timetoken indexes for which pubnub_message_count() query is requested
+       corresponding to the channel list declared above as 'static'.
+       You can change these values as long as they are in the range of channel
+       indexes.(Number of offered timetokens in this example is the same as
+       the number of channels.- Use numbers from 1 to number_of_channels)
+     */
+    int             timetoken_index[sizeof m_channel/sizeof m_channel[0]] = {2, 1, 4, 3, 2};
+    char            string_timetokens[150];
+    enum pubnub_res res;
+    char const*     pubkey = (argc > 1) ? argv[1] : "demo";
+    char const*     keysub = (argc > 2) ? argv[2] : "demo";
+    char const*     origin = (argc > 3) ? argv[3] : "pubsub.pubnub.com";
+    pubnub_t*       pbp   = pubnub_alloc();
+    pubnub_t*       pbp_2 = pubnub_alloc();
+    int             n = sizeof m_channel/sizeof m_channel[0];
+    int             i;
+    
+    if ((NULL == pbp) || (NULL == pbp_2)) {
+        printf("Failed to allocate Pubnub context!\n");
+        return -1;
+    }
+    
+    pubnub_init(pbp, pubkey, keysub);
+    pubnub_init(pbp_2, pubkey, keysub);
+    generate_uuid(pbp);
+    generate_uuid(pbp_2);
+    pubnub_origin_set(pbp, origin);
+    pubnub_origin_set(pbp_2, origin);
+
+    publish_on_channels(pbp);
+
+    snprintf(string_channels,
+             sizeof string_channels,
+             "%s,%s,%s,%s,%s",
+             m_channel[0],
+             m_channel[1],
+             m_channel[2],
+             m_channel[3],
+             m_channel[4]);    
+    for (i = 0; i < 2; i++) {
+        int  internal_msg_counts[sizeof m_channel/sizeof m_channel[0]] = {0};
+
         if (i == 0) {
+            calculate_internal_msg_counts_for_a_single_timetoken(internal_msg_counts,
+                                                                 n,
+                                                                 timetoken_index[0]);
             puts("------------------------------------------------");
             puts("Getting message counts for a single timetoken...");
             puts("------------------------------------------------");
+
+            time(&t0);
             res = pubnub_message_counts(pbp_2,
                                         string_channels,
-                                        timetokens[timetoken_index[0] - 1],
-                                        NULL);
+                                        m_timetokens[timetoken_index[0] - 1]);
         }
         else {
-            sprintf(string_timetokens,
-                    "%s,%s,%s,%s,%s",
-                    timetokens[timetoken_index[0] - 1],
-                    timetokens[timetoken_index[1] - 1],
-                    timetokens[timetoken_index[2] - 1],
-                    timetokens[timetoken_index[3] - 1],
-                    timetokens[timetoken_index[4] - 1]);
+            calculate_internal_msg_counts_for_timetoken_list(internal_msg_counts,
+                                                             n,
+                                                             timetoken_index);
+            snprintf(string_timetokens,
+                     sizeof string_timetokens,
+                     "%s,%s,%s,%s,%s",
+                     m_timetokens[timetoken_index[0] - 1],
+                     m_timetokens[timetoken_index[1] - 1],
+                     m_timetokens[timetoken_index[2] - 1],
+                     m_timetokens[timetoken_index[3] - 1],
+                     m_timetokens[timetoken_index[4] - 1]);
             puts("----------------------------------------------------");
             puts("Getting message counts for the list of timetokens...");
             puts("----------------------------------------------------");
+
+            time(&t0);
             res = pubnub_message_counts(pbp_2,
                                         string_channels,
-                                        NULL,
                                         string_timetokens);
         }
         if (res == PNR_STARTED) {
@@ -244,45 +318,11 @@ int main(int argc, char* argv[])
         }
         printf("Getting message counts lasted %lf seconds.\n", difftime(time(NULL), t0));
         if (PNR_OK == res) {
-            int j;
-            if (pubnub_get_chan_msg_counts_size(pbp_2) == sizeof channel/sizeof channel[0]) {
+            if (pubnub_get_chan_msg_counts_size(pbp_2) == sizeof m_channel/sizeof m_channel[0]) {
                 puts("-----------------------------------Got message counts for all channels!----------------------------------");
             }
             pubnub_get_message_counts(pbp_2, string_channels, msg_counts);
-            if (0 == i) {
-                printf("tt[%d]='%s':", timetoken_index[0], timetokens[timetoken_index[0] - 1]);
-            }
-            else {
-                printf("tt[%d]='%s'|tt[%d]='%s'|tt[%d]='%s'|tt[%d]='%s'|tt[%d]='%s'|\n",
-                       timetoken_index[0],
-                       timetokens[timetoken_index[0] - 1],
-                       timetoken_index[1],
-                       timetokens[timetoken_index[1] - 1],
-                       timetoken_index[2],
-                       timetokens[timetoken_index[2] - 1],
-                       timetoken_index[3],
-                       timetokens[timetoken_index[3] - 1],
-                       timetoken_index[4],
-                       timetokens[timetoken_index[4] - 1]);
-            }
-            for (j = 0 ; j < n; j++) {
-                if ((msg_counts[j] > 0) && (msg_counts[j] != internal_msg_counts[j])) {
-                    printf("Message counter mismatch! - "
-                           "msg_counts[%d]=%d, "
-                           "internal_msg_counts[%d]=%d |",
-                           j,
-                           msg_counts[j],
-                           j,
-                           internal_msg_counts[j]);
-                }
-                else {
-                    printf("%s   %d   %s|",
-                           (0 == i) ? "" : "         ",
-                           msg_counts[j],
-                           (0 == i) ? "" : "         ");
-                }
-            }
-            putchar('\n');
+            print_message_counts(pbp_2, i, msg_counts, internal_msg_counts, timetoken_index);
         }
         else {
             printf("Getting message counts failed with code: %d('%s')\n",
@@ -290,11 +330,7 @@ int main(int argc, char* argv[])
                    pubnub_res_2_string(res));
         }
     }
-    
-           
-    for (i = 0 ; i < n; i++) {
-        free(channel[i]);
-    }    
+
     sync_sample_free(pbp_2);
     sync_sample_free(pbp);
 

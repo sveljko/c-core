@@ -188,8 +188,6 @@ enum pubnub_publish_method {
 enum pubnub_parameter_error {
     /** All parameters checked are valid */
     pnarg_PARAMS_OK,
-    /** Indicates simultaneous presence of parameters which exclude each other */
-    pnarg_EXCLUSIVE_ARGUMENTS_PRESENT,
     /** Invalid channel name */
     pnarg_INVALID_CHANNEL,
     /** Invalid timetoken parameter */

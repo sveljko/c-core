@@ -23,9 +23,9 @@ struct pubnub_chan_msg_count {
 int pubnub_get_chan_msg_counts_size(pubnub_t* pb);
 
 /** Starts the transaction 'pubnub_message_counts' on the context @p pb for the
-    list of channels @p channel for unread messages counts starting from @p timeoken,
-    or (exclusive or) list of @p channel_timetokens(corresponding to the list
-    'channel').
+    list of channels @p channel for unread messages counts starting from @p timeoken
+    which can be a single timetoken, or list of timetokens(corresponding to the
+    'channel' list).
     @retval PNR_STARTED request has been sent, but transaction is still in progress
     @retval PNR_IN_PROGRESS can't start transaction because previous one is still
                             in progress(hasn't finished yet)
@@ -33,14 +33,12 @@ int pubnub_get_chan_msg_counts_size(pubnub_t* pb);
  */
 enum pubnub_res pubnub_message_counts(pubnub_t*   pb,
                                       char const* channel, 
-                                      char const* timetoken, 
-                                      char const* channel_timetokens);
+                                      char const* timetoken);
 
 /** On input, @p io_count is the number of allocated "counters per channel"(array
     dimension of @p chan_msg_counters). On output(@p io_count), number of counters per
     channel in the answer. If there are more in the answer than there are in the allocated
-    array("can't fit all"), wan't be considered an error. It will be reported as
-    PUBNUB_LOG_DEBUG().
+    array("can't fit all"), wan't be considered an error.
     @retval 0 on success
     @retval -1 on error(transaction in progress, or format error)
  */
@@ -55,8 +53,7 @@ int pubnub_get_chan_msg_counts(pubnub_t* pb,
     channel(from 'o_count' array) is not found in the answer, the message counter
     in the respective 'o_count' array member has negative value. 
     If there is a channel name in the answer, not to be found in requested
-    `channel` list, that won't be considered an error. It will be reported as
-    PUBNUB_LOG_DEBUG().
+    `channel` list, that won't be considered an error.
     @retval 0 on success
     @retval -1 on error(transaction in progress, or format error)
   */

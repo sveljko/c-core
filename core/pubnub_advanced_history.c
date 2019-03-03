@@ -50,12 +50,13 @@ int pubnub_get_chan_msg_counts_size(pubnub_t* pb)
 
 enum pubnub_res pubnub_message_counts(pubnub_t*   pb,
                                       char const* channel, 
-                                      char const* timetoken, 
-                                      char const* channel_timetokens)
+                                      char const* timetoken)
 {
     enum pubnub_res rslt;
 
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
+    PUBNUB_ASSERT_OPT(channel != NULL);
+    PUBNUB_ASSERT_OPT(timetoken != NULL);
 
     pubnub_mutex_lock(pb->monitor);
     if (!pbnc_can_start_transaction(pb)) {
@@ -63,7 +64,7 @@ enum pubnub_res pubnub_message_counts(pubnub_t*   pb,
         return PNR_IN_PROGRESS;
     }
 
-    rslt = pbcc_message_counts_prep(&(pb->core), channel, timetoken, channel_timetokens);
+    rslt = pbcc_message_counts_prep(&(pb->core), channel, timetoken);
     if (PNR_STARTED == rslt) {
         pb->trans            = PBTT_MESSAGE_COUNTS;
         pb->core.last_result = PNR_STARTED;

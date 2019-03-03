@@ -452,20 +452,10 @@ static enum pubnub_parameter_error check_channel_timetokens(struct pbcc_context*
 static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
                                                     char const* channel,
                                                     char const* timetoken,
-                                                    char const* channel_timetokens)
+                                                    bool* o_tt_list)
 {
-    if ((timetoken != NULL) && (channel_timetokens != NULL)) {
-        PUBNUB_LOG_ERROR("Error: message_counts_prep(pbcc=%p) - "
-                         "Both 'timetoken' and 'channel_timetokens' "
-                         "present as non NULL parameters.\n"
-                         "timetoken='%s'\n"
-                         "channel_timetokens='%s'\n",
-                         p,
-                         timetoken,
-                         channel_timetokens);
-        return pnarg_EXCLUSIVE_ARGUMENTS_PRESENT;
-    }
-    if (timetoken != NULL) {
+    if (strchr(timetoken, ',') == NULL) {
+        *o_tt_list = false;
         if (check_timetoken(p, timetoken) != pnarg_PARAMS_OK) {
             return pnarg_INVALID_TIMETOKEN;
         }
@@ -473,8 +463,9 @@ static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
             return pnarg_INVALID_CHANNEL;
         }
     }
-    if (channel_timetokens != NULL) {
-        enum pubnub_parameter_error rslt = check_channel_timetokens(p, channel, channel_timetokens);
+    else {
+        enum pubnub_parameter_error rslt = check_channel_timetokens(p, channel, timetoken);
+        *o_tt_list = true;
         if (rslt != pnarg_PARAMS_OK) {
             return rslt;
         }
@@ -486,14 +477,13 @@ static enum pubnub_parameter_error check_parameters(struct pbcc_context* p,
 
 enum pubnub_res pbcc_message_counts_prep(struct pbcc_context* p,
                                          char const*          channel,
-                                         char const*          timetoken,
-                                         char const*          channel_timetokens)
+                                         char const*          timetoken)
 {
     char const* const uname = pubnub_uname();
     char const*       uuid  = pbcc_uuid_get(p);
+    bool              tt_list;
     
-    if ((NULL == channel) ||
-        (check_parameters(p, channel, timetoken, channel_timetokens) != pnarg_PARAMS_OK)) {
+    if (check_parameters(p, channel, timetoken, &tt_list) != pnarg_PARAMS_OK) {
         return PNR_INVALID_PARAMETERS;
     }
     if (p->msg_ofs < p->msg_end) {
@@ -511,8 +501,12 @@ enum pubnub_res pbcc_message_counts_prep(struct pbcc_context* p,
     APPEND_URL_PARAM_M(p, "pnsdk", uname, '?');
     APPEND_URL_PARAM_M(p, "auth", p->auth, '&');
     APPEND_URL_PARAM_M(p, "uuid", uuid, '&');
-    APPEND_URL_PARAM_M(p, "timetoken", timetoken, '&');
-    APPEND_URL_PARAM_M(p, "channelsTimetoken", channel_timetokens, '&');
+    if (tt_list) {
+        APPEND_URL_PARAM_M(p, "channelsTimetoken", timetoken, '&');
+    }
+    else {
+        APPEND_URL_PARAM_M(p, "timetoken", timetoken, '&');
+    }
 
     return PNR_STARTED;
 }
