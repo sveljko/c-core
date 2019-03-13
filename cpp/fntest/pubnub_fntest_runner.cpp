@@ -127,7 +127,6 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
     cannot_do_chan_group = is_pull_request_build();
 
     std::cout << "Starting Run of " << test_count << " tests" << std::endl;
-    srand_from_pubnub(pubkey.c_str(), keysub.c_str());
     while (next_test < test_count) {
         unsigned i;
         unsigned in_this_pass = max_conc_thread;
@@ -140,6 +139,7 @@ static int run_tests(TestData aTest[], unsigned test_count, unsigned max_conc_th
             runners[i-next_test] =
                 std::thread([i, pubkey, keysub, origin, aTest, cannot_do_chan_group] {
                     try {
+                        srand_from_pubnub(pubkey.c_str(), keysub.c_str());
                         aTest[i].pf(pubkey.c_str(),
                                     keysub.c_str(),
                                     origin.c_str(),
