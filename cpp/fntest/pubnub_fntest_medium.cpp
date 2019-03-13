@@ -7,7 +7,7 @@
 using namespace pubnub;
 
 const std::chrono::seconds Td(5);
-const std::chrono::milliseconds T_chan_registry_propagation(1000);
+const std::chrono::milliseconds T_chan_registry_propagation(2000);
 
 
 TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
@@ -18,6 +18,11 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
     std::string const two(pnfntst_make_name(this_test_name_));
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string       two_three = two + comma + three;
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+    std::cout << "-->two=" << two << std::endl; 
+    std::cout << "-->three=" << three << std::endl; 
+//
 
     SENSE(pbp.subscribe(two_three)).in(Td) == PNR_OK;
     SENSE(pbp_2.subscribe(ch)).in(Td) == PNR_OK;
@@ -45,6 +50,12 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     std::string const three(pnfntst_make_name(this_test_name_));
     std::string const gr(pnfntst_make_name(this_test_name_));
     std::string       two_three = two + comma + three;
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+    std::cout << "-->two=" << two << std::endl; 
+    std::cout << "-->three=" << three << std::endl; 
+    std::cout << "-->gr=" << gr << std::endl; 
+//
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(two_three, gr)).in(Td) == PNR_OK;
@@ -75,6 +86,9 @@ TEST_DEF(connect_disconnect_and_connect_again)
     std::string const         ch(pnfntst_make_name(this_test_name_));
     std::chrono::milliseconds rel_time = Td;
     pubnub_res                result = PNR_STARTED;
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+//
 
     SENSE(pbp.subscribe(ch)).in(Td) == PNR_OK;
 
@@ -125,6 +139,10 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     std::string const         gr(pnfntst_make_name(this_test_name_));
     std::chrono::milliseconds rel_time = Td;
     pubnub_res                result = PNR_STARTED;
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+    std::cout << "-->gr=" << gr << std::endl; 
+//
     
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(ch, gr)).in(Td) == PNR_OK;
@@ -186,6 +204,11 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     std::chrono::milliseconds rel_time = Td;
     pubnub_res                result_1 = PNR_STARTED;
     pubnub_res                result_2 = PNR_STARTED;
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+    std::cout << "-->two=" << two << std::endl; 
+    std::cout << "-->gr=" << gr << std::endl; 
+//
 
     SENSE(pbp.remove_channel_group(gr)).in(Td) == PNR_OK;
     SENSE(pbp.add_channel_to_group(ch, gr)).in(Td) == PNR_OK;
@@ -252,6 +275,9 @@ TEST_DEF(wrong_api_usage)
     std::string const         ch(pnfntst_make_name(this_test_name_));
     std::chrono::milliseconds rel_time = Td;
     pubnub_res                result = PNR_STARTED;
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+//
     
     SENSE(pbp.subscribe(ch)).in(Td) == PNR_OK;
 
@@ -285,6 +311,9 @@ TEST_DEF(handling_errors_from_pubnub)
 {
     context           pbp(pubkey, keysub, origin);
     std::string const ch(pnfntst_make_name(this_test_name_));
+//
+    std::cout << "-->ch=" << ch << std::endl; 
+//
     
     SENSE(pbp.publish(ch, "\"Test ")).in(Td) == PNR_PUBLISH_FAILED;
     EXPECT(pbp.last_http_code()) == 400;

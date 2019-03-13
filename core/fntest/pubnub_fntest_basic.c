@@ -8,13 +8,16 @@
 
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 1000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 2000
 
 
 TEST_DEF(simple_connect_and_send_over_single_channel)
 {
     static pubnub_t* pbp;
     char* const      chan = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chan='%s'\n", chan);
+//
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -35,6 +38,9 @@ TEST_DEF(connect_and_send_over_several_channels_simultaneously)
 {
     static pubnub_t* pbp;
     char* const      chan = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chan='%s'\n", chan);
+//
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -59,6 +65,10 @@ TEST_DEF_NEED_CHGROUP(simple_connect_and_send_over_single_channel_in_group)
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     char* const      chan  = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+    printf("--->chan='%s'\n", chan);
+//
     TEST_DEFER(free, chgrp);
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
@@ -88,6 +98,9 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_several_channels_in_group_simultaneo
 {
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -116,6 +129,9 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_single_channel_
 {
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -143,6 +159,9 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_multi_channel_s
 {
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -182,6 +201,9 @@ TEST_DEF(simple_connect_and_receiver_over_single_channel)
     static pubnub_t* pbp_2;
     enum pubnub_res  rslt;
     char* const      chan = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chan='%s'\n", chan);
+//
     TEST_DEFER(free, chan);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -213,6 +235,9 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     char             chanlist[100];
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
@@ -237,6 +262,9 @@ TEST_DEF_NEED_CHGROUP(simple_connect_and_receiver_over_single_channel_in_group)
     static pubnub_t* pbp_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     char* const      chan  = chgrp;
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -275,6 +303,9 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_several_channels_in_group_simulta
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -308,6 +339,9 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_single_chann
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -340,6 +374,9 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_multi_channe
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);

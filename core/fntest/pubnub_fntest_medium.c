@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 1000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 2000
 
 
 TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
@@ -15,6 +15,9 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     enum pubnub_res  rslt;
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
@@ -53,6 +56,9 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     enum pubnub_res  rslt;
     enum pubnub_res  rslt_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+//
+    printf("--->chgrp='%s'\n", chgrp);
+//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
@@ -93,6 +99,9 @@ TEST_DEF(connect_disconnect_and_connect_again)
 {
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
@@ -130,6 +139,9 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
 
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
@@ -181,6 +193,9 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     enum pubnub_res  rslt;
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
@@ -241,6 +256,9 @@ TEST_ENDDEF
 TEST_DEF(wrong_api_usage)
 {
     static pubnub_t* pbp;
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
@@ -270,6 +288,9 @@ TEST_DEF(handling_errors_from_pubnub)
 {
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
+//
+    printf("--->this_test_name_='%s'\n", this_test_name_);
+//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
