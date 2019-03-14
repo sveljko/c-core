@@ -6,7 +6,7 @@
 using namespace pubnub;
 
 const std::chrono::seconds Td(5);
-const std::chrono::milliseconds T_chan_registry_propagation(2000);
+const std::chrono::milliseconds T_chan_registry_propagation(10000);
 
 
 TEST_DEF(simple_connect_and_send_over_single_channel)
