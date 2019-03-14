@@ -7,7 +7,7 @@
 using namespace pubnub;
 
 const std::chrono::seconds Td(5);
-const std::chrono::milliseconds T_chan_registry_propagation(2000);
+const std::chrono::milliseconds T_chan_registry_propagation(10000);
 
 
 TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)

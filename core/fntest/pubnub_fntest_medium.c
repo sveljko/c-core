@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 2000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 10000
 
 
 TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
