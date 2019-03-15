@@ -40,7 +40,7 @@ enum pubnub_log_level {
 /** User should define a printf-like function that will do the actual
     logging. If it is not defined, we'll use printf().
 */
-#define PUBNUB_LOG_PRINTF(...) printf(__VA_ARGS__)
+#define PUBNUB_LOG_PRINTF(...) printf(__VA_ARGS__);fflush(stdout)
 #endif
 
 /** Generic logging macro, logs to given @a LVL using a printf-like

@@ -8,7 +8,7 @@
 
 
 #define SECONDS 1000
-#define CHANNEL_REGISTRY_PROPAGATION_DELAY 10000
+#define CHANNEL_REGISTRY_PROPAGATION_DELAY 1000
 
 
 TEST_DEF(simple_connect_and_send_over_single_channel)
@@ -23,6 +23,9 @@ TEST_DEF(simple_connect_and_send_over_single_channel)
     TEST_DEFER(pnfntst_free, pbp);
 
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 1\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 1-2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -46,6 +49,9 @@ TEST_DEF(connect_and_send_over_several_channels_simultaneously)
     TEST_DEFER(pnfntst_free, pbp);
 
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test M1\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M1 - 2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, chan, NULL), 10 * SECONDS);
@@ -65,6 +71,7 @@ TEST_DEF_NEED_CHGROUP(simple_connect_and_send_over_single_channel_in_group)
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     char* const      chan  = pnfntst_make_name(this_test_name_);
+    enum pubnub_res  rslt;
 //
     printf("--->chgrp='%s'\n", chgrp);
     printf("--->chan='%s'\n", chan);
@@ -78,8 +85,17 @@ TEST_DEF_NEED_CHGROUP(simple_connect_and_send_over_single_channel_in_group)
     expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, chan, chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
-
+//
+    rslt = pubnub_list_channel_group(pbp, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp);
+    }
+    expect(PNR_OK == rslt);
+//
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 2 - 2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
@@ -98,6 +114,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_several_channels_in_group_simultaneo
 {
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+    enum pubnub_res  rslt;
 //
     printf("--->chgrp='%s'\n", chgrp);
 //
@@ -110,8 +127,17 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_several_channels_in_group_simultaneo
         pbp, pubnub_add_channel_to_group(pbp, "ch,two", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
-
+//
+    rslt = pubnub_list_channel_group(pbp, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp);
+    }
+    expect(PNR_OK == rslt);
+//
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M2-2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -129,6 +155,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_single_channel_
 {
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+    enum pubnub_res  rslt;
 //
     printf("--->chgrp='%s'\n", chgrp);
 //
@@ -140,8 +167,17 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_single_channel_
     expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
-
+//
+    rslt = pubnub_list_channel_group(pbp, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp);
+    }
+    expect(PNR_OK == rslt);
+//    
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, "two", chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M3 - 1\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M3 - 2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -159,6 +195,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_multi_channel_s
 {
     static pubnub_t* pbp;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+    enum pubnub_res  rslt;
 //
     printf("--->chgrp='%s'\n", chgrp);
 //
@@ -170,8 +207,18 @@ TEST_DEF_NEED_CHGROUP(connect_and_send_over_channel_in_group_and_multi_channel_s
     expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "three", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
+//
+    rslt = pubnub_list_channel_group(pbp, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp);
+    }
+    expect(PNR_OK == rslt);
+//
 
     expect_PNR_OK(pbp, pubnub_subscribe(pbp, "ch,two", chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M4 - ch\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M4 - two\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "three", "\"Test M4-3\""), 10 * SECONDS);
@@ -212,6 +259,9 @@ TEST_DEF(simple_connect_and_receiver_over_single_channel)
     pubnub_set_non_blocking_io(pbp_2);
 
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chan, NULL), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     rslt = pubnub_subscribe(pbp_2, chan, NULL);
     expect_pnr(rslt, PNR_STARTED);
     rslt = pubnub_publish(pbp, chan, "\"Test 3 - 1\"");
@@ -245,6 +295,9 @@ TEST_DEF(connect_and_receive_over_several_channels_simultaneously)
 
     snprintf(chanlist, sizeof chanlist, "%s,two", this_test_name_);
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, chanlist, NULL), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, this_test_name_, "\"M5\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"M5-2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -260,6 +313,7 @@ TEST_DEF_NEED_CHGROUP(simple_connect_and_receiver_over_single_channel_in_group)
 {
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
+    enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     char* const      chan  = chgrp;
 //
@@ -277,12 +331,25 @@ TEST_DEF_NEED_CHGROUP(simple_connect_and_receiver_over_single_channel_in_group)
         pbp_2, pubnub_add_channel_to_group(pbp_2, chan, chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
+//
+    rslt = pubnub_list_channel_group(pbp_2, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp_2);
+    }
+    expect(PNR_OK == rslt);
+//
 
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, NULL, chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_pnr(pubnub_subscribe(pbp_2, NULL, chgrp), PNR_STARTED);
     expect_pnr(pubnub_publish(pbp, chan, "\"Test 4\""), PNR_STARTED);
     await_timed_2(10 * SECONDS, PNR_OK, pbp, PNR_OK, pbp_2);
     expect(pnfntst_got_messages(pbp_2, "\"Test 4\"", NULL));
+//
+    TEST_SLEEP_FOR(100);
+//    
 
     expect_PNR_OK(pbp, pubnub_publish(pbp, chan, "\"Test 4 - 4\""), 10 * SECONDS);
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, NULL, chgrp), 10 * SECONDS);
@@ -302,6 +369,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_several_channels_in_group_simulta
 
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
+    enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
 //
     printf("--->chgrp='%s'\n", chgrp);
@@ -318,8 +386,18 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_several_channels_in_group_simulta
         pbp_2, pubnub_add_channel_to_group(pbp_2, "ch,two", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
+//
+    rslt = pubnub_list_channel_group(pbp_2, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp_2);
+    }
+    expect(PNR_OK == rslt);
+//
 
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, NULL, chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M6\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M6-2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -338,6 +416,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_single_chann
 {
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
+    enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
 //
     printf("--->chgrp='%s'\n", chgrp);
@@ -353,8 +432,18 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_single_chann
     expect_PNR_OK(pbp, pubnub_add_channel_to_group(pbp, "ch", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
+//
+    rslt = pubnub_list_channel_group(pbp, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp);
+    }
+    expect(PNR_OK == rslt);
+//
 
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, "two", chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M7\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M7-2\""), 10 * SECONDS);
     expect(pnfntst_subscribe_and_check(
@@ -373,6 +462,7 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_multi_channe
 {
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
+    enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
 //
     printf("--->chgrp='%s'\n", chgrp);
@@ -389,8 +479,18 @@ TEST_DEF_NEED_CHGROUP(connect_and_receive_over_channel_in_group_and_multi_channe
         pbp_2, pubnub_add_channel_to_group(pbp_2, "three", chgrp), 10 * SECONDS);
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
+//
+    rslt = pubnub_list_channel_group(pbp_2, chgrp);
+    if (PNR_STARTED == rslt) {
+        rslt = pubnub_await(pbp_2);
+    }
+    expect(PNR_OK == rslt);
+//
 
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, "ch,two", chgrp), 10 * SECONDS);
+//
+    TEST_SLEEP_FOR(100);
+//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "ch", "\"Test M8\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M8-2\""), 10 * SECONDS);
     expect_PNR_OK(pbp, pubnub_publish(pbp, "three", "\"Test M8-3\""), 10 * SECONDS);
