@@ -59,6 +59,7 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     enum pubnub_res  rslt;
     enum pubnub_res  rslt_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+    int              tries = 0;
 //
     printf("--->chgrp='%s'\n", chgrp);
 //
@@ -80,8 +81,16 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     }
     expect(PNR_OK == rslt);
 //
-
-    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
+    do {
+        TEST_SLEEP_FOR(1000);
+        rslt = pubnub_subscribe(pbp, NULL, chgrp);
+        if (PNR_STARTED == rslt) {
+            rslt = pubnub_await(pbp);
+        }
+    } while ((++tries < 1000) && (PNR_FORMAT_ERROR == rslt));
+    printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
+    expect(PNR_OK == rslt);
+//    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, "ch", NULL), 10 * SECONDS);
 //
     TEST_SLEEP_FOR(100);
@@ -160,6 +169,7 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+    int              tries = 0;
 //
     printf("--->chgrp='%s'\n", chgrp);
 //
@@ -181,8 +191,16 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     expect(PNR_OK == rslt);
 //
 
-    rslt = pubnub_subscribe(pbp, NULL, chgrp);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    do {
+        TEST_SLEEP_FOR(1000);
+        rslt = pubnub_subscribe(pbp, NULL, chgrp);
+        if (PNR_STARTED == rslt) {
+            rslt = pubnub_await(pbp);
+        }
+    } while ((++tries < 1000) && (PNR_FORMAT_ERROR == rslt));
+    printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
+    expect(PNR_OK == rslt);
+//    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 //
     TEST_SLEEP_FOR(100);
 //    
@@ -228,6 +246,7 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     static pubnub_t* pbp_2;
     enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
+    int              tries = 0;
 //
     printf("--->chgrp='%s'\n", chgrp);
 //
@@ -252,8 +271,17 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     expect(PNR_OK == rslt);
 //
 
-    rslt = pubnub_subscribe(pbp, NULL, chgrp);
-    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
+    do {
+        TEST_SLEEP_FOR(1000);
+        rslt = pubnub_subscribe(pbp, NULL, chgrp);
+        if (PNR_STARTED == rslt) {
+            rslt = pubnub_await(pbp);
+        }
+    } while ((++tries < 1000) && (PNR_FORMAT_ERROR == rslt));
+    printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
+    expect(PNR_OK == rslt);
+//    rslt = pubnub_subscribe(pbp, NULL, chgrp);
+//    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 //
     TEST_SLEEP_FOR(100);
 //    
