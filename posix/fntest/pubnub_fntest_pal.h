@@ -142,6 +142,7 @@
         monotonic_clock_get_time(&M_prev_timspec);                             \
         pnfntst_start_timer(M_t_, (ms));                                       \
         await_w_timer(M_t_, M_rslt, pbp);                                      \
+        printf("pbp=%p", pbp);                                                 \
         ELAPSED_MS(M_prev_timspec);                                            \
         expect_last_result(pbp, M_rslt, exp_rslt);                             \
         TEST_POP_DEFERRED;                                                     \
@@ -189,6 +190,7 @@
         monotonic_clock_get_time(&M_prev_timspec);                             \
         pnfntst_start_timer(M_t_, (ms));                                       \
         await_w_timer_2(M_rslt_1, M_rslt_2, M_t_, pbp1, pbp2);                 \
+        printf("pbp1=%p, pbp2=%p", pbp1, pbp2);                                \
         ELAPSED_MS(M_prev_timspec);                                            \
         expect_last_result_2(pbp1, M_rslt_1, exp_rslt1, pbp2, M_rslt_2, exp_rslt2);\
         TEST_POP_DEFERRED;                                                     \
@@ -207,6 +209,7 @@
         monotonic_clock_get_time(&M_prev_timspec);                             \
         pnfntst_start_timer(M_t_, (time_ms));                                  \
         await_w_timer_2(M_rslt_1, M_rslt_2, M_t_, pbp1, pbp2);                 \
+        printf("pbp1=%p, pbp2=%p", pbp1, pbp2);                                \
         ELAPSED_MS(M_prev_timspec);                                            \
         expect_last_result_2(pbp1, M_rslt_1, exp_rslt1, pbp2, M_rslt_2, exp_rslt2);\
         TEST_POP_DEFERRED;                                                     \

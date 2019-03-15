@@ -252,7 +252,7 @@ static enum pubnub_res finish(struct pubnub_* pb)
     }
     possible_gzip_response(pb);
     pb->core.http_reply[pb->core.http_buf_len] = '\0';
-    PUBNUB_LOG_TRACE("finish(pb=%p, '%s')\n", pb, pb->core.http_reply);
+    PUBNUB_LOG_WARNING("finish(pb=%p, '%s')\n", pb, pb->core.http_reply);
     pbres = parse_pubnub_result(pb);
     if ((PNR_OK == pbres) && ((pb->http_code / 100) != 2)) {
         pbres = PNR_HTTP_ERROR;
