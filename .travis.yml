@@ -2,7 +2,7 @@ language: c
 os:
   - linux
 #  - osx
-dist: trusty
+dist: precise
 compiler:
   - clang
 #  - gcc
