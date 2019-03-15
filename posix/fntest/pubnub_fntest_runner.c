@@ -7,7 +7,6 @@
 #include "core/pubnub_alloc.h"
 #include "core/pubnub_pubsubapi.h"
 #include "core/srand_from_pubnub_time.h"
-#include "posix/monotonic_clock_get_time.h"
 #include "core/pubnub_log.h"
 
 #include <pthread.h>

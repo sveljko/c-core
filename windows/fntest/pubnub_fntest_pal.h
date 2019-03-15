@@ -83,28 +83,31 @@
     }
 
 #define expect_pnr(rslt, exp_rslt)                                                \
-    if ((rslt) != (exp_rslt)) {                                                   \
-        HANDLE                     hstdout_ = GetStdHandle(STD_OUTPUT_HANDLE);    \
-        CONSOLE_SCREEN_BUFFER_INFO csbiInfo_;                                     \
-        WORD                       wOldColorAttrs_ = FOREGROUND_INTENSITY;        \
-        PUBNUB_ASSERT_OPT(hstdout_ != INVALID_HANDLE_VALUE);                      \
-        if (GetConsoleScreenBufferInfo(hstdout_, &csbiInfo_)) {                   \
-            wOldColorAttrs_ = csbiInfo_.wAttributes;                              \
+    do {                                                                          \
+        enum pubnub_res M_rslt_ = rslt;                                           \
+        if (M_rslt_ != (exp_rslt)) {                                              \
+            HANDLE                     hstdout_ = GetStdHandle(STD_OUTPUT_HANDLE);\
+            CONSOLE_SCREEN_BUFFER_INFO csbiInfo_;                                 \
+            WORD                       wOldColorAttrs_ = FOREGROUND_INTENSITY;    \
+            PUBNUB_ASSERT_OPT(hstdout_ != INVALID_HANDLE_VALUE);                  \
+            if (GetConsoleScreenBufferInfo(hstdout_, &csbiInfo_)) {               \
+                wOldColorAttrs_ = csbiInfo_.wAttributes;                          \
+            }                                                                     \
+            SetConsoleTextAttribute(hstdout_, FOREGROUND_RED | FOREGROUND_INTENSITY);\
+            printf(" Expected result %d (%s) but got %d (%s), file %s function "  \
+                   "%s line %d\n",                                                \
+                   (exp_rslt),                                                    \
+                   #exp_rslt,                                                     \
+                   M_rslt_,                                                       \
+                   pubnub_res_2_string(rslt),                                     \
+                   __FILE__,                                                      \
+                   __FUNCTION__,                                                  \ 
+                   __LINE__);                                                     \
+            SetConsoleTextAttribute(hstdout_, wOldColorAttrs_);                   \
+            *(enum PNFNTestResult*)pResult = trFail;                              \
+            TEST_EXIT;                                                            \
         }                                                                         \
-        SetConsoleTextAttribute(hstdout_, FOREGROUND_RED | FOREGROUND_INTENSITY); \
-        printf(" Expected result %d (%s) but got %d (%s), file %s function "      \
-               "%s line %d\n",                                                    \
-               (exp_rslt),                                                        \
-               #exp_rslt,                                                         \
-               (rslt),                                                            \
-               pubnub_res_2_string(rslt),                                         \
-               __FILE__,                                                          \
-               __FUNCTION__,                                                      \
-               __LINE__);                                                         \
-        SetConsoleTextAttribute(hstdout_, wOldColorAttrs_);                       \
-        *(enum PNFNTestResult*)pResult = trFail;                                  \
-        TEST_EXIT;                                                                \
-    }
+    } while (0)
 
 #define expect_pnr_maybe_started(rslt, pbp, time_ms, exp_rslt)                 \
     if ((rslt) == (PNR_STARTED)) {                                             \
