@@ -84,8 +84,8 @@
 
 #define expect_pnr(rslt, exp_rslt)                                                \
     do {                                                                          \
-        enum pubnub_res M_rslt_ = rslt;                                           \
-        if (M_rslt_ != (exp_rslt)) {                                              \
+        enum pubnub_res M_res_ = rslt;                                            \
+        if (M_res_ != (exp_rslt)) {                                               \
             HANDLE                     hstdout_ = GetStdHandle(STD_OUTPUT_HANDLE);\
             CONSOLE_SCREEN_BUFFER_INFO csbiInfo_;                                 \
             WORD                       wOldColorAttrs_ = FOREGROUND_INTENSITY;    \
@@ -98,10 +98,10 @@
                    "%s line %d\n",                                                \
                    (exp_rslt),                                                    \
                    #exp_rslt,                                                     \
-                   M_rslt_,                                                       \
-                   pubnub_res_2_string(rslt),                                     \
+                   M_res_,                                                        \
+                   pubnub_res_2_string(M_res_),                                   \
                    __FILE__,                                                      \
-                   __FUNCTION__,                                                  \ 
+                   __FUNCTION__,                                                  \
                    __LINE__);                                                     \
             SetConsoleTextAttribute(hstdout_, wOldColorAttrs_);                   \
             *(enum PNFNTestResult*)pResult = trFail;                              \
@@ -114,7 +114,7 @@
         await_timed(time_ms, exp_rslt, pbp);                                   \
     }                                                                          \
     else {                                                                     \
-        expect_last_result(pbp, rslt, exp_rslt);                               \
+        expect_last_result(pbp, (rslt), exp_rslt);                             \
     }
 
 

@@ -66,14 +66,14 @@
 
 #define expect_pnr(rslt, exp_rslt)                                             \
     do {                                                                       \
-        enum pubnub_res M_rslt_ = rslt;                                        \
-        if (M_rslt_ != (exp_rslt)) {                                           \
+        enum pubnub_res M_res_ = rslt;                                         \
+        if (M_res_ != (exp_rslt)) {                                            \
             printf("\x1b[33m Expected result %d (%s) but got %d (%s), file %s "\
                    "function %s line %d\x1b[0m\n",                             \
                    (exp_rslt),                                                 \
                    #exp_rslt,                                                  \
-                   M_rslt_,                                                    \
-                   pubnub_res_2_string(rslt),                                  \
+                   M_res_,                                                     \
+                   pubnub_res_2_string(M_res_),                                \
                    __FILE__,                                                   \
                    __FUNCTION__,                                               \
                    __LINE__);                                                  \
