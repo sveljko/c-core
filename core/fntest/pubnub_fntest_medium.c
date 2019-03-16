@@ -68,6 +68,9 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp_2);
+//    
+    pubnub_dont_use_http_keep_alive(pbp);
+//    
 
     expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
     expect_PNR_OK(
@@ -75,19 +78,17 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 //
-    rslt = pubnub_list_channel_group(pbp, chgrp);
-    if (PNR_STARTED == rslt) {
-        rslt = pubnub_await(pbp);
-    }
-    expect(PNR_OK == rslt);
-//
     do {
-        TEST_SLEEP_FOR(1000);
+        rslt = pubnub_list_channel_group(pbp, chgrp);
+        if (PNR_STARTED == rslt) {
+            rslt = pubnub_await(pbp);
+        }
+        expect(PNR_OK == rslt);
         rslt = pubnub_subscribe(pbp, NULL, chgrp);
         if (PNR_STARTED == rslt) {
             rslt = pubnub_await(pbp);
         }
-    } while ((++tries < 1000) && (PNR_FORMAT_ERROR == rslt));
+    } while ((++tries < 100) && (PNR_FORMAT_ERROR == rslt));
     printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
     expect(PNR_OK == rslt);
 //    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
@@ -176,6 +177,9 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
+//    
+    pubnub_dont_use_http_keep_alive(pbp);
+//    
 
     expect_pnr(pubnub_remove_channel_group(pbp, chgrp), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
@@ -184,20 +188,18 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 //
-    rslt = pubnub_list_channel_group(pbp, chgrp);
-    if (PNR_STARTED == rslt) {
-        rslt = pubnub_await(pbp);
-    }
-    expect(PNR_OK == rslt);
-//
 
     do {
-        TEST_SLEEP_FOR(1000);
+        rslt = pubnub_list_channel_group(pbp, chgrp);
+        if (PNR_STARTED == rslt) {
+            rslt = pubnub_await(pbp);
+        }
+        expect(PNR_OK == rslt);
         rslt = pubnub_subscribe(pbp, NULL, chgrp);
         if (PNR_STARTED == rslt) {
             rslt = pubnub_await(pbp);
         }
-    } while ((++tries < 1000) && (PNR_FORMAT_ERROR == rslt));
+    } while ((++tries < 100) && (PNR_FORMAT_ERROR == rslt));
     printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
     expect(PNR_OK == rslt);
 //    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
@@ -256,6 +258,9 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     TEST_DEFER(pnfntst_free, pbp_2);
     pubnub_set_non_blocking_io(pbp);
     pubnub_set_non_blocking_io(pbp_2);
+//    
+    pubnub_dont_use_http_keep_alive(pbp);
+//    
 
     expect_pnr(pubnub_remove_channel_group(pbp, chgrp), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
@@ -264,20 +269,17 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 //
-    rslt = pubnub_list_channel_group(pbp, chgrp);
-    if (PNR_STARTED == rslt) {
-        rslt = pubnub_await(pbp);
-    }
-    expect(PNR_OK == rslt);
-//
-
     do {
-        TEST_SLEEP_FOR(1000);
+        rslt = pubnub_list_channel_group(pbp, chgrp);
+        if (PNR_STARTED == rslt) {
+            rslt = pubnub_await(pbp);
+        }
+        expect(PNR_OK == rslt);
         rslt = pubnub_subscribe(pbp, NULL, chgrp);
         if (PNR_STARTED == rslt) {
             rslt = pubnub_await(pbp);
         }
-    } while ((++tries < 1000) && (PNR_FORMAT_ERROR == rslt));
+    } while ((++tries < 100) && (PNR_FORMAT_ERROR == rslt));
     printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
     expect(PNR_OK == rslt);
 //    rslt = pubnub_subscribe(pbp, NULL, chgrp);
