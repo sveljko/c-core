@@ -3,6 +3,7 @@
 
 #include "pubnub_fntest.h"
 #include "core/pubnub_blocking_io.h"
+#include "core/pubnub_log.h"
 
 #include <stdlib.h>
 
@@ -15,9 +16,6 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
     static pubnub_t* pbp;
     static pubnub_t* pbp_2;
     enum pubnub_res  rslt;
-//
-    printf("--->this_test_name_='%s'\n", this_test_name_);
-//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
@@ -27,9 +25,6 @@ TEST_DEF(complex_send_and_receive_over_several_channels_simultaneously)
     expect_pnr(pubnub_subscribe(pbp, "two,three", NULL), PNR_STARTED);
     expect_pnr(pubnub_subscribe(pbp_2, "this_test_name_", NULL), PNR_STARTED);
     await_timed_2(10 * SECONDS, PNR_OK, pbp, PNR_OK, pbp_2);
-//
-    TEST_SLEEP_FOR(100);
-//    
 
     expect_pnr(pubnub_publish(pbp_2, "two", "\"Test M3\""), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp_2);
@@ -60,17 +55,11 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
     enum pubnub_res  rslt_2;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     int              tries = 0;
-//
-    printf("--->chgrp='%s'\n", chgrp);
-//
     TEST_DEFER(free, chgrp);
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp_2);
-//    
-    pubnub_dont_use_http_keep_alive(pbp);
-//    
 
     expect_PNR_OK(pbp, pubnub_remove_channel_group(pbp, chgrp), 10 * SECONDS);
     expect_PNR_OK(
@@ -89,13 +78,10 @@ TEST_DEF_NEED_CHGROUP(complex_send_and_receive_over_channel_plus_group_simultane
             rslt = pubnub_await(pbp);
         }
     } while ((++tries < 100) && (PNR_FORMAT_ERROR == rslt));
-    printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
+    PUBNUB_LOG_TRACE("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
     expect(PNR_OK == rslt);
 //    expect_PNR_OK(pbp, pubnub_subscribe(pbp, NULL, chgrp), 10 * SECONDS);
     expect_PNR_OK(pbp_2, pubnub_subscribe(pbp_2, "ch", NULL), 10 * SECONDS);
-//
-    TEST_SLEEP_FOR(100);
-//    
     expect_PNR_OK(pbp, pubnub_publish(pbp, "two", "\"Test M4 - two\""), 10 * SECONDS);
     rslt_2 = pubnub_publish(pbp_2, "ch", "\"Test M4\"");
     rslt   = pubnub_publish(pbp, "three", "\"Test M4 - three\"");
@@ -122,18 +108,12 @@ TEST_DEF(connect_disconnect_and_connect_again)
 {
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
-//
-    printf("--->this_test_name_='%s'\n", this_test_name_);
-//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
 
     expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
-//
-    TEST_SLEEP_FOR(100);
-//    
 
     rslt = pubnub_publish(pbp, this_test_name_, "\"Test M5\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK) pubnub_cancel(pbp);
@@ -145,9 +125,6 @@ TEST_DEF(connect_disconnect_and_connect_again)
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
     expect(pnfntst_got_messages(pbp, "\"Test M5 - 2\"", NULL));
-//
-    TEST_SLEEP_FOR(100);
-//    
 
     expect_pnr(pubnub_subscribe(pbp, this_test_name_, NULL), PNR_STARTED);
     pubnub_cancel(pbp);
@@ -171,15 +148,9 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     int              tries = 0;
-//
-    printf("--->chgrp='%s'\n", chgrp);
-//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
-//    
-    pubnub_dont_use_http_keep_alive(pbp);
-//    
 
     expect_pnr(pubnub_remove_channel_group(pbp, chgrp), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
@@ -188,7 +159,6 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
 
     TEST_SLEEP_FOR(CHANNEL_REGISTRY_PROPAGATION_DELAY);
 //
-
     do {
         rslt = pubnub_list_channel_group(pbp, chgrp);
         if (PNR_STARTED == rslt) {
@@ -200,12 +170,9 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
             rslt = pubnub_await(pbp);
         }
     } while ((++tries < 100) && (PNR_FORMAT_ERROR == rslt));
-    printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
+    PUBNUB_LOG_TRACE("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
     expect(PNR_OK == rslt);
 //    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-//
-    TEST_SLEEP_FOR(100);
-//    
 
     rslt = pubnub_publish(pbp, "ch", "\"Test M6\"");
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
@@ -218,9 +185,6 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_group)
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
 
     expect(pnfntst_got_messages(pbp, "\"Test M6 - 2\"", NULL));
-//
-    TEST_SLEEP_FOR(100);
-//
     
     expect_pnr(pubnub_subscribe(pbp, NULL, chgrp), PNR_STARTED);
     pubnub_cancel(pbp);
@@ -249,18 +213,12 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     enum pubnub_res  rslt;
     char* const      chgrp = pnfntst_make_name(this_test_name_);
     int              tries = 0;
-//
-    printf("--->chgrp='%s'\n", chgrp);
-//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pbp_2 = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp_2);
     pubnub_set_non_blocking_io(pbp);
     pubnub_set_non_blocking_io(pbp_2);
-//    
-    pubnub_dont_use_http_keep_alive(pbp);
-//    
 
     expect_pnr(pubnub_remove_channel_group(pbp, chgrp), PNR_STARTED);
     await_timed(10 * SECONDS, PNR_OK, pbp);
@@ -280,13 +238,10 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
             rslt = pubnub_await(pbp);
         }
     } while ((++tries < 100) && (PNR_FORMAT_ERROR == rslt));
-    printf("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
+    PUBNUB_LOG_TRACE("---->pubnub_subscribe(pb=%p, chgrp) tries %d times.\n", pbp, tries);
     expect(PNR_OK == rslt);
 //    rslt = pubnub_subscribe(pbp, NULL, chgrp);
 //    expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
-//
-    TEST_SLEEP_FOR(100);
-//    
 
     rslt = pubnub_publish(pbp, "ch", "\"Test M8\"");
     if ((rslt != PNR_OK) && (rslt != PNR_STARTED)) {
@@ -306,9 +261,6 @@ TEST_DEF_NEED_CHGROUP(connect_disconnect_and_connect_again_combo)
     rslt = pubnub_subscribe(pbp, "two", chgrp);
     expect_pnr_maybe_started(rslt, pbp, 10 * SECONDS, PNR_OK);
     expect(pnfntst_got_messages(pbp, "\"Test M8 - 2\"", "\"Test M9 - 2\"", NULL));
-//
-    TEST_SLEEP_FOR(100);
-//    
 
     expect_pnr(pubnub_subscribe(pbp, "two", chgrp), PNR_STARTED);
     pubnub_cancel(pbp);
@@ -334,9 +286,6 @@ TEST_ENDDEF
 TEST_DEF(wrong_api_usage)
 {
     static pubnub_t* pbp;
-//
-    printf("--->this_test_name_='%s'\n", this_test_name_);
-//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
     pubnub_set_non_blocking_io(pbp);
@@ -366,9 +315,6 @@ TEST_DEF(handling_errors_from_pubnub)
 {
     static pubnub_t* pbp;
     enum pubnub_res  rslt;
-//
-    printf("--->this_test_name_='%s'\n", this_test_name_);
-//
     pbp = pnfntst_create_ctx();
     TEST_DEFER(pnfntst_free, pbp);
 
