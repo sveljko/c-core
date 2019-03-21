@@ -5,7 +5,7 @@ os:
 dist: trusty
 compiler:
   - clang
-#  - gcc
+  - gcc
 before_install:
 # Getting the latest version of "Codacy coverage reporter" often fails.
 # Until we figure out why and how to handle it, it's commented out

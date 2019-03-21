@@ -143,9 +143,9 @@ static int run_tests(struct TestData aTest[],
                        errno);
             }
             monotonic_clock_get_time(&timspec);
-            printf("%d.test lasted %d milliseconds.\n",
-                   i+1,
-                   elapsed_ms(prev_timspec[i], timspec));
+            PUBNUB_LOG_TRACE("%d.test lasted %d milliseconds.\n",
+                             i+1,
+                             elapsed_ms(prev_timspec[i], timspec));
             switch (aTest[i].result) {
             case trFail:
                 printf(
