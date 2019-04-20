@@ -19,19 +19,15 @@
 
 #define TLS_PORT 443
 
-#if PUBNUB_USE_IPV6
-typedef struct sockaddr_storage sockaddr_inX_t;
-#else
-typedef struct sockaddr_in sockaddr_inX_t;
-#endif
-
 #ifndef PUBNUB_CALLBACK_API
 #define send_dns_query(x,y,z,v) -1
 #define read_response(x,y,z,v) -1
 #else
 #if PUBNUB_USE_IPV6
+typedef struct sockaddr_storage sockaddr_inX_t;
 #define QUERY_TYPE pb->options.ipv6_connectivity ? dnsAAAA : dnsA
 #else
+typedef struct sockaddr_in sockaddr_inX_t;
 #define QUERY_TYPE dnsA
 #endif
 #endif /* PUBNUB_CALLBACK_API */

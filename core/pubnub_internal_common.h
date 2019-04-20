@@ -10,6 +10,10 @@
 #if defined(PUBNUB_CALLBACK_API)
 #include "core/pubnub_ntf_callback.h"
 #include "core/pubnub_dns_servers.h"
+#define PUBNUB_ADNS_RETRY_AFTER_CLOSE                                                \
+    (PUBNUB_CHANGE_DNS_SERVERS || PUBNUB_USE_MULTIPLE_ADDRESSES)
+#else
+#define PUBNUB_ADNS_RETRY_AFTER_CLOSE 0
 #endif
 
 #if !defined(PUBNUB_PROXY_API)
@@ -19,10 +23,8 @@
 #include "core/pbhttp_digest.h"
 #endif
 
-#define PUBNUB_NEED_RETRY_AFTER_CLOSE                               \
-    (PUBNUB_PROXY_API ||                                            \
-     PUBNUB_USE_SSL ||                                              \
-     (defined(PUBNUB_CALLBACK_API) && (PUBNUB_CHANGE_DNS_SERVERS || PUBNUB_USE_MULTIPLE_ADDRESSES)))
+#define PUBNUB_NEED_RETRY_AFTER_CLOSE                                          \
+    (PUBNUB_PROXY_API || PUBNUB_USE_SSL || PUBNUB_ADNS_RETRY_AFTER_CLOSE)
 
 #if !defined PUBNUB_USE_GZIP_COMPRESSION
 #define PUBNUB_USE_GZIP_COMPRESSION 0
