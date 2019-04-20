@@ -36,10 +36,6 @@ static void callback_sample_free(pubnub_t* p)
     if (pubnub_free_with_timeout(p, 1000) != 0) {
         printf("Failed to free the Pubnub context\n");
     }
-    else {
-        /* Waits for the context to be released from the processing queue */
-        wait_seconds(1);
-    }
 }
 
 
@@ -65,15 +61,17 @@ int main()
         return -1;
     }
     //! [Define subscribe loop]
-
+/*
     printf("Entering subscribe loop for channel '%s' for %d minutes...\n",
            chan,
            minutes_in_loop);
-
+*/
+    printf("Entering subscribe loop for channel '%s'.\n", chan);
     //! [Start a subscribe loop]
     pubnub_subloop_start(pbsld);
     //! [Start Subscribe loop]
 
+//   while(true);
     wait_seconds(minutes_in_loop * 60);
 
     //! [Stop a subscribe loop]

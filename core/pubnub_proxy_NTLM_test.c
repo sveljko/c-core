@@ -722,8 +722,8 @@ static void AfterEach(void)
         expect("pbpal_close", pbp, "", 0);
         expect("pbpal_closed", pbp, "", (int)true);
         expect("pbpal_forget", pbp, "", 0);
+        expect("pbntf_trans_outcome", pbp, "", 0);
     }
-    expect("pbntf_trans_outcome", pbp, "", 0);
     expect("pbpal_free", pbp, "", 0);
     attest(pubnub_free(pbp) == 0);
     check_residual_mocks();

@@ -6,6 +6,7 @@
 #include "core/pubnub_free_with_timeout.h"
 #include "core/pubnub_dns_servers.h"
 #include "core/pubnub_mutex.h"
+#include "core/pubnub_proxy.h"
 
 #if defined _WIN32
 #include <windows.h>
@@ -47,10 +48,6 @@ static void callback_sample_free(pubnub_t* p)
 {
     if (pubnub_free_with_timeout(p, 1500) != 0) {
         printf("Failed to free the Pubnub context\n");
-    }
-    else {
-        /* Waits for the context to be released from the processing queue */
-        wait_seconds(1);
     }
 }
 
@@ -255,6 +252,7 @@ int main()
         printf("Failed to read system DNS server, will use default %s\n",
                PUBNUB_DEFAULT_DNS_SERVER);
     }
+    
     pubnub_mutex_init_static(m_lock);
     pubnub_set_transaction_timeout(pbp, 5000);
 
@@ -303,6 +301,10 @@ int main()
        Starting everything disconnected and then connecting to internet at some point,
        and so on...
      */
+/*
+    do {
+    } while(true);
+*/
     wait_seconds(200);
 
     callback_sample_free(pbp_2);

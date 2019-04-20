@@ -9,6 +9,7 @@
 
 #if defined(PUBNUB_CALLBACK_API)
 #include "core/pubnub_ntf_callback.h"
+#include "core/pubnub_dns_servers.h"
 #endif
 
 #if !defined(PUBNUB_PROXY_API)
@@ -16,22 +17,12 @@
 #elif PUBNUB_PROXY_API
 #include "core/pubnub_proxy.h"
 #include "core/pbhttp_digest.h"
-#include "core/pubnub_dns_servers.h"
 #endif
 
-#if !defined(PUBNUB_USE_IPV6)
-#define PUBNUB_USE_IPV6 0
-#endif
-
-#if !defined(PUBNUB_USE_ADVANCED_HISTORY)
-#define PUBNUB_USE_ADVANCED_HISTORY 0
-#endif
-
-#if !defined PUBNUB_USE_SSL
-#define PUBNUB_USE_SSL 0
-#endif
-
-#define PUBNUB_NEED_RETRY_AFTER_CLOSE (PUBNUB_PROXY_API || PUBNUB_USE_SSL)
+#define PUBNUB_NEED_RETRY_AFTER_CLOSE                               \
+    (PUBNUB_PROXY_API ||                                            \
+     PUBNUB_USE_SSL ||                                              \
+     (defined(PUBNUB_CALLBACK_API) && (PUBNUB_CHANGE_DNS_SERVERS || PUBNUB_USE_MULTIPLE_ADDRESSES)))
 
 #if !defined PUBNUB_USE_GZIP_COMPRESSION
 #define PUBNUB_USE_GZIP_COMPRESSION 0
@@ -226,10 +217,12 @@ struct pubnub_ {
 #if PUBNUB_USE_SSL
         /** Try to establish TLS/SSL over existing TCP/IP connection: yes/no */
         bool trySSL : 1;
+
+        /** Use first ip address again in case of fallback */
+        bool use_first_ip_address : 1;
 #endif
         /** Should close connection */
         bool should_close : 1;
-
 #if PUBNUB_NEED_RETRY_AFTER_CLOSE
         /** Retry the same Pubnub request after closing current TCP
             connection.
@@ -269,7 +262,19 @@ struct pubnub_ {
     char const* ssl_CApath;
     /** User-defined, in-memory, PEM certificate to use */
     char const* ssl_userPEMcert;
+
+#if defined(PUBNUB_CALLBACK_API)
+    /** First Ipv4 address, if and when available through dns resolution.
+     */
+    struct pubnub_ipv4_address first_ipv4_address;
+
+#if PUBNUB_USE_IPV6
+    /** First Iv6 address, if and when available through dns resolution.
+     */
+    struct pubnub_ipv6_address first_ipv6_address;
 #endif
+#endif /* defined(PUBNUB_CALLBACK_API) */
+#endif /* PUBNUB_USE_SSL */
 
 #if PUBNUB_THREADSAFE
     pubnub_mutex_t monitor;
@@ -290,8 +295,34 @@ struct pubnub_ {
 #if defined(PUBNUB_CALLBACK_API)
     pubnub_callback_t cb;
     void*             user_data;
-#endif
 
+#if PUBNUB_CHANGE_DNS_SERVERS
+    int dns_index;
+    /* dns server condition indicators.
+       Set to zeros inicates no issues encountered while sending, connecting,
+       or receiving valid response
+     */
+    int dns_server_check[PUBNUB_MAX_DNS_SERVERS];
+#endif
+    
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+    /* Number of spare ipv4 addresses */
+    int n_ipv4;
+    /* Spare ipv4 address index(from the array) currently used */
+    int ipv4_index;
+    /* Spare ipv4 address array */
+    struct pubnub_ipv4_address ipv4_addresses[PUBNUB_MAX_IPV4_ADDRESSES];
+#if PUBNUB_USE_IPV6
+    /* Number of spare ipv6 addresses */
+    int n_ipv6;
+    /* Spare ipv6 address index(from the array) currently used */
+    int ipv6_index;
+    /* Spare ipv6 address array */
+    struct pubnub_ipv6_address ipv6_addresses[PUBNUB_MAX_IPV6_ADDRESSES];
+#endif
+#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
+#endif /* defined(PUBNUB_CALLBACK_API) */
+    
 #if PUBNUB_PROXY_API
 
     /** The type (protocol) of the proxy to use */
@@ -300,6 +331,7 @@ struct pubnub_ {
     /** Hostname (address) of the proxy server to use */
     char proxy_hostname[PUBNUB_MAX_PROXY_HOSTNAME_LENGTH + 1];
 
+#if defined(PUBNUB_CALLBACK_API)
     /** Proxy Ipv4 address, if and when available through hostname string in
        'numbers and dots' notation. If proxy Ipv4 address is not available
        structure array is filled with zeros.
@@ -313,6 +345,7 @@ struct pubnub_ {
      */
     struct pubnub_ipv6_address proxy_ipv6_address;
 #endif
+#endif /* defined(PUBNUB_CALLBACK_API) */
     
     /** The (TCP) port to use on the proxy. */
     uint16_t proxy_port;

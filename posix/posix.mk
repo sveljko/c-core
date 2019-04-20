@@ -2,16 +2,8 @@ SOURCEFILES = ../core/pubnub_pubsubapi.c ../core/pubnub_coreapi.c ../core/pubnub
 
 OBJFILES = pubnub_pubsubapi.o pubnub_coreapi.o pubnub_coreapi_ex.o pubnub_ccore_pubsub.o pubnub_ccore.o pubnub_netcore.o  pbpal_sockets.o pbpal_resolv_and_connect_sockets.o pubnub_alloc_std.o pubnub_assert_std.o pubnub_generate_uuid.o pubnub_blocking_io.o posix_socket_blocking_io.o pubnub_timers.o pubnub_json_parse.o  md5.o pbbase64.o pubnub_helper.o  pubnub_version_posix.o  pubnub_generate_uuid_posix.o pbpal_posix_blocking_io.o pubnub_generate_uuid_v3_md5.o  pubnub_free_with_timeout_std.o pubnub_subscribe_v2.o msstopwatch_monotonic_clock.o pubnub_url_encode.o
 
-ifndef USE_IPV6
-USE_IPV6 = 1
-endif
-
 ifndef USE_PROXY
 USE_PROXY = 1
-endif
-
-ifndef USE_DNS_SERVERS
-USE_DNS_SERVERS = 1
 endif
 
 ifndef USE_GZIP_COMPRESSION
@@ -30,16 +22,6 @@ endif
 ifeq ($(USE_PROXY), 1)
 SOURCEFILES += ../core/pubnub_proxy.c ../core/pubnub_proxy_core.c ../core/pbhttp_digest.c ../core/pbntlm_core.c ../core/pbntlm_packer_std.c
 OBJFILES += pubnub_proxy.o pubnub_proxy_core.o pbhttp_digest.o pbntlm_core.o pbntlm_packer_std.o
-endif
-
-ifeq ($(USE_DNS_SERVERS), 1)
-SOURCEFILES += ../core/pubnub_dns_servers.c ../posix/pubnub_dns_system_servers.c ../lib/pubnub_parse_ipv4_addr.c
-OBJFILES += pubnub_dns_servers.o pubnub_dns_system_servers.o pubnub_parse_ipv4_addr.o
-endif
-
-ifeq ($(USE_IPV6), 1)
-SOURCEFILES += ../lib/pubnub_parse_ipv6_addr.c
-OBJFILES += pubnub_parse_ipv6_addr.o
 endif
 
 ifeq ($(USE_GZIP_COMPRESSION), 1)
@@ -68,7 +50,7 @@ OBJFILES += monotonic_clock_get_time_posix.o
 LDLIBS=-lrt -lpthread
 endif
 
-CFLAGS =-g -Wall -D PUBNUB_THREADSAFE -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_WARNING -D PUBNUB_PROXY_API=$(USE_PROXY) -D PUBNUB_USE_IPV6=$(USE_IPV6)
+CFLAGS =-g -Wall -D PUBNUB_THREADSAFE -D PUBNUB_LOG_LEVEL=PUBNUB_LOG_LEVEL_WARNING
 # -g enables debugging, remove to get a smaller executable
 # -fsanitize-address Use AddressSanitizer
 
@@ -85,6 +67,24 @@ pubnub_sync.a : $(SOURCEFILES) $(SYNC_INTF_SOURCEFILES)
 
 CALLBACK_INTF_SOURCEFILES=pubnub_ntf_callback_posix.c pubnub_get_native_socket.c ../core/pubnub_timer_list.c ../lib/sockets/pbpal_ntf_callback_poller_poll.c ../lib/sockets/pbpal_adns_sockets.c ../lib/pubnub_dns_codec.c ../core/pbpal_ntf_callback_queue.c ../core/pbpal_ntf_callback_admin.c ../core/pbpal_ntf_callback_handle_timer_list.c  ../core/pubnub_callback_subscribe_loop.c
 CALLBACK_INTF_OBJFILES=pubnub_ntf_callback_posix.o pubnub_get_native_socket.o pubnub_timer_list.o pbpal_ntf_callback_poller_poll.o pbpal_adns_sockets.o pubnub_dns_codec.o pbpal_ntf_callback_queue.o pbpal_ntf_callback_admin.o pbpal_ntf_callback_handle_timer_list.o pubnub_callback_subscribe_loop.o
+
+ifndef USE_DNS_SERVERS
+USE_DNS_SERVERS = 1
+endif
+
+ifndef USE_IPV6
+USE_IPV6 = 1
+endif
+
+ifeq ($(USE_DNS_SERVERS), 1)
+CALLBACK_INTF_SOURCEFILES += ../core/pubnub_dns_servers.c ../posix/pubnub_dns_system_servers.c ../lib/pubnub_parse_ipv4_addr.c
+CALLBACK_INTF_OBJFILES += pubnub_dns_servers.o pubnub_dns_system_servers.o pubnub_parse_ipv4_addr.o
+endif
+
+ifeq ($(USE_IPV6), 1)
+CALLBACK_INTF_SOURCEFILES += ../lib/pubnub_parse_ipv6_addr.c
+CALLBACK_INTF_OBJFILES += pubnub_parse_ipv6_addr.o
+endif
 
 pubnub_callback.a : $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES)
 	$(CC) -c $(CFLAGS) -D PUBNUB_CALLBACK_API $(INCLUDES) $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES)

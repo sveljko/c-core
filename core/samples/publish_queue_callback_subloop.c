@@ -128,10 +128,6 @@ static void callback_sample_free(pubnub_t* pb)
     if (0 != pubnub_free_with_timeout(pb, 1500)) {
         puts("Failed to free the context in due time");
     }
-    else {
-        /* Waits until the context is released from the processing queue */
-        wait_miliseconds(500);
-    }
 }
 
 

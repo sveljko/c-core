@@ -343,6 +343,15 @@ static char const* pbnc_state2str(enum pubnub_state e)
     }
 }
 
+#if PUBNUB_CHANGE_DNS_SERVERS
+static void reset_dns_servers_check_indicators(struct pubnub_* pb)
+{
+    int i;
+    for (i = 0; i < PUBNUB_MAX_DNS_SERVERS; i++) {
+        pb->dns_server_check[i] = 0;
+    }
+}
+#endif
 
 int pbnc_fsm(struct pubnub_* pb)
 {
@@ -357,6 +366,17 @@ next_state:
     case PBS_NULL:
         break;
     case PBS_IDLE:
+#if PUBNUB_CHANGE_DNS_SERVERS
+        reset_dns_servers_check_indicators(pb);
+#endif
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+        pb->n_ipv4 = 0;
+        pb->ipv4_index = 0;
+#if PUBNUB_USE_IPV6
+        pb->n_ipv6 = 0;
+        pb->ipv6_index = 0;
+#endif
+#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 #if PUBNUB_NEED_RETRY_AFTER_CLOSE
         pb->flags.retry_after_close = false;
 #endif
@@ -406,6 +426,12 @@ next_state:
             break;
         default:
             pb->core.last_result = PNR_ADDR_RESOLUTION_FAILED;
+#if PUBNUB_USE_MULTIPLE_ADDRESSES || PUBNUB_CHANGE_DNS_SERVERS
+            if (pb->flags.retry_after_close) {
+                close_connection(pb);
+                goto next_state;
+            }
+#endif
             pbntf_trans_outcome(pb, PBS_IDLE);
             return 0;
         }
@@ -414,6 +440,12 @@ next_state:
         }
         else if (i < 0) {
             pb->core.last_result = PNR_CONNECT_FAILED;
+#if PUBNUB_USE_MULTIPLE_ADDRESSES || PUBNUB_CHANGE_DNS_SERVERS
+            if (pb->flags.retry_after_close) {
+                close_connection(pb);
+                goto next_state;
+            }
+#endif
             pbntf_trans_outcome(pb, PBS_IDLE);
         }
         break;
@@ -526,6 +558,7 @@ next_state:
             res = pbpal_start_tls(pb);
             switch (res) {
             case pbtlsEstablished:
+                pb->flags.use_first_ip_address = false;
                 break;
             case pbtlsStarted:
                 pb->state = PBS_WAIT_TLS_CONNECT;
@@ -556,6 +589,7 @@ next_state:
         enum pbpal_tls_result res = pbpal_check_tls(pb);
         switch (res) {
         case pbtlsEstablished:
+            pb->flags.use_first_ip_address = false;
             i = pbpal_send_str(pb, pb->flags.is_publish_via_post ? "POST " : "GET ");
             if (i < 0) {
                 outcome_detected(pb, PNR_IO_ERROR);
@@ -579,8 +613,19 @@ next_state:
         }
         break;
     }
-#endif
+#endif /* PUBNUB_USE_SSL */
     case PBS_TX_GET:
+#if PUBNUB_CHANGE_DNS_SERVERS
+        reset_dns_servers_check_indicators(pb);
+#endif
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+        pb->n_ipv4 = 0;
+        pb->ipv4_index = 0;
+#if PUBNUB_USE_IPV6
+        pb->n_ipv6 = 0;
+        pb->ipv6_index = 0;
+#endif
+#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
         i = pbpal_send_status(pb);
         if (i <= 0) {
 #if PUBNUB_PROXY_API
@@ -1159,6 +1204,11 @@ next_state:
                          pbnc_state2str(pb->state));
         break;
     }
+#if PUBNUB_USE_MULTIPLE_ADDRESSES || PUBNUB_CHANGE_DNS_SERVERS
+    if (PBS_RETRY == pb->state) {
+        goto next_state;
+    }
+#endif
     return 0;
 }
 
@@ -1177,7 +1227,6 @@ void pbnc_stop(struct pubnub_* pbp, enum pubnub_res outcome_to_report)
         break;
     case PBS_IDLE:
         pbp->trans = PBTT_NONE;
-        pbntf_trans_outcome(pbp, PBS_IDLE);
         break;
     case PBS_KEEP_ALIVE_IDLE:
         pbp->trans = PBTT_NONE;

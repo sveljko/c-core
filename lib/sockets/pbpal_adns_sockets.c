@@ -1,8 +1,8 @@
 /* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
-#include "lib/sockets/pbpal_adns_sockets.h"
-
 #include "pubnub_internal.h"
 
+#include "lib/sockets/pbpal_adns_sockets.h"
+#include "core/pubnub_assert.h"
 #include "core/pubnub_log.h"
 
 #if !defined(_WIN32)
@@ -87,7 +87,7 @@ int send_dns_query(int                    skt,
 #define P_ADDR_IPV6_ARGUMENT
 #endif
 
-int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr* resolved_addr)
+int read_dns_response(pubnub_t *pb, struct sockaddr* dest, struct sockaddr* resolved_addr)
 {
     uint8_t                    buf[8192];
     int                        msg_size;
@@ -96,6 +96,7 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr* resolved_
 #if PUBNUB_USE_IPV6
     struct pubnub_ipv6_address addr_ipv6 = {{0}};
 #endif
+    PUBNUB_ASSERT(SOCKET_INVALID != pb->pal.socket);
 
     switch (dest->sa_family) {
     case AF_INET:
@@ -111,18 +112,19 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr* resolved_
     default:
         PUBNUB_LOG_ERROR("read_dns_response(socket=%d): invalid address family "
                          "dest->sa_family =%uh\n",
-                         skt,
+                         pb->pal.socket,
                          dest->sa_family);
         return -1;
     }
-    msg_size = recvfrom(skt, (char*)buf, sizeof buf, 0, dest, CAST & sockaddr_size);
+    msg_size = recvfrom(pb->pal.socket, (char*)buf, sizeof buf, 0, dest, CAST & sockaddr_size);
     if (msg_size <= 0) {
         return socket_would_block() ? +1 : -1;
     }
-    if (pbdns_pick_resolved_address(buf,
-                                    (size_t)msg_size,
-                                    &addr_ipv4
-                                    P_ADDR_IPV6_ARGUMENT) != 0) {
+    if (pbdns_pick_resolved_addresses(pb,
+                                      buf,
+                                      (size_t)msg_size,
+                                      &addr_ipv4
+                                      P_ADDR_IPV6_ARGUMENT) != 0) {
         return -1;
     }
     if (addr_ipv4.ipv4[0] != 0) {
@@ -148,11 +150,19 @@ int read_dns_response(int skt, struct sockaddr* dest, struct sockaddr* resolved_
 #if !defined(_WIN32)
 #include <fcntl.h>
 #endif
+/* When running this test example PUBNUB_USE_MULTIPLE_ADDRESSES should be defined and
+   set to zero in the corresponding make file
+*/
 int main()
 {
     struct sockaddr_in  dest;
     struct sockaddr_in6 dest6;
     struct sockaddr*    resolved_addr;
+    pubnub_t*           pbp = pubnub_alloc();
+    if (NULL == pbp) {
+        printf("Failed to allocate Pubnub context!\n");
+        return -1;
+    }
 
 #if defined(_WIN32)
     WSADATA wsaData;
@@ -172,6 +182,7 @@ int main()
         PUBNUB_LOG_ERROR("Error: Couldnt't get Ipv4 socket.\n");
         return -1;
     }
+    
 #if !defined(_WIN32)
     int flags = fcntl(skt, F_GETFL, 0);
     fcntl(skt, F_SETFL, flags | O_NONBLOCK);
@@ -204,7 +215,8 @@ int main()
                timev.tv_sec,
                timev.tv_usec);
 #endif
-        read_dns_response(skt, (struct sockaddr*)&dest, &resolved_addr);
+        pb->pal.socket = skt;
+        read_dns_response(pb, (struct sockaddr*)&dest, &resolved_addr);
 #if !defined(_WIN32)
     }
     else {
@@ -251,7 +263,8 @@ int main()
                timev.tv_sec,
                timev.tv_usec);
 #endif
-        read_dns_response(skt, (struct sockaddr*)&dest6, &resolved_addr);
+        pb->pal.socket = skt;
+        read_dns_response(pb, (struct sockaddr*)&dest6, &resolved_addr);
 #if !defined(_WIN32)
     }
     else {

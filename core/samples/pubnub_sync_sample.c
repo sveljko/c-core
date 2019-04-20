@@ -3,6 +3,7 @@
 
 #include "core/pubnub_helper.h"
 #include "core/pubnub_timers.h"
+#include "core/pubnub_proxy.h"
 
 #include <stdio.h>
 #include <time.h>
@@ -82,6 +83,7 @@ int main()
     pubnub_init(pbp, "demo", "demo");
 
     pubnub_set_transaction_timeout(pbp, PUBNUB_DEFAULT_SUBSCRIBE_TIMEOUT);
+    pubnub_set_proxy_manual(pbp, pbproxyHTTP_CONNECT, "localhost", 8888);
 
     /* Leave this commented out to use the default - which is
        blocking I/O on most platforms. Uncomment to use non-
