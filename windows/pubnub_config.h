@@ -152,7 +152,7 @@
 #define PUBNUB_CRYPTO_API 0
 
 
-#if !defined(PUBNUB_ONLY_PUBSUB)
+#if !defined(PUBNUB_ONLY_PUBSUB_API)
 /** If true (!=0), will enable only publish and subscribe. All
     other transactions will fail.
 

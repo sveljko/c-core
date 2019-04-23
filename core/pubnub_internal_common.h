@@ -10,10 +10,37 @@
 #if defined(PUBNUB_CALLBACK_API)
 #include "core/pubnub_ntf_callback.h"
 #include "core/pubnub_dns_servers.h"
-#define PUBNUB_ADNS_RETRY_AFTER_CLOSE                                                \
+#endif
+
+#if !defined(PUBNUB_USE_IPV6)
+#define PUBNUB_USE_IPV6 0
+#endif
+
+#if !defined(PUBNUB_SET_DNS_SERVERS)
+#define PUBNUB_SET_DNS_SERVERS 0
+#endif
+
+#if !defined(PUBNUB_USE_MULTIPLE_ADDRESSES)
+#define PUBNUB_USE_MULTIPLE_ADDRESSES 0
+#endif
+
+#if !defined(PUBNUB_CHANGE_DNS_SERVERS)
+#define PUBNUB_CHANGE_DNS_SERVERS 0
+#endif
+
+#define PUBNUB_ADNS_RETRY_AFTER_CLOSE                               \
     (PUBNUB_CHANGE_DNS_SERVERS || PUBNUB_USE_MULTIPLE_ADDRESSES)
-#else
-#define PUBNUB_ADNS_RETRY_AFTER_CLOSE 0
+
+#if !defined(PUBNUB_ONLY_PUBSUB_API)
+#define PUBNUB_ONLY_PUBSUB_API 0
+#endif
+
+#if !defined(PUBNUB_USE_SUBSCRIBE_V2)
+#define PUBNUB_USE_SUBSCRIBE_V2 0
+#endif
+
+#if !defined(PUBNUB_USE_ADVANCED_HISTORY)
+#define PUBNUB_USE_ADVANCED_HISTORY 0
 #endif
 
 #if !defined(PUBNUB_PROXY_API)
@@ -23,7 +50,7 @@
 #include "core/pbhttp_digest.h"
 #endif
 
-#define PUBNUB_NEED_RETRY_AFTER_CLOSE                                          \
+#define PUBNUB_NEED_RETRY_AFTER_CLOSE                          \
     (PUBNUB_PROXY_API || PUBNUB_USE_SSL || PUBNUB_ADNS_RETRY_AFTER_CLOSE)
 
 #if !defined PUBNUB_USE_GZIP_COMPRESSION

@@ -33,10 +33,24 @@ struct UserData {
 };
 
 
+static void wait_seconds(double time_in_seconds)
+{
+    time_t start = time(NULL);
+    double time_passed_in_seconds;
+    do {
+        time_passed_in_seconds = difftime(time(NULL), start);
+    } while (time_passed_in_seconds < time_in_seconds);
+}
+
+
 static void callback_sample_free(pubnub_t* p)
 {
     if (pubnub_free_with_timeout(p, 1000) != 0) {
         printf("Failed to free the Pubnub context\n");
+    }
+    else {
+        /* Waits until the context is released from the processing queue */
+        wait_seconds(1);
     }
 }
 

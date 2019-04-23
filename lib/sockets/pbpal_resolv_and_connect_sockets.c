@@ -75,51 +75,52 @@ static void get_dns_ip(pubnub_t *pb, struct sockaddr* addr)
     addr->sa_family = AF_INET;
 #if PUBNUB_CHANGE_DNS_SERVERS
     pb->dns_index = 0;
-#endif
     if ((pubnub_get_dns_primary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)
-#if PUBNUB_CHANGE_DNS_SERVERS
         || (DNS_ERROR == pb->dns_server_check[pb->dns_index])
-#endif
         ) {
-#if PUBNUB_CHANGE_DNS_SERVERS
         pb->dns_index++;
-#endif
         if ((pubnub_get_dns_secondary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)
-#if PUBNUB_CHANGE_DNS_SERVERS
             || (DNS_ERROR == pb->dns_server_check[pb->dns_index])
-#endif
            ) {
-#if PUBNUB_CHANGE_DNS_SERVERS
             pb->dns_index++;
-#endif
 #if PUBNUB_USE_IPV6
             addr->sa_family = AF_INET6;
 #else        
             inet_pton(AF_INET, PUBNUB_DEFAULT_DNS_SERVER, p);
 #endif /* PUBNUB_USE_IPV6 */
         }
+#else
+    if ((pubnub_get_dns_primary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)
+        && ((pubnub_get_dns_secondary_server_ipv4((struct pubnub_ipv4_address*)p) == -1)
+        ) {
+#if PUBNUB_USE_IPV6
+        addr->sa_family = AF_INET6;
+#else        
+        inet_pton(AF_INET, PUBNUB_DEFAULT_DNS_SERVER, p);
+#endif /* PUBNUB_USE_IPV6 */
+#endif /* PUBNUB_CHANGE_DNS_SERVERS */
     }
 #if PUBNUB_USE_IPV6
     if (AF_INET6 == addr->sa_family) {
+#if PUBNUB_CHANGE_DNS_SERVERS
         if ((pubnub_get_dns_primary_server_ipv6((struct pubnub_ipv6_address*)pv6) == -1)
-#if PUBNUB_CHANGE_DNS_SERVERS
             || (DNS_ERROR == pb->dns_server_check[pb->dns_index])
-#endif
            ) {
-#if PUBNUB_CHANGE_DNS_SERVERS
             pb->dns_index++;
-#endif
             if ((pubnub_get_dns_secondary_server_ipv6((struct pubnub_ipv6_address*)pv6) == -1)
-#if PUBNUB_CHANGE_DNS_SERVERS
                 || (DNS_ERROR == pb->dns_server_check[pb->dns_index])
-#endif
                ) {
-#if PUBNUB_CHANGE_DNS_SERVERS
                 pb->dns_index++;
-#endif
                 addr->sa_family = AF_INET;
                 inet_pton(AF_INET, PUBNUB_DEFAULT_DNS_SERVER, p);
             }
+#else
+        if ((pubnub_get_dns_primary_server_ipv6((struct pubnub_ipv6_address*)p) == -1)
+            && ((pubnub_get_dns_secondary_server_ipv6((struct pubnub_ipv6_address*)p) == -1)
+            ) {
+            addr->sa_family = AF_INET;
+            inet_pton(AF_INET, PUBNUB_DEFAULT_DNS_SERVER, p);
+#endif /* PUBNUB_CHANGE_DNS_SERVERS */
         }
     }
 #endif /* PUBNUB_USE_IPV6 */

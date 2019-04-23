@@ -423,7 +423,8 @@ AfterEach(single_context_pubnub) {
         expect(pbpal_forget, when(pb, equals(pbp)));
         expect(pbntf_trans_outcome, when(pb, equals(pbp)));
     }
-    expect(pbpal_free, when(pb, equals(pbp)));
+    expect(pbntf_trans_outcome, when(pb, equals(pbp)));
+    expect(pbntf_requeue_for_processing, when(pb, equals(pbp)));
     if (state_not_idle) {
         attest(pubnub_free(pbp), equals(-1));
         attest(pbnc_fsm(pbp), equals(0));
@@ -432,6 +433,10 @@ AfterEach(single_context_pubnub) {
     else {
         attest(pubnub_free(pbp), equals(0));
     }
+    attest(pbp->state, equals(PBS_NULL));
+    expect(pbpal_free, when(pb, equals(pbp)));
+    /* pballoc_free_at_last(pb) is called from socket watcher thread */
+    pballoc_free_at_last(pbp);
     free_m_msgs(m_msg_array);
 }
 

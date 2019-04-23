@@ -1,11 +1,13 @@
 /* -*- c-file-style:"stroustrup"; indent-tabs-mode: nil -*- */
 #include "pubnub_internal.h"
 
-#if !PUBNUB_SET_DNS_SERVERS
-#error PUBNUB_SET_DNS_SERVERS must be defined and set to 1 before compiling this file
-#endif
+#if PUBNUB_SET_DNS_SERVERS
 #include "core/pubnub_dns_servers.h"
 #include "lib/pubnub_parse_ipv4_addr.h"
+#else
+#error PUBNUB_SET_DNS_SERVERS must be defined and set to 1 before compiling this file
+#endif
+
 #if PUBNUB_USE_IPV6
 #include "lib/pubnub_parse_ipv6_addr.h"
 #endif

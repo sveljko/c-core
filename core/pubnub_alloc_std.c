@@ -145,8 +145,13 @@ int pubnub_free(pubnub_t* pb)
     if (PBS_IDLE == pb->state) {
         PUBNUB_LOG_TRACE("pubnub_free(%p) PBS_IDLE\n", pb);
         pb->state = PBS_NULL;
+#if defined(PUBNUB_CALLBACK_API)
+        pbntf_requeue_for_processing(pb);
+        pubnub_mutex_unlock(pb->monitor);
+#else
         pubnub_mutex_unlock(pb->monitor);
         pballoc_free_at_last(pb);
+#endif
         result = 0;
     }
     else {

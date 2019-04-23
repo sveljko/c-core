@@ -36,6 +36,10 @@ static void callback_sample_free(pubnub_t* p)
     if (pubnub_free_with_timeout(p, 1000) != 0) {
         printf("Failed to free the Pubnub context\n");
     }
+    else {
+        /* Waits until the context is released from the processing queue */
+        wait_seconds(1);
+    }
 }
 
 
