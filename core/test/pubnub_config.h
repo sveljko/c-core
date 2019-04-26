@@ -90,30 +90,36 @@
 #endif
 
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
+#if PUBNUB_USE_SSL
+#define PUBNUB_MAX_IPV4_ADDRESSES 2
+#if PUBNUB_USE_IPV6
+#define PUBNUB_MAX_IPV6_ADDRESSES 2
+#endif
+#else
 #define PUBNUB_MAX_IPV4_ADDRESSES 1
 #if PUBNUB_USE_IPV6
 #define PUBNUB_MAX_IPV6_ADDRESSES 1
 #endif
+#endif /* PUBNUB_USE_SSL */
 #endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 
 #if !defined(PUBNUB_SET_DNS_SERVERS)
 /** If true (!=0), enable support for setting DNS servers */
 #define PUBNUB_SET_DNS_SERVERS 1
-/** If true (!=0), enable support for switching between DNS servers */
-#if !defined(PUBNUB_CHANGE_DNS_SERVERS)
-#define PUBNUB_CHANGE_DNS_SERVERS 1
 #endif
+
+#if PUBNUB_SET_DNS_SERVERS
+/** If true (!=0), enable support for switching between DNS servers */
+#define PUBNUB_CHANGE_DNS_SERVERS 1
 #endif
 
 #define PUBNUB_DEFAULT_DNS_SERVER "8.8.8.8"
 #endif /* defined(PUBNUB_CALLBACK_API) */
 
-/*
 #if !defined(PUBNUB_RECEIVE_GZIP_RESPONSE)
 // If true (!=0), enables support for compressed content data
 #define PUBNUB_RECEIVE_GZIP_RESPONSE 1
 #endif
-*/
 
 #define PUBNUB_DEFAULT_TRANSACTION_TIMER    310000
 

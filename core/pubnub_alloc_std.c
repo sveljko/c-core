@@ -152,6 +152,7 @@ int pubnub_free(pubnub_t* pb)
         pubnub_mutex_unlock(pb->monitor);
         pballoc_free_at_last(pb);
 #endif
+
         result = 0;
     }
     else {

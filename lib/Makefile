@@ -34,7 +34,7 @@ pubnub_parse_ipv6_addr_unit_test: pubnub_parse_ipv6_addr.c pubnub_parse_ipv6_add
 DNS_CODEC_SOURCE_FILES = ../core/pubnub_assert_std.c
 
 pubnub_dns_codec_unit_test: pubnub_dns_codec.c pubnub_dns_codec_unit_test.c
-	gcc -o pubnub_dns_codec_unit_test.so -shared $(CFLAGS) -D PUBNUB_USE_SSL=1 $(LDFLAGS) -Wall $(COVERAGE_FLAGS) -fPIC $(DNS_CODEC_SOURCE_FILES) pubnub_dns_codec.c pubnub_dns_codec_unit_test.c -lcgreen -lm
+	gcc -o pubnub_dns_codec_unit_test.so -shared $(CFLAGS) -D PUBNUB_USE_IPV6=1 -D PUBNUB_USE_SSL=1 $(LDFLAGS) -Wall $(COVERAGE_FLAGS) -fPIC $(DNS_CODEC_SOURCE_FILES) pubnub_dns_codec.c pubnub_dns_codec_unit_test.c -lcgreen -lm
 #	gcc -o pubnub_dns_codec_unit_testo $(CFLAGS) -Wall $(COVERAGE_FLAGS) $(DNS_CODEC_SOURCE_FILES) ../lib/pubnub_dns_codec.c pubnub_dns_codec_unit_test.c -lcgreen -lm
 	$(CGREEN_RUNNER) ./pubnub_dns_codec_unit_test.so
 	$(GCOVR) -r . --html --html-details -o coverage.html

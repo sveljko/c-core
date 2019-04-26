@@ -18,10 +18,10 @@ struct pubnub_ipv6_address {
 };
 
 /* primary, secondary(ipv4, ipv6) and default dns server */
-#define PUBNUB_MAX_DNS_SERVERS 5
+#define PUBNUB_MAX_DNS_SERVERS_MASK 0x10 
 #else
 /* primary, secondary(ipv4) and default dns server */
-#define PUBNUB_MAX_DNS_SERVERS 3
+#define PUBNUB_MAX_DNS_SERVERS_MASK 0x04
 #endif /* PUBNUB_USE_IPV6 */
 
 #if PUBNUB_SET_DNS_SERVERS

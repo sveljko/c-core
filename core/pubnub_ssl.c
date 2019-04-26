@@ -10,7 +10,6 @@ void pubnub_set_ssl_options(pubnub_t *p, bool useSSL, bool ignoreSecureConnectio
     PUBNUB_ASSERT(pb_valid_ctx_ptr(p));
 #if PUBNUB_USE_SSL
     p->options.useSSL = p->flags.trySSL = useSSL;
-    p->flags.use_first_ip_address = false;
     p->options.fallbackSSL = ignoreSecureConnectionRequirement;
 #endif
 }

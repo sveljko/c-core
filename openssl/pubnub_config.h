@@ -102,27 +102,26 @@
 #define PUBNUB_USE_IPV6 1
 #endif
 
-#if !defined(PUBNUB_USE_MULTIPLE_ADDRESSES)
 /** If true (!=0), enable support for trying different addresses
     from dns response when connecting to the server.
  */
 #define PUBNUB_USE_MULTIPLE_ADDRESSES 1
-#endif
 
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
-#define PUBNUB_MAX_IPV4_ADDRESSES 1
+#define PUBNUB_MAX_IPV4_ADDRESSES 2
 #if PUBNUB_USE_IPV6
-#define PUBNUB_MAX_IPV6_ADDRESSES 1
+#define PUBNUB_MAX_IPV6_ADDRESSES 2
 #endif
 #endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 
 #if !defined(PUBNUB_SET_DNS_SERVERS)
 /** If true (!=0), enable support for setting DNS servers */
 #define PUBNUB_SET_DNS_SERVERS 1
-/** If true (!=0), enable support for switching between DNS servers */
-#if !defined(PUBNUB_CHANGE_DNS_SERVERS)
-#define PUBNUB_CHANGE_DNS_SERVERS 1
 #endif
+
+#if PUBNUB_SET_DNS_SERVERS
+/** If true (!=0), enable support for switching between DNS servers */
+#define PUBNUB_CHANGE_DNS_SERVERS 1
 #endif
 
 #define PUBNUB_DEFAULT_DNS_SERVER "8.8.8.8"

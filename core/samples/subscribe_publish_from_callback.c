@@ -51,7 +51,7 @@ static void callback_sample_free(pubnub_t* p)
     }
     else {
         /* Waits until the context is released from the processing queue */
-        wait_seconds(1);
+        wait_seconds(2);
     }
 }
 
@@ -305,10 +305,6 @@ int main()
        Starting everything disconnected and then connecting to internet at some point,
        and so on...
      */
-/*
-    do {
-    } while(true);
-*/
     wait_seconds(200);
 
     callback_sample_free(pbp_2);

@@ -146,6 +146,101 @@ struct pbntlm_context {
 
 typedef struct pbntlm_context pbntlm_ctx_t;
 
+struct pubnub_options {
+#if PUBNUB_BLOCKING_IO_SETTABLE
+    /** Indicates whether to use blocking I/O. Not implemented if
+        choosing between blocking and non-blocking is not supported
+        on a platform.
+     */
+    bool use_blocking_io : 1;
+#endif
+
+    /** Indicates whether to use HTTP keep-alive. If used,
+        subsequent transactions will be faster, unless the (TCP/IP
+        and TLS/SSL) connection drops. OTOH, the "async"
+        drop/close of the connection may be a problem and cause
+        some transactions to fail.
+     */
+    bool use_http_keep_alive : 1;
+
+#if PUBNUB_USE_IPV6 && defined(PUBNUB_CALLBACK_API)
+    /* Connectivity type(true-Ipv6/false-Ipv4) chosen on a given context */
+    bool ipv6_connectivity : 1;
+#endif
+#if PUBNUB_USE_SSL
+    /** Should the PubNub client establish the connection to
+      * PubNub using SSL? */
+    bool useSSL : 1;
+    /** When SSL is enabled, should the client fallback to a
+      * non-SSL connection if it experiences issues handshaking
+      * across local proxies, firewalls, etc?
+      */
+    bool fallbackSSL : 1;
+    /** Use system certificate store (if available) */
+    bool use_system_certificate_store : 1;
+    /** Re-use SSL session on a new connection */
+    bool reuse_SSL_session : 1;
+#endif
+};
+
+struct pubnub_flags {
+#if PUBNUB_USE_SSL
+    /** Try to establish TLS/SSL over existing TCP/IP connection: yes/no */
+    bool trySSL : 1;
+#endif
+    /** Should close connection */
+    bool should_close : 1;
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
+    /** Retry the same Pubnub request after closing current TCP
+        connection.
+      */
+    bool retry_after_close : 1;
+#endif
+    /** Indicates whether current transaction started while connection
+        was kept alive(by client)(true:yes, false:no).
+        Used when deciding whether closed connection detected should be
+        renewed without losing transaction at hand.
+     */
+    bool started_while_kept_alive : 1;
+
+    /** Indicates whether to send the message in http message body, or if not,
+        encoded 'via GET'(, or maybe some third method).
+      */
+    bool is_publish_via_post : 1;
+};
+
+#if PUBNUB_CHANGE_DNS_SERVERS
+struct dns_servers_check {
+    /* One-bit mask that shifts */
+    uint8_t dns_mask;
+    /* dns server condition bit indicators(0 - OK, 1 - Error on server).
+       Set to zeros indicates no issues encountered while sending, or receiving
+       valid response from any of available dns servers(up to 8 of them, as 'uint8_t'
+       conains 8 bits. In practise there is up to 5 dns servers). 
+     */
+    uint8_t dns_server_check;
+};
+#endif
+
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+struct pubnub_multi_addresses {
+    /* Number of spare ipv4 addresses */
+    int n_ipv4;
+    /* Spare ipv4 address index(from the array) currently used */
+    int ipv4_index;
+    /* Spare ipv4 address array */
+    struct pubnub_ipv4_address ipv4_addresses[PUBNUB_MAX_IPV4_ADDRESSES];
+#if PUBNUB_USE_IPV6
+    /* Number of spare ipv6 addresses */
+    int n_ipv6;
+    /* Spare ipv6 address index(from the array) currently used */
+    int ipv6_index;
+    /* Spare ipv6 address array */
+    struct pubnub_ipv6_address ipv6_addresses[PUBNUB_MAX_IPV6_ADDRESSES];
+#endif
+};
+#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
+
 /** The Pubnub context
 
     @note Don't declare any members as `bool`, as there may be
@@ -205,71 +300,9 @@ struct pubnub_ {
 
     struct pubnub_pal pal;
 
-    struct pubnub_options {
-#if PUBNUB_BLOCKING_IO_SETTABLE
-        /** Indicates whether to use blocking I/O. Not implemented if
-            choosing between blocking and non-blocking is not supported
-            on a platform.
-        */
-        bool use_blocking_io : 1;
-#endif
+    struct pubnub_options options;
 
-        /** Indicates whether to use HTTP keep-alive. If used,
-            subsequent transactions will be faster, unless the (TCP/IP
-            and TLS/SSL) connection drops. OTOH, the "async"
-            drop/close of the connection may be a problem and cause
-            some transactions to fail.
-        */
-        bool use_http_keep_alive : 1;
-
-#if PUBNUB_USE_IPV6 && defined(PUBNUB_CALLBACK_API)
-        /* Connectivity type(true-Ipv6/false-Ipv4) chosen on a given context */
-        bool ipv6_connectivity : 1;
-#endif
-#if PUBNUB_USE_SSL
-        /** Should the PubNub client establish the connection to
-         * PubNub using SSL? */
-        bool useSSL : 1;
-        /** When SSL is enabled, should the client fallback to a
-         * non-SSL connection if it experiences issues handshaking
-         * across local proxies, firewalls, etc?
-         */
-        bool fallbackSSL : 1;
-        /** Use system certificate store (if available) */
-        bool use_system_certificate_store : 1;
-        /** Re-use SSL session on a new connection */
-        bool reuse_SSL_session : 1;
-#endif
-    } options;
-
-    struct pubnub_flags {
-#if PUBNUB_USE_SSL
-        /** Try to establish TLS/SSL over existing TCP/IP connection: yes/no */
-        bool trySSL : 1;
-
-        /** Use first ip address again in case of fallback */
-        bool use_first_ip_address : 1;
-#endif
-        /** Should close connection */
-        bool should_close : 1;
-#if PUBNUB_NEED_RETRY_AFTER_CLOSE
-        /** Retry the same Pubnub request after closing current TCP
-            connection.
-        */
-        bool retry_after_close : 1;
-#endif
-        /** Indicates whether current transaction started while connection
-            was kept alive(by client)(true:yes, false:no).
-            Used when deciding whether closed connection detected should be
-            renewed without losing transaction at hand.
-        */
-        bool started_while_kept_alive : 1;
-
-        /** Indicates whether to send the message in http message body, or if not,
-            encoded 'via GET'(, or maybe some third method).
-        */
-        bool is_publish_via_post : 1;
-    } flags;
+    struct pubnub_flags flags;
 
 #if PUBNUB_ADVANCED_KEEP_ALIVE
     struct pubnub_keep_alive_data {
@@ -291,18 +324,6 @@ struct pubnub_ {
     char const* ssl_CApath;
     /** User-defined, in-memory, PEM certificate to use */
     char const* ssl_userPEMcert;
-
-#if defined(PUBNUB_CALLBACK_API)
-    /** First Ipv4 address, if and when available through dns resolution.
-     */
-    struct pubnub_ipv4_address first_ipv4_address;
-
-#if PUBNUB_USE_IPV6
-    /** First Iv6 address, if and when available through dns resolution.
-     */
-    struct pubnub_ipv6_address first_ipv6_address;
-#endif
-#endif /* defined(PUBNUB_CALLBACK_API) */
 #endif /* PUBNUB_USE_SSL */
 
 #if PUBNUB_THREADSAFE
@@ -326,30 +347,11 @@ struct pubnub_ {
     void*             user_data;
 
 #if PUBNUB_CHANGE_DNS_SERVERS
-    int dns_index;
-    /* dns server condition indicators.
-       Set to zeros inicates no issues encountered while sending, connecting,
-       or receiving valid response
-     */
-    int dns_server_check[PUBNUB_MAX_DNS_SERVERS];
-#endif
-    
+    struct dns_servers_check dns_check;
+#endif    
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
-    /* Number of spare ipv4 addresses */
-    int n_ipv4;
-    /* Spare ipv4 address index(from the array) currently used */
-    int ipv4_index;
-    /* Spare ipv4 address array */
-    struct pubnub_ipv4_address ipv4_addresses[PUBNUB_MAX_IPV4_ADDRESSES];
-#if PUBNUB_USE_IPV6
-    /* Number of spare ipv6 addresses */
-    int n_ipv6;
-    /* Spare ipv6 address index(from the array) currently used */
-    int ipv6_index;
-    /* Spare ipv6 address array */
-    struct pubnub_ipv6_address ipv6_addresses[PUBNUB_MAX_IPV6_ADDRESSES];
+    struct pubnub_multi_addresses spare_addresses;
 #endif
-#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 #endif /* defined(PUBNUB_CALLBACK_API) */
     
 #if PUBNUB_PROXY_API

@@ -107,7 +107,7 @@ CALLBACK_INTF_SOURCEFILES += ../lib/pubnub_parse_ipv6_addr.c
 CALLBACK_INTF_OBJFILES += pubnub_parse_ipv6_addr.o
 endif
 
-CFLAGS_CALLBACK = -D PUBNUB_USE_IPV6=$(USE_IPV6)
+CFLAGS_CALLBACK = -D PUBNUB_USE_IPV6=$(USE_IPV6) -D PUBNUB_SET_DNS_SERVERS=$(USE_DNS_SERVERS)
 
 openssl/pubnub_callback_sample: samples/pubnub_sample.cpp $(SOURCEFILES) $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp
 	$(CXX) -o $@ -D PUBNUB_CALLBACK_API $(CFLAGS) $(CFLAGS_CALLBACK) -x c++ samples/pubnub_sample.cpp $(CALLBACK_INTF_SOURCEFILES) pubnub_futres_posix.cpp $(SOURCEFILES) $(LDLIBS)

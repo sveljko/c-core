@@ -16,8 +16,6 @@ enum pubnub_state {
     PBS_NULL,
     /** No transaction ongoing */
     PBS_IDLE,
-    /** Connection is just closed and about to go to pubnub_state 'PBS_IDLE' */
-    PBS_IDLE_AFTER_CLOSE,
     /** About to retry the transaction.  Currently used for TLS/SSL 'fallback' to TCP/IP
         and in proxy authentication, where we "retry" after receiving HTTP status
         407, sending (some more) authentication data.

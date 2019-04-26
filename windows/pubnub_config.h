@@ -95,12 +95,10 @@
 #define PUBNUB_USE_IPV6 1
 #endif
 
-#if !defined(PUBNUB_USE_MULTIPLE_ADDRESSES)
 /** If true (!=0), enable support for trying different addresses
     from dns response when connecting to the server.
  */
 #define PUBNUB_USE_MULTIPLE_ADDRESSES 1
-#endif
 
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
 #define PUBNUB_MAX_IPV4_ADDRESSES 1
@@ -109,27 +107,22 @@
 #endif
 #endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 
-#if !defined(PUBNUB_SET_DNS_SERVERS)
 /** If true (!=0), enable support for setting DNS servers */
 #define PUBNUB_SET_DNS_SERVERS 1
+
+#if PUBNUB_SET_DNS_SERVERS
 /** If true (!=0), enable support for switching between DNS servers */
-#if !defined(PUBNUB_CHANGE_DNS_SERVERS)
 #define PUBNUB_CHANGE_DNS_SERVERS 1
-#endif
 #endif
 
 #define PUBNUB_DEFAULT_DNS_SERVER "8.8.8.8"
 #endif /* defined(PUBNUB_CALLBACK_API) */
 
-#if !defined(PUBNUB_RECEIVE_GZIP_RESPONSE)
 /** If true (!=0), enables support for compressed content data*/
 #define PUBNUB_RECEIVE_GZIP_RESPONSE 1
-#endif
 
-#if !defined(PUBNUB_USE_GZIP_COMPRESSION)
 /** If true (!=0), enables support for compressed content data*/
 #define PUBNUB_USE_GZIP_COMPRESSION 1
-#endif
 
 #if PUBNUB_USE_GZIP_COMPRESSION
 /* Maximum compressed message length allowed. Could be shortened by the user */
@@ -173,17 +166,13 @@
 #endif
 
 
-#if !defined(PUBNUB_USE_SUBSCRIBE_V2)
 /** If true (!=0) will enable using the subscribe v2 API, which
     provides filter expressions and more data about messages. */
 #define PUBNUB_USE_SUBSCRIBE_V2 1
-#endif
 
-#if !defined(PUBNUB_USE_ADVANCED_HISTORY)
 /** If true (!=0) will enable using the advanced history API, which
     provides more data about (unread) messages. */
 #define PUBNUB_USE_ADVANCED_HISTORY 1
-#endif
 
 
 #endif /* !defined INC_PUBNUB_CONFIG */

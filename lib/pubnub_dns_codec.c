@@ -483,13 +483,13 @@ static int skip_questions(uint8_t const** o_reader,
     return 0;
 }
 
-static int check_answer(pubnub_t*       pb,
-                        const uint8_t** o_reader,
+static int check_answer(const uint8_t** o_reader,
                         unsigned        r_data_type,
                         size_t          r_data_len,
                         bool*           p_address_found,                
                         struct pubnub_ipv4_address* resolved_addr_ipv4
-                        IPV6_ADDR_ARGUMENT_DECLARATION)
+                        IPV6_ADDR_ARGUMENT_DECLARATION
+                        PBDNS_OPTIONAL_PARAMS_DECLARATIONS)
 {
     PUBNUB_ASSERT_OPT(o_reader != NULL);
 
@@ -510,23 +510,19 @@ static int check_answer(pubnub_t*       pb,
         if (false == *p_address_found) {
             memcpy(resolved_addr_ipv4->ipv4, reader, 4);
             *p_address_found = true;
-#if PUBNUB_USE_SSL
-            if (pb->options.fallbackSSL) {
-                memcpy(pb->first_ipv4_address.ipv4, resolved_addr_ipv4->ipv4, 4);
-#if PUBNUB_USE_IPV6
-                memset(pb->first_ipv6_address.ipv6, 0, sizeof pb->first_ipv6_address.ipv6);
-#endif
-                pb->flags.use_first_ip_address = true;
+#if PUBNUB_USE_MULTIPLE_ADDRESSES && PUBNUB_USE_SSL
+            if (options->fallbackSSL) {
+                memcpy(spare_addresses->ipv4_addresses[spare_addresses->n_ipv4++].ipv4,
+                       resolved_addr_ipv4->ipv4,
+                       4);
             }
 #endif /* PUBNUB_USE_SSL */
         }
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
-        else if (pb->n_ipv4 < PUBNUB_MAX_IPV4_ADDRESSES) {
-            memcpy(pb->ipv4_addresses[pb->n_ipv4++].ipv4, reader, 4);
+        else if (spare_addresses->n_ipv4 < PUBNUB_MAX_IPV4_ADDRESSES) {
+            memcpy(spare_addresses->ipv4_addresses[spare_addresses->n_ipv4++].ipv4, reader, 4);
         }
-#else
-        PUBNUB_UNUSED(pb);
-#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
+#endif
         return 0;
     }
 #if PUBNUB_USE_IPV6
@@ -552,17 +548,17 @@ static int check_answer(pubnub_t*       pb,
         if (false == *p_address_found) {
             memcpy(resolved_addr_ipv6->ipv6, reader, 16);
             *p_address_found = true;
-#if PUBNUB_USE_SSL
-            if (pb->options.fallbackSSL) {
-                memcpy(pb->first_ipv6_address.ipv6, resolved_addr_ipv6->ipv6, 16);
-                memset(pb->first_ipv4_address.ipv4, 0, sizeof pb->first_ipv4_address.ipv4);
-                pb->flags.use_first_ip_address = true;
+#if PUBNUB_USE_MULTIPLE_ADDRESSES && PUBNUB_USE_SSL
+            if (options->fallbackSSL) {
+                memcpy(spare_addresses->ipv6_addresses[spare_addresses->n_ipv6++].ipv6,
+                       resolved_addr_ipv6->ipv6,
+                       16);
             }
 #endif /* PUBNUB_USE_SSL */
         }
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
-        else if (pb->n_ipv6 < PUBNUB_MAX_IPV6_ADDRESSES) {
-            memcpy(pb->ipv6_addresses[pb->n_ipv6++].ipv6, reader, 16);
+        else if (spare_addresses->n_ipv6 < PUBNUB_MAX_IPV6_ADDRESSES) {
+            memcpy(spare_addresses->ipv6_addresses[spare_addresses->n_ipv6++].ipv6, reader, 16);
         }
 #endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
         return 0;
@@ -573,13 +569,13 @@ static int check_answer(pubnub_t*       pb,
     return -1;
 }
 
-static int find_the_answer(pubnub_t*      pb,
-                           uint8_t const* reader,
+static int find_the_answer(uint8_t const* reader,
                            uint8_t const* buf,
                            uint8_t const* end,
                            size_t         ans_count,
                            struct pubnub_ipv4_address* resolved_addr_ipv4
-                           IPV6_ADDR_ARGUMENT_DECLARATION)
+                           IPV6_ADDR_ARGUMENT_DECLARATION
+                           PBDNS_OPTIONAL_PARAMS_DECLARATIONS)
 {
     size_t i;
     bool address_found = false;
@@ -635,13 +631,13 @@ static int find_the_answer(pubnub_t*      pb,
                          to_skip,
                          r_data_type,
                          r_data_len);
-        if(check_answer(pb,
-                        &reader,
+        if(check_answer(&reader,
                         r_data_type,
                         r_data_len,
                         &address_found,
                         resolved_addr_ipv4
-                        IPV6_ADDR_ARGUMENT) == 0) {
+                        IPV6_ADDR_ARGUMENT
+                        PBDNS_OPTIONAL_PARAMS) == 0) {
 #if !PUBNUB_USE_MULTIPLE_ADDRESSES
             return 0;
 #endif
@@ -651,11 +647,11 @@ static int find_the_answer(pubnub_t*      pb,
     return address_found ? 0 : -1;
 }
 
-int pbdns_pick_resolved_addresses(pubnub_t *pb,
-                                  uint8_t const* buf,
+int pbdns_pick_resolved_addresses(uint8_t const* buf,
                                   size_t msg_size,
                                   struct pubnub_ipv4_address* resolved_addr_ipv4
-                                  IPV6_ADDR_ARGUMENT_DECLARATION)
+                                  IPV6_ADDR_ARGUMENT_DECLARATION
+                                  PBDNS_OPTIONAL_PARAMS_DECLARATIONS)
 {
     size_t         q_count;
     size_t         ans_count;
@@ -690,11 +686,11 @@ int pbdns_pick_resolved_addresses(pubnub_t *pb,
         return -1;
     }
 
-    return find_the_answer(pb,
-                           reader,
+    return find_the_answer(reader,
                            buf,
                            end,
                            ans_count,
                            resolved_addr_ipv4
-                           IPV6_ADDR_ARGUMENT);
+                           IPV6_ADDR_ARGUMENT
+                           PBDNS_OPTIONAL_PARAMS);
 }

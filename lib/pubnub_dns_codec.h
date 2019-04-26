@@ -2,11 +2,11 @@
 #if !defined INC_PUBNUB_DNS_HANDLER
 #define      INC_PUBNUB_DNS_HANDLER
 
+#include "pubnub_internal.h"
 #include "core/pubnub_dns_servers.h"
 
 #include <stdlib.h>
 
-//typedef struct pubnub_ pubnub_t;
 
 /** Question/query types */
 enum DNSqueryType {
@@ -39,10 +39,15 @@ enum DNSqueryType {
 #define IPV6_ADDR_ARGUMENT
 #endif /* PUBNUB_USE_IPV6 */
 
-/** Indicates that error has occurred while sending request, or when receiving(or received)
-    response from dns server
- */
-#define DNS_ERROR 1
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+#define PBDNS_OPTIONAL_PARAMS_DECLARATIONS , struct pubnub_multi_addresses* spare_addresses \
+                                           , struct pubnub_options const* options
+#define PBDNS_OPTIONAL_PARAMS , spare_addresses, options
+#else
+#define PBDNS_OPTIONAL_PARAMS_DECLARATIONS
+#define PBDNS_OPTIONAL_PARAMS
+#endif
+
 
 /** Prepares DNS @p query_type query request for @p host(name) in @p buf whose maximum available
     length is @p buf_size in octets.
@@ -67,11 +72,11 @@ int pbdns_prepare_dns_request(uint8_t* buf,
 
     @retval 0 success, -1 on error
  */
-int pbdns_pick_resolved_addresses(pubnub_t *pb,
-                                  uint8_t const* buf,
+int pbdns_pick_resolved_addresses(uint8_t const* buf,
                                   size_t msg_size,
                                   struct pubnub_ipv4_address* resolved_addr_ipv4
-                                  IPV6_ADDR_ARGUMENT_DECLARATION);
+                                  IPV6_ADDR_ARGUMENT_DECLARATION
+                                  PBDNS_OPTIONAL_PARAMS_DECLARATIONS);
 
 
 #endif /* defined INC_PUBNUB_DNS_HANDLER */
