@@ -3,6 +3,7 @@
 
 #include "core/pubnub_helper.h"
 #include "core/pubnub_timers.h"
+#include "core/pubnub_proxy.h"
 
 #include <stdio.h>
 #include <time.h>

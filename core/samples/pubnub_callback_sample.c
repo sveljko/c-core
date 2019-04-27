@@ -5,6 +5,7 @@
 #include "core/pubnub_timers.h"
 #include "core/pubnub_generate_uuid.h"
 #include "core/pubnub_free_with_timeout.h"
+#include "core/pubnub_proxy.h"
 
 #if defined _WIN32
 #include <windows.h>
@@ -163,7 +164,7 @@ static void generate_uuid(pubnub_t* pbp)
 
 static void wait_seconds(double time_in_seconds)
 {
-    time_t  start = time(NULL);
+    time_t start = time(NULL);
     double time_passed_in_seconds;
     do {
         time_passed_in_seconds = difftime(time(NULL), start);
@@ -177,10 +178,11 @@ static void callback_sample_free(pubnub_t* p)
         printf("Failed to free the Pubnub context\n");
     }
     else {
-        /* Waits for the context to be released from the processing queue */
-        wait_seconds(1);
+        /* Waits until the context is released from the processing queue */
+        wait_seconds(2);
     }
 }
+
 
 static int do_time(pubnub_t* pbp, struct UserData* pUserData)
 {
