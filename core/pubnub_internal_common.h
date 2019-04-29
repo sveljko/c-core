@@ -210,7 +210,7 @@ struct pubnub_flags {
 };
 
 #if PUBNUB_CHANGE_DNS_SERVERS
-struct dns_servers_check {
+struct pbdns_servers_check {
     /* One-bit mask that shifts */
     uint8_t dns_mask;
     /* dns server condition bit indicators(0 - OK, 1 - Error on server).
@@ -347,7 +347,7 @@ struct pubnub_ {
     void*             user_data;
 
 #if PUBNUB_CHANGE_DNS_SERVERS
-    struct dns_servers_check dns_check;
+    struct pbdns_servers_check dns_check;
 #endif    
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
     struct pubnub_multi_addresses spare_addresses;
