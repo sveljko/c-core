@@ -68,7 +68,7 @@ static void prepare_port_and_hostname(pubnub_t *pb, uint16_t* p_port, char const
 #ifdef PUBNUB_CALLBACK_API
 #if PUBNUB_SET_DNS_SERVERS
 #if PUBNUB_CHANGE_DNS_SERVERS
-static void get_dns_ip(struct dns_servers_check* dns_check, struct sockaddr* addr)
+static void get_dns_ip(struct pbdns_servers_check* dns_check, struct sockaddr* addr)
 {
     void* p = &(((struct sockaddr_in*)addr)->sin_addr.s_addr);
 #if PUBNUB_USE_IPV6
@@ -184,7 +184,7 @@ static enum pbpal_resolv_n_connect_result connect_TCP_socket(pb_socket_t* skt,
 }
 
 #if PUBNUB_CHANGE_DNS_SERVERS
-static void check_dns_server_error(struct dns_servers_check* dns_check,
+static void check_dns_server_error(struct pbdns_servers_check* dns_check,
                                    struct pubnub_flags* flags)
 {                                   
     dns_check->dns_server_check |= dns_check->dns_mask;
