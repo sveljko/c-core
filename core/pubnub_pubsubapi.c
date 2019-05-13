@@ -301,11 +301,10 @@ char const* pubnub_get_origin(pubnub_t* pb)
 
 
 int pubnub_origin_set(pubnub_t* pb, char const* origin)
-{
-    bool origin_set = false;
-    
+{    
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     if (PUBNUB_ORIGIN_SETTABLE) {
+        bool origin_set = false;
         if (NULL == origin) {
             origin = PUBNUB_ORIGIN;
         }
