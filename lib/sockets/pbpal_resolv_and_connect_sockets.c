@@ -184,7 +184,7 @@ static enum pbpal_resolv_n_connect_result connect_TCP_socket(pb_socket_t* skt,
 }
 
 #if PUBNUB_ADNS_RETRY_AFTER_CLOSE
-inline static void if_no_retry_close_socket(pb_socket_t* skt, struct pubnub_flags* flags)
+static void if_no_retry_close_socket(pb_socket_t* skt, struct pubnub_flags* flags)
 {
     if (!flags->retry_after_close && (*skt != SOCKET_INVALID)) {
         socket_close(*skt);

@@ -505,7 +505,7 @@ static int check_answer(const uint8_t** o_reader,
                              r_data_len);
             return -1;
         }
-        PUBNUB_LOG_WARNING("Got IPv4: %u.%u.%u.%u\n",
+        PUBNUB_LOG_TRACE("Got IPv4: %u.%u.%u.%u\n",
                          reader[0],
                          reader[1],
                          reader[2],
@@ -526,7 +526,7 @@ static int check_answer(const uint8_t** o_reader,
                    2^16 == 65536(seconds), assuming that more significant bytes are zeros.
                  */
                 PUBNUB_ASSERT_OPT(ttl_ipv4 < 65536);
-                PUBNUB_LOG_WARNING("ttl_ipv4= %u\n", ttl_ipv4);
+                PUBNUB_LOG_TRACE("ttl_ipv4= %u\n", ttl_ipv4);
                 spare_addresses->ttl_ipv4[spare_addresses->n_ipv4] = (uint16_t)ttl_ipv4;
                 memcpy(spare_addresses->ipv4_addresses[spare_addresses->n_ipv4++].ipv4, reader, 4);
             }
@@ -570,7 +570,7 @@ static int check_answer(const uint8_t** o_reader,
                    2^16 == 65536(seconds), assuming that more significant bytes are zeros.
                  */
                 PUBNUB_ASSERT_OPT(ttl_ipv6 < 65536);
-                PUBNUB_LOG_WARNING("ttl_ipv6= %u\n", ttl_ipv6);
+                PUBNUB_LOG_TRACE("ttl_ipv6= %u\n", ttl_ipv6);
                 spare_addresses->ttl_ipv6[spare_addresses->n_ipv6] = (uint16_t)ttl_ipv6;
                 memcpy(spare_addresses->ipv6_addresses[spare_addresses->n_ipv6++].ipv6, reader, 16);
             }
