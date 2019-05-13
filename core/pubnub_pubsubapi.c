@@ -28,7 +28,7 @@ pubnub_t* pubnub_init(pubnub_t* p, const char* publish_key, const char* subscrib
 #if defined(PUBNUB_CALLBACK_API)
     p->cb        = NULL;
     p->user_data = NULL;
-#endif
+#endif /* defined(PUBNUB_CALLBACK_API) */
     if (PUBNUB_ORIGIN_SETTABLE) {
         p->origin = PUBNUB_ORIGIN;
     }
@@ -302,6 +302,8 @@ char const* pubnub_get_origin(pubnub_t* pb)
 
 int pubnub_origin_set(pubnub_t* pb, char const* origin)
 {
+    bool origin_set = false;
+    
     PUBNUB_ASSERT(pb_valid_ctx_ptr(pb));
     if (PUBNUB_ORIGIN_SETTABLE) {
         if (NULL == origin) {
@@ -309,10 +311,14 @@ int pubnub_origin_set(pubnub_t* pb, char const* origin)
         }
 
         pubnub_mutex_lock(pb->monitor);
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+        pbpal_multiple_addresses_reset_counters(&pb->spare_addresses);
+#endif
         pb->origin = origin;
+        origin_set = (PBS_IDLE == pb->state);
         pubnub_mutex_unlock(pb->monitor);
 
-        return 0;
+        return origin_set ? 0 : +1;
     }
     return -1;
 }

@@ -344,17 +344,24 @@ static char const* pbnc_state2str(enum pubnub_state e)
     }
 }
 
-#if PUBNUB_USE_MULTIPLE_ADDRESSES
-static void multiple_addresses_reset_counters(struct pubnub_multi_addresses* spare_addresses)
+static void initialize_fields_in_state_IDLE(struct pubnub_* pb)
 {
-    spare_addresses->n_ipv4 = 0;
-    spare_addresses->ipv4_index = 0;
-#if PUBNUB_USE_IPV6
-    spare_addresses->n_ipv6 = 0;
-    spare_addresses->ipv6_index = 0;
+#if PUBNUB_CHANGE_DNS_SERVERS
+    pb->dns_check.dns_server_check = 0;
+#endif
+#if PUBNUB_NEED_RETRY_AFTER_CLOSE
+    pb->flags.retry_after_close = false;
+#else
+    PUBNUB_UNUSED(pb);
+#endif
+#if PUBNUB_PROXY_API
+    pb->proxy_tunnel_established = false;
+    pb->proxy_saved_path_len     = 0;
+#endif
+#if PUBNUB_USE_SSL
+    pb->flags.trySSL = pb->options.useSSL;
 #endif
 }
-#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 
 int pbnc_fsm(struct pubnub_* pb)
 {
@@ -369,19 +376,7 @@ next_state:
     case PBS_NULL:
         break;
     case PBS_IDLE:
-#if PUBNUB_CHANGE_DNS_SERVERS
-        pb->dns_check.dns_server_check = 0;
-#endif
-#if PUBNUB_USE_MULTIPLE_ADDRESSES
-        multiple_addresses_reset_counters(&pb->spare_addresses);
-#endif
-#if PUBNUB_NEED_RETRY_AFTER_CLOSE
-        pb->flags.retry_after_close = false;
-#endif
-#if PUBNUB_PROXY_API
-        pb->proxy_tunnel_established = false;
-        pb->proxy_saved_path_len     = 0;
-#endif
+        initialize_fields_in_state_IDLE(pb);
         pb->state = PBS_READY;
         switch (pbntf_enqueue_for_processing(pb)) {
         case -1:
@@ -565,6 +560,16 @@ next_state:
                     pb->flags.trySSL            = false;
                     pb->flags.retry_after_close = true;
                 }
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+                else {
+                    pb->flags.retry_after_close =
+                        (++pb->spare_addresses.ipv4_index < pb->spare_addresses.n_ipv4)
+#if PUBNUB_USE_IPV6
+                        || (++pb->spare_addresses.ipv6_index < pb->spare_addresses.n_ipv6)
+#endif
+                        ;
+                }
+#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
                 outcome_detected(pb, PNR_CONNECT_FAILED);
                 return 0;
             default:
@@ -573,7 +578,7 @@ next_state:
                 return 0;
             }
         }
-#endif
+#endif /* PUBNUB_USE_SSL */
         i = pbpal_send_str(pb, pb->flags.is_publish_via_post ? "POST " : "GET ");
         if (i < 0) {
             outcome_detected(pb, PNR_IO_ERROR);
@@ -600,6 +605,16 @@ next_state:
                 pb->flags.trySSL            = false;
                 pb->flags.retry_after_close = true;
             }
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+            else {
+                pb->flags.retry_after_close =
+                    (++pb->spare_addresses.ipv4_index < pb->spare_addresses.n_ipv4)
+#if PUBNUB_USE_IPV6
+                    || (++pb->spare_addresses.ipv6_index < pb->spare_addresses.n_ipv6)
+#endif
+                    ;
+            }
+#endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
             outcome_detected(pb, PNR_CONNECT_FAILED);
             break;
         default:
@@ -611,12 +626,6 @@ next_state:
     }
 #endif /* PUBNUB_USE_SSL */
     case PBS_TX_GET:
-#if PUBNUB_CHANGE_DNS_SERVERS
-        pb->dns_check.dns_server_check = 0;
-#endif
-#if PUBNUB_USE_MULTIPLE_ADDRESSES
-        multiple_addresses_reset_counters(&pb->spare_addresses);
-#endif
         i = pbpal_send_status(pb);
         if (i <= 0) {
 #if PUBNUB_PROXY_API

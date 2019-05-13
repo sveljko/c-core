@@ -14,6 +14,9 @@
 #endif
 
 #include <stdint.h>
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+#include <time.h>
+#endif
 
 #define DNS_PORT 53
 
@@ -124,6 +127,9 @@ int read_dns_response(pb_socket_t skt,
     if (msg_size <= 0) {
         return socket_would_block() ? +1 : -1;
     }
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+    time(&spare_addresses->time_of_the_last_dns_query);
+#endif
     if (pbdns_pick_resolved_addresses(buf,
                                       (size_t)msg_size,
                                       &addr_ipv4

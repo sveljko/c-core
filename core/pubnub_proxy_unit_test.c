@@ -334,6 +334,13 @@ int pbpal_close(pubnub_t *pb)
     return mock(pb);
 }
 
+#if PUBNUB_USE_MULTIPLE_ADDRESSES
+void pbpal_multiple_addresses_reset_counters(struct pubnub_multi_addresses* spare_addresses)
+{
+    PUBNUB_UNUSED(spare_addresses);
+}
+#endif
+
 
 /* The Pubnub version stubs */
 

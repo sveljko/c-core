@@ -224,19 +224,24 @@ struct pbdns_servers_check {
 
 #if PUBNUB_USE_MULTIPLE_ADDRESSES
 struct pubnub_multi_addresses {
+    time_t time_of_the_last_dns_query; 
     /* Number of spare ipv4 addresses */
     int n_ipv4;
-    /* Spare ipv4 address index(from the array) currently used */
+    /* ipv4 address index(from the array) currently used */
     int ipv4_index;
-    /* Spare ipv4 address array */
+    /* ipv4 address array */
     struct pubnub_ipv4_address ipv4_addresses[PUBNUB_MAX_IPV4_ADDRESSES];
+    /* Time to live for each saved ipv4 address */
+    uint16_t ttl_ipv4[PUBNUB_MAX_IPV4_ADDRESSES];
 #if PUBNUB_USE_IPV6
     /* Number of spare ipv6 addresses */
     int n_ipv6;
-    /* Spare ipv6 address index(from the array) currently used */
+    /* ipv6 address index(from the array) currently used */
     int ipv6_index;
-    /* Spare ipv6 address array */
+    /* ipv6 address array */
     struct pubnub_ipv6_address ipv6_addresses[PUBNUB_MAX_IPV6_ADDRESSES];
+    /* Time to live for each saved ipv6 address */
+    uint16_t ttl_ipv6[PUBNUB_MAX_IPV6_ADDRESSES];
 #endif
 };
 #endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
