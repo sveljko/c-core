@@ -159,18 +159,18 @@ static enum pbpal_resolv_n_connect_result connect_TCP_socket(pb_socket_t* skt,
         break;
 #if PUBNUB_USE_IPV6
     case AF_INET6:
-         sockaddr_size = sizeof(struct sockaddr_in6);
-         ((struct sockaddr_in6*)dest)->sin6_port = htons(port);
-         break;
+        sockaddr_size = sizeof(struct sockaddr_in6);
+        ((struct sockaddr_in6*)dest)->sin6_port = htons(port);
+        break;
 #endif
     default:
-         PUBNUB_LOG_ERROR("connect_TCP_socket(socket=%d): invalid internet protokol "
-                          "dest->sa_family =%uh\n",
-                          *skt,
-                          dest->sa_family);
-         return pbpal_connect_failed;
+        PUBNUB_LOG_ERROR("connect_TCP_socket(socket=%d): invalid internet protokol "
+                         "dest->sa_family =%uh\n",
+                         *skt,
+                         dest->sa_family);
+        return pbpal_connect_failed;
     }
-    *skt  = socket(dest->sa_family, SOCK_STREAM, IPPROTO_TCP);
+    *skt = socket(dest->sa_family, SOCK_STREAM, IPPROTO_TCP);
     if (SOCKET_INVALID == *skt) {
         return pbpal_connect_resource_failure;
     }

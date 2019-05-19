@@ -363,7 +363,8 @@ Ensure(pubnub_dns_codec, decodes_response_1_question_3_answers_no_ssl_fallback)
     make_dns_header_M(RESPONSE, 1, 3);
     append_question_M(encoded_abc_domain_name);
     append_answer_M(encoded_domain_name, RecordTypeA, data, 150);
-    append_answer_M(encoded_domain_name, RecordTypeA, data_2, 300);
+    /* Time to live out of range */
+    append_answer_M(encoded_domain_name, RecordTypeA, data_2, 65536);
     append_answer_M(encoded_domain_name, RecordTypeA, data_3, 2);
 
     attest(pbdns_pick_resolved_addresses(m_buf,
@@ -383,7 +384,7 @@ Ensure(pubnub_dns_codec, decodes_response_1_question_3_answers_no_ssl_fallback)
                   data_2,
                   sizeof bp.spare_addresses.ipv4_addresses[1].ipv4),
            equals(0));
-    attest(bp.spare_addresses.ttl_ipv4[1], equals(300));
+    attest(bp.spare_addresses.ttl_ipv4[1], equals(0));
     attest(bp.spare_addresses.n_ipv4, equals(2));
     attest(bp.spare_addresses.ipv4_index, equals(0));
 #if PUBNUB_USE_IPV6
@@ -1035,7 +1036,8 @@ Ensure(pubnub_dns_codec, handles_response_with_RecordTypeAAAA_no_ssl_fallback)
     append_answer_M(encoded_piece3, RecordTypeA, data, 25);
     /* Address with time to live 0 wan't be 'cashed' */
     append_answer_M(encoded_piece3, RecordTypeAAAA, data_2, 0);
-    append_answer_M(encoded_piece3, RecordTypeAAAA, data_3, 593);
+    /* Time to live out of range */
+    append_answer_M(encoded_piece3, RecordTypeAAAA, data_3, 65536);
     append_answer_M(encoded_piece3, RecordTypeAAAA, data_2, 30);
     attest(pbdns_pick_resolved_addresses(m_buf,
                                          m_msg_size,
@@ -1055,7 +1057,7 @@ Ensure(pubnub_dns_codec, handles_response_with_RecordTypeAAAA_no_ssl_fallback)
                   data_3,
                   sizeof bp.spare_addresses.ipv6_addresses[0].ipv6),
            equals(0));
-    attest(bp.spare_addresses.ttl_ipv6[1], equals(593));
+    attest(bp.spare_addresses.ttl_ipv6[1], equals(0));
     attest(bp.spare_addresses.n_ipv6, equals(2));
     attest(bp.spare_addresses.ipv6_index, equals(0));
     attest(memcmp(bp.spare_addresses.ipv4_addresses[0].ipv4,
@@ -1068,25 +1070,6 @@ Ensure(pubnub_dns_codec, handles_response_with_RecordTypeAAAA_no_ssl_fallback)
 #endif /* PUBNUB_USE_MULTIPLE_ADDRESSES */
 }
 
-/* Verify ASSERT gets fired (ipv6) */
-Ensure(pubnub_dns_codec, fires_asserts_on_illegal_parameters_ipv6)
-{
-    uint8_t data[] = {0x0A,0x0b,0x0c,0x0d,0,0,0,0,0x0e,0,0,0,0,0x0f,0x1a,0x1b};
-    struct pubnub_ipv6_address resolved_addr_ipv6;
-
-    pubnub_assert_set_handler((pubnub_assert_handler_t)test_assert_handler);
-
-    make_dns_header_M(RESPONSE, 1, 1);
-    append_question_M(encoded_abc_domain_name);
-    /* Time to live out of expected range */
-    append_answer_M(encoded_piece3, RecordTypeAAAA, data, 65536);
-    expect_assert_in(pbdns_pick_resolved_addresses(m_buf,
-                                                   m_msg_size,
-                                                   NULL,
-                                                   &resolved_addr_ipv6
-                                                   PBDNS_OPTIONAL_PARAMS_BP),
-                     "pubnub_dns_codec.c");
-}
 #endif /* PUBNUB_USE_IPV6 */
 
 
@@ -1094,7 +1077,6 @@ Ensure(pubnub_dns_codec, fires_asserts_on_illegal_parameters_ipv6)
 
 Ensure(pubnub_dns_codec, fires_asserts_on_illegal_parameters)
 {
-    uint8_t data[]  = {3,75,0,1};
     int to_send;
     struct pubnub_ipv4_address resolved_addr_ipv4;
     pubnub_assert_set_handler((pubnub_assert_handler_t)test_assert_handler);
@@ -1113,16 +1095,6 @@ Ensure(pubnub_dns_codec, fires_asserts_on_illegal_parameters)
     expect_assert_in(pbdns_pick_resolved_addresses(m_buf,
                                                    m_msg_size,
                                                    NULL
-                                                   IPV6_NULL_ARGUMENT
-                                                   PBDNS_OPTIONAL_PARAMS_BP),
-                     "pubnub_dns_codec.c");
-    make_dns_header_M(RESPONSE, 1, 1);
-    append_question_M(encoded_abc_domain_name);
-    /* Time to live out of expected range */
-    append_answer_M(encoded_domain_name, RecordTypeA, data, 65536);
-    expect_assert_in(pbdns_pick_resolved_addresses(m_buf,
-                                                   m_msg_size,
-                                                   &resolved_addr_ipv4
                                                    IPV6_NULL_ARGUMENT
                                                    PBDNS_OPTIONAL_PARAMS_BP),
                      "pubnub_dns_codec.c");
