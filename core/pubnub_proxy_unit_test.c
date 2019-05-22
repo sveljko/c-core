@@ -1167,19 +1167,19 @@ Ensure(single_context_pubnub, GET_Digest_proxy_closes_connection_after407_and_st
                                      "realm=\"testrealm@host.com\", "
                                      "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
                                      "uri=\"/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1\", "
-                                     "cnonce=\"51dcb074ff5c49198a94e82aec585562\", "
+                                     "cnonce=\"82b73144c8da461c988e0506fe09e556\", "
                                      "nc=\"00000002\", "
                                      "qop=\"auth-int\", "
-                                     "response=\"6580aa5fc33cbe37ffa73412c7c0ca48\", "
+                                     "response=\"38f6c94df22f77e29c802da5008791e8\", "
                                      "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
     char const* HTTP_proxy_header6 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
                                      "realm=\"testrealm@host.com\", "
                                      "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
                                      "uri=\"/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1\", "
-                                     "cnonce=\"291f8e23cd7c4846ba581b3dabd77e50\", "
+                                     "cnonce=\"432ff3564d04447798981631553c7c42\", "
                                      "nc=\"00000001\", "
                                      "qop=\"auth-int\", "
-                                     "response=\"84085a90c8ceca28b53f01ea11ee0a65\", "
+                                     "response=\"d3f795dbe1c3942eb4c3445327cde49f\", "
                                      "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 #else
     char const* HTTP_proxy_header1 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
