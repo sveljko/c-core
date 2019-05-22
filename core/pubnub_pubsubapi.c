@@ -72,7 +72,7 @@ pubnub_t* pubnub_init(pubnub_t* p, const char* publish_key, const char* subscrib
     p->proxy_auth_scheme        = pbhtauNone;
     p->proxy_auth_username      = NULL;
     p->proxy_auth_password      = NULL;
-    p->proxy_authorization_sent = false;
+    p->realm[0]                 = '\0'; 
 #endif
 
 #if PUBNUB_RECEIVE_GZIP_RESPONSE

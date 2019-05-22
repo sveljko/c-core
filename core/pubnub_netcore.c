@@ -71,6 +71,7 @@ static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)
         case PNR_CANCELLED:
         case PNR_STARTED:
         case PNR_INTERNAL_ERROR:
+        case PNR_AUTHENTICATION_FAILED:
             return false;
         default:
             return true;
@@ -357,6 +358,8 @@ static void initialize_fields_in_state_IDLE(struct pubnub_* pb)
 #if PUBNUB_PROXY_API
     pb->proxy_tunnel_established = false;
     pb->proxy_saved_path_len     = 0;
+    pb->proxy_authorization_sent = false;
+    pb->auth_msg_count = 0;
 #endif
 #if PUBNUB_USE_SSL
     pb->flags.trySSL = pb->options.useSSL;
@@ -988,8 +991,9 @@ next_state:
                 pb->data_compressed = compressionGZIP;
             }
 #endif
-            else {
-                pbproxy_handle_http_header(pb, pb->core.http_buf);
+            else if (pbproxy_handle_http_header(pb, pb->core.http_buf) != 0) {
+                outcome_detected(pb, PNR_AUTHENTICATION_FAILED);
+                return 0;
             }
             pb->state = PBS_RX_HEADERS;
             goto next_state;
@@ -1158,6 +1162,8 @@ next_state:
     case PBS_KEEP_ALIVE_IDLE:
 #if PUBNUB_PROXY_API
         pb->proxy_saved_path_len = 0;
+        pb->proxy_authorization_sent = false;
+        pb->auth_msg_count = 0;
 #endif
         pb->state                          = PBS_KEEP_ALIVE_READY;
         pb->flags.started_while_kept_alive = true;

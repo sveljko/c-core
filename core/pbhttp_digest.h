@@ -5,11 +5,6 @@
 #include "pubnub_memory_block.h"
 
 
-/** Maximum length of the "realm" field used in HTTP
-    authentication headers. Server sets this.
-*/
-#define PUBNUB_MAX_HTTP_AUTH_REALM 31
-
 /** Maximum length of the "nonce" field used in HTTP authentication
     headers. Server sets this.
 */
@@ -63,9 +58,6 @@ enum pbhttp_digest_qop {
 /** 
  */
 struct pbhttp_digest_context {
-    /** Authentication realm - received from the server */
-    char realm[PUBNUB_MAX_HTTP_AUTH_REALM + 1];
-
     /** The auth challenge nonce - received from the server */
     char nonce[PUBNUB_MAX_HTTP_NONCE + 1];
 
@@ -101,8 +93,13 @@ void pbhttp_digest_init(struct pbhttp_digest_context *ctx);
 
     @param ctx The HTTP digest context
     @param header The string of the header (key-value pairs)
+    @param realm pinter to the corresponding pubnub context field to be filled in
+    @param consecutive_stales indicates if 'stale'-s are present in two consecutive 407 mesages
+    @return 0 equal consecutive realms, +1 different consecutive realms, -1 on Error
  */
-void pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx, char const* header);
+int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
+                               char const* header,
+                               char* realm);
 
 /** Sets the contents of the string buffer to send as the header
     during HTTP Digest authentication.
@@ -111,10 +108,16 @@ void pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx, char const* h
     @param username The username to use
     @param password The password to use
     @param uri The URI to use
+    @param realm The URI realm to use
     @param buf The buffer which contents to set
     @param 0: OK, -1: error
  */
-int pbhttp_digest_prep_header_to_send(struct pbhttp_digest_context *ctx, char const* username, char const* password, char const* uri, pubnub_chamebl_t *buf);
+int pbhttp_digest_prep_header_to_send(struct pbhttp_digest_context *ctx,
+                                      char const* username,
+                                      char const* password,
+                                      char const* uri,
+                                      char const* realm,
+                                      pubnub_chamebl_t *buf);
 
 /** Returns a read-only string representation of the HTTP Digest
     Quality of Protection value.

@@ -77,7 +77,7 @@ static void wait_time_in_seconds(time_t time_in_seconds)
 static void buf_setup(pubnub_t* pb)
 {
     pb->ptr  = (uint8_t*)pb->core.http_buf;
-    pb->left = sizeof pb->core.http_buf;
+    pb->left = sizeof pb->core.http_buf / sizeof pb->core.http_buf[0];
 }
 
 void pbpal_init(pubnub_t* pb)

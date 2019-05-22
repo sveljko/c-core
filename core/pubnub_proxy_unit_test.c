@@ -56,7 +56,7 @@ static void wait4it(time_t time_in_seconds) {
 static void buf_setup(pubnub_t *pb)
 {
     pb->ptr = (uint8_t*)pb->core.http_buf;
-    pb->left = sizeof pb->core.http_buf;
+    pb->left = sizeof pb->core.http_buf / sizeof pb->core.http_buf[0];
 }
 
 void pbpal_init(pubnub_t *pb)
@@ -611,6 +611,7 @@ static void cancel_and_cleanup(pubnub_t *pbp)
 } 
 #endif
 
+
 Ensure(single_context_pubnub, establishes_proxy_connection_GET_Basic)
 {
     uint16_t proxy_port = 500;
@@ -691,6 +692,7 @@ Ensure(single_context_pubnub, establishes_proxy_connection_GET_Basic)
     pubnub_set_proxy_none(pbp);
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyNONE)); 
 }
+
 
 Ensure(single_context_pubnub, proxy_GET_Basic_client_sets_timeout_and_max_operation_count_for_keep_alive)
 {
@@ -819,6 +821,7 @@ Ensure(single_context_pubnub, proxy_GET_Basic_client_sets_timeout_and_max_operat
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyHTTP_GET)); 
 }
 
+
 Ensure(single_context_pubnub, GET_Basic_proxy_closes_connection_after_first_407answer_client_keeps_folloving_protocol_until_established)
 {
     uint16_t proxy_port = 500;
@@ -891,7 +894,37 @@ Ensure(single_context_pubnub, GET_Basic_proxy_closes_connection_after_first_407a
     attest(pubnub_get(pbp), equals(NULL));
     attest(pubnub_get_channel(pbp), streqs(NULL));
     attest(pubnub_last_http_code(pbp), equals(200));
+    
+    /* Basic sheme - Proxy responds with 407 after credentials being sent.
+       It is supposed that authentication is recognized as erroneous
+     */
+    expect(pbntf_enqueue_for_processing, when(pb, equals(pbp)), returns(0));
+    expect(pbntf_got_socket, when(pb, equals(pbp)), returns(0));
+    expect_outgoing_with_encoded_credentials_GET("/subscribe/sub-key/colors/0/1516714978925123457?pnsdk=unit-test-0.1",
+                                                 "\r\nProxy-Authorization: Basic c29tZV91c2VyOnNvbWVfcGFzc3dvcmQ=");
+    incoming_and_close("HTTP/1.1 407 ProxyAuthentication Required\r\n"
+                       "Server: proxy_server.com\r\n"
+                       "Date: Mon, 5 Mar 2018 23:45:55 GMT\r\n"
+                       "Proxy-Authenticate: Basic\r\n"
+                       "Connection: close\r\n"
+                       "Content-Length: 169\r\n"
+                       "\r\n"
+                       "<!DOCTYPE html>\r\n"
+                       "<html>\r\n"
+                       " <head>\r\n"
+                       "  <meta charset=\"UTF-8\" />\r\n"
+                       "  <title>Error</title>\r\n"
+                       " </head>\r\n"
+                       " <body>\r\n"
+                       "  <h1>407 ProxyAuthentication Required.</h1>\r\n"
+                       " </body>\r\n"
+                       "</html>\n");
+    attest(pubnub_subscribe(pbp, "colors", NULL), equals(PNR_AUTHENTICATION_FAILED));
+
+    attest(pubnub_get(pbp), equals(NULL));
+    attest(pubnub_last_http_code(pbp), equals(407));
 }
+
 
 Ensure(single_context_pubnub, establishes_proxy_connection_GET_Digest_and_continues_negotiating_after_stale_nounce)
 {
@@ -931,7 +964,8 @@ Ensure(single_context_pubnub, establishes_proxy_connection_GET_Digest_and_contin
                                      "cnonce=\"82b73144c8da461c988e0506fe09e556\", "
                                      "nc=\"00000001\", "
                                      "qop=\"auth-int\", "
-                                     "response=\"2fec0363450ddc98fcfa587da85d3f60\"";
+                                     "response=\"2fec0363450ddc98fcfa587da85d3f60\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 #else
     char const* HTTP_proxy_header1 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
                                      "realm=\"testrealm@host.com\", "
@@ -967,7 +1001,8 @@ Ensure(single_context_pubnub, establishes_proxy_connection_GET_Digest_and_contin
                                      "cnonce=\"51dcb074ff5c49198a94e82aec585562\", "
                                      "nc=\"00000001\", "
                                      "qop=\"auth-int\", "
-                                     "response=\"d0966999c0711a461db101b2d3648bf8\"";
+                                     "response=\"d0966999c0711a461db101b2d3648bf8\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 #endif
     pubnub_init(pbp, "publ-key", "sub-key");
     attest(pubnub_set_proxy_manual(pbp, pbproxyHTTP_GET, "proxy.mythic-beasts.com", port), equals(0));
@@ -1048,7 +1083,7 @@ Ensure(single_context_pubnub, establishes_proxy_connection_GET_Digest_and_contin
                                         "qop=\"auth,auth-int\", "
                                         "stale=TRUE, "
                                         "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
-                                        "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\r\n"
+                                        "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n"
              "Content-Type: text/html\r\n"
              "Content-Length: 153\r\n"
              "\r\n"
@@ -1086,6 +1121,7 @@ Ensure(single_context_pubnub, establishes_proxy_connection_GET_Digest_and_contin
     attest(pubnub_last_http_code(pbp), equals(200));
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyHTTP_GET)); 
 }
+
 
 Ensure(single_context_pubnub, GET_Digest_proxy_closes_connection_after407_and_stale_nounce_but_keeps_negotiating)
 {
@@ -1125,7 +1161,26 @@ Ensure(single_context_pubnub, GET_Digest_proxy_closes_connection_after407_and_st
                                      "cnonce=\"82b73144c8da461c988e0506fe09e556\", "
                                      "nc=\"00000001\", "
                                      "qop=\"auth-int\", "
-                                     "response=\"2fec0363450ddc98fcfa587da85d3f60\"";
+                                     "response=\"2fec0363450ddc98fcfa587da85d3f60\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
+    char const* HTTP_proxy_header5 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
+                                     "realm=\"testrealm@host.com\", "
+                                     "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
+                                     "uri=\"/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1\", "
+                                     "cnonce=\"51dcb074ff5c49198a94e82aec585562\", "
+                                     "nc=\"00000002\", "
+                                     "qop=\"auth-int\", "
+                                     "response=\"6580aa5fc33cbe37ffa73412c7c0ca48\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
+    char const* HTTP_proxy_header6 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
+                                     "realm=\"testrealm@host.com\", "
+                                     "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
+                                     "uri=\"/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1\", "
+                                     "cnonce=\"291f8e23cd7c4846ba581b3dabd77e50\", "
+                                     "nc=\"00000001\", "
+                                     "qop=\"auth-int\", "
+                                     "response=\"84085a90c8ceca28b53f01ea11ee0a65\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 #else
     char const* HTTP_proxy_header1 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
                                      "realm=\"testrealm@host.com\", "
@@ -1161,7 +1216,26 @@ Ensure(single_context_pubnub, GET_Digest_proxy_closes_connection_after407_and_st
                                      "cnonce=\"51dcb074ff5c49198a94e82aec585562\", "
                                      "nc=\"00000001\", "
                                      "qop=\"auth-int\", "
-                                     "response=\"d0966999c0711a461db101b2d3648bf8\"";
+                                     "response=\"d0966999c0711a461db101b2d3648bf8\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
+    char const* HTTP_proxy_header5 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
+                                     "realm=\"testrealm@host.com\", "
+                                     "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
+                                     "uri=\"/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1\", "
+                                     "cnonce=\"51dcb074ff5c49198a94e82aec585562\", "
+                                     "nc=\"00000002\", "
+                                     "qop=\"auth-int\", "
+                                     "response=\"6580aa5fc33cbe37ffa73412c7c0ca48\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
+    char const* HTTP_proxy_header6 = "\r\nProxy-Authorization: Digest username=\"average_user\", "
+                                     "realm=\"testrealm@host.com\", "
+                                     "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
+                                     "uri=\"/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1\", "
+                                     "cnonce=\"291f8e23cd7c4846ba581b3dabd77e50\", "
+                                     "nc=\"00000001\", "
+                                     "qop=\"auth-int\", "
+                                     "response=\"84085a90c8ceca28b53f01ea11ee0a65\", "
+                                     "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 #endif
     pubnub_init(pbp, "publ-key", "sub-key");
     attest(pubnub_set_proxy_manual(pbp, pbproxyHTTP_GET, "proxy_server_url", port), equals(0));
@@ -1246,7 +1320,7 @@ Ensure(single_context_pubnub, GET_Digest_proxy_closes_connection_after407_and_st
                                         "qop=\"auth,auth-int\", "
                                         "stale=TRUE, "
                                         "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
-                                        "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\r\n"
+                                        "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n"
              "Connection: close\r\n"
              "Content-Type: text/html\r\n"
              "Content-Length: 153\r\n"
@@ -1286,7 +1360,67 @@ Ensure(single_context_pubnub, GET_Digest_proxy_closes_connection_after407_and_st
     attest(pubnub_get_channel(pbp), streqs(NULL));
     attest(pubnub_last_http_code(pbp), equals(200));
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyHTTP_GET)); 
+
+    /* Digest sheme - Sending repeated 'authentication required' messages on same realm
+       within the same transaction should be considered eroneous
+     */
+    expect(pbntf_enqueue_for_processing, when(pb, equals(pbp)), returns(0));
+    expect(pbntf_got_socket, when(pb, equals(pbp)), returns(0));
+    expect_outgoing_with_encoded_credentials_GET(
+        "/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1",
+        HTTP_proxy_header5);
+    incoming("HTTP/1.0 407 ProxyAuthentication Required\r\n"
+             "Server: proxy_server.com\r\n"
+             "Date: Tue, 12 Mar 2018 19:42:31 GMT\r\n"
+             "Proxy-Authenticate: Digest realm=\"testrealm@host.com\", "
+                                        "qop=\"auth,auth-int\", "
+                                        "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
+                                        "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n"
+             "Connection: keep-alive\r\n"
+             "Content-Type: text/html\r\n"
+             "Content-Length: 153\r\n"
+             "\r\n"
+             "<!DOCTYPE html>\r\n"
+             "<html>\r\n"
+             " <head>\r\n"
+             "  <meta charset=\"UTF-8\" />\r\n"
+             "  <title>Error</title>\r\n"
+             " </head>\r\n"
+             " <body>\r\n"
+             "  <h1>401 Unauthorized.</h1>\r\n"
+             " </body>\r\n"
+             "</html>\n");
+    expect_outgoing_with_encoded_credentials_GET(
+        "/subscribe/sub-key/music/0/1516014978925123577?pnsdk=unit-test-0.1",
+        HTTP_proxy_header6);
+    incoming_and_close("HTTP/1.0 407 ProxyAuthentication Required\r\n"
+                       "Server: proxy_server.com\r\n"
+                       "Date: Tue, 12 Mar 2018 19:42:31 GMT\r\n"
+                       "Proxy-Authenticate: Digest realm=\"testrealm@host.com\", "
+                                                  "qop=\"auth,auth-int\", "
+                                                  "nonce=\"dcd98b7102cc2f0e8b11d0f700bfb0c093\", "
+                                                  "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"\r\n"
+                       "Connection: keep-alive\r\n"
+                       "Content-Type: text/html\r\n"
+                       "Content-Length: 153\r\n"
+                       "\r\n"
+                       "<!DOCTYPE html>\r\n"
+                       "<html>\r\n"
+                       " <head>\r\n"
+                       "  <meta charset=\"UTF-8\" />\r\n"
+                       "  <title>Error</title>\r\n"
+                       " </head>\r\n"
+                       " <body>\r\n"
+                       "  <h1>401 Unauthorized.</h1>\r\n"
+                       " </body>\r\n"
+                       "</html>\n");
+    attest(pubnub_subscribe(pbp, "music", NULL), equals(PNR_STARTED));
+    attest(pbnc_fsm(pbp), equals(0));
+    attest(pbnc_fsm(pbp), equals(0));
+    attest(pbnc_fsm(pbp), equals(0));
+    attest(pbp->core.last_result, equals(PNR_AUTHENTICATION_FAILED));
 }
+
 
 Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_No_response)
 {
@@ -1301,6 +1435,7 @@ Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_No_response)
     incoming_and_close("");
     attest(pubnub_subscribe(pbp, "music", NULL), equals(PNR_TIMEOUT));
 }
+
 
 Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_unsupported_proxy_authentication)
 {
@@ -1333,10 +1468,11 @@ Ensure(single_context_pubnub, try_to_establish_proxy_connection_GET_unsupported_
     attest(pubnub_subscribe(pbp, "music", NULL), equals(PNR_STARTED));
 
     attest(pbnc_fsm(pbp), equals(0));
-
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyHTTP_GET)); 
     attest(pbnc_fsm(pbp), equals(0));
+    attest(pbp->core.last_result, equals(PNR_HTTP_ERROR));
 }
+
 
 Ensure(single_context_pubnub, establishes_proxy_connection_CONNECT_Basic)
 {
@@ -1402,6 +1538,7 @@ Ensure(single_context_pubnub, establishes_proxy_connection_CONNECT_Basic)
     attest(pubnub_last_http_code(pbp), equals(200));
     attest(pubnub_proxy_protocol_get(pbp), equals(pbproxyHTTP_CONNECT)); 
 }
+
 
 Ensure(single_context_pubnub, establishes_proxy_connection_CONNECT_Digest)
 {
@@ -1506,5 +1643,3 @@ Ensure(single_context_pubnub, illegal_parameter_fires_assert) {
     expect_assert_in(pubnub_proxy_protocol_get(NULL), "pubnub_proxy.c");
     expect_assert_in(pubnub_set_proxy_authentication_username_password(NULL, "username", "password"), "pubnub_proxy.c");
 }
-
-

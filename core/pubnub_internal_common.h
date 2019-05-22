@@ -47,6 +47,7 @@
 #define PUBNUB_PROXY_API 0
 #elif PUBNUB_PROXY_API
 #include "core/pubnub_proxy.h"
+#include "core/pubnub_proxy_core.h"
 #include "core/pbhttp_digest.h"
 #endif
 
@@ -418,6 +419,12 @@ struct pubnub_ {
         avoiding a sort of "endless loop".
     */
     int proxy_authorization_sent;
+
+    /** Authentication realm - received from the server */
+    char realm[PUBNUB_MAX_HTTP_AUTH_REALM + 1];
+
+    /** 407 proxy response message counter(within single transaction) */
+    uint8_t auth_msg_count;
 
     /** Data about NTLM authentication */
     struct pbntlm_context ntlm_context;
