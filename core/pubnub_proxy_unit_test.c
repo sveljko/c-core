@@ -359,6 +359,11 @@ char const *pubnub_uname(void)
     return "unit-test-0.1";
 }
 
+char const* pubnub_uagent(void)
+{
+    return "POSIX-PubNub-C-core/" PUBNUB_SDK_VERSION;
+}
+
 
 /* The Pubnub NTF mocks and stubs */
 void pbntf_trans_outcome(pubnub_t *pb, enum pubnub_state state)
@@ -476,10 +481,10 @@ static inline void expect_first_outgoing_GET(const char* url)
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, 
-           when(data, streqs("\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
-                             ACCEPT_ENCODING
-                             "\r\n")),
+    expect(pbpal_send_str, 
+           when(s, streqs("\r\nUser-Agent: POSIX-PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
+                          ACCEPT_ENCODING
+                          "\r\n")),
            returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbntf_watch_in_events, when(pb, equals(pbp)), returns(0));
@@ -498,10 +503,10 @@ static inline void expect_first_outgoing_CONNECT(void)
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, 
-           when(data, streqs("\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
-                             ACCEPT_ENCODING
-                             "\r\n")),
+    expect(pbpal_send_str, 
+           when(s, streqs("\r\nUser-Agent: POSIX-PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
+                          ACCEPT_ENCODING
+                          "\r\n")),
            returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbntf_watch_in_events, when(pb, equals(pbp)), returns(0));
@@ -524,10 +529,10 @@ static inline void expect_outgoing_with_encoded_credentials_GET(char const *url,
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(HTTP_proxy_header)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, 
-           when(data, streqs("\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
-                             ACCEPT_ENCODING
-                             "\r\n")),
+    expect(pbpal_send_str, 
+           when(s, streqs("\r\nUser-Agent: POSIX-PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
+                          ACCEPT_ENCODING
+                          "\r\n")),
            returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbntf_watch_in_events, when(pb, equals(pbp)), returns(0));
@@ -549,10 +554,10 @@ static inline void expect_outgoing_with_encoded_credentials_CONNECT(char const *
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(HTTP_proxy_header)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, 
-           when(data, streqs("\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
-                             ACCEPT_ENCODING
-                             "\r\n")),
+    expect(pbpal_send_str, 
+           when(s, streqs("\r\nUser-Agent: POSIX-PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
+                          ACCEPT_ENCODING
+                          "\r\n")),
            returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbntf_watch_in_events, when(pb, equals(pbp)), returns(0));
@@ -569,10 +574,10 @@ static inline void expect_outgoing_with_url(char const *url) {
     expect(pbpal_send_status, returns(0));
     expect(pbpal_send_str, when(s, streqs(PUBNUB_ORIGIN)), returns(0));
     expect(pbpal_send_status, returns(0));
-    expect(pbpal_send, 
-           when(data, streqs("\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
-                             ACCEPT_ENCODING
-                             "\r\n")),
+    expect(pbpal_send_str, 
+           when(s, streqs("\r\nUser-Agent: POSIX-PubNub-C-core/" PUBNUB_SDK_VERSION "\r\n"
+                          ACCEPT_ENCODING
+                          "\r\n")),
            returns(0));
     expect(pbpal_send_status, returns(0));
     expect(pbntf_watch_in_events, when(pb, equals(pbp)), returns(0));

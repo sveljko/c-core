@@ -20,6 +20,13 @@
    header field */
 #define HTTP_CODE_PROXY_AUTH_REQ 407
 
+/* Maximum number of expected 'proxy auth required' mesages with valid credentials
+   for single realm in Digest sheme proxy protocol within a single transaction
+   It may be set to a higher value depending on chosen proxy behavior.
+   Set to one as default value.
+   (RFC 7616: See 5.4. Limited-Use Nonce Values)
+ */
+#define NUM_EXPECTED_DIGEST_AUTH_MESSAGES 1
 
 char const* pbproxy_get_next_key_value(char const* s, pubnub_chamebl_t *key, pubnub_chamebl_t *val)
 {
@@ -76,6 +83,45 @@ int pbproxy_check_realm(pubnub_chamebl_t const* value)
 }
 
 
+static int auth_sheme_priority(enum pubnub_http_authentication_scheme sheme)
+{
+    switch (sheme) {
+    case pbhtauNone:
+        return 0;
+    case pbhtauBasic:
+        return 1;
+    case pbhtauDigest:
+        return 2;
+    case pbhtauNTLM:
+        return 3;
+    default:
+        break;
+    }
+    return -1;
+}
+
+
+static int process_digest_header_line(pubnub_t* p, char const* header)
+{
+    enum pbhttp_digest_parse_header_rslt rslt;
+
+    rslt = pbhttp_digest_parse_header(&p->digest_context, header, p->realm);
+    if (pbhtdig_EqualConsecutiveRealms == rslt) {
+        ++p->auth_msg_count;
+    }
+    else if (pbhtdig_DifferentConsecutiveRealms == rslt) {
+        p->auth_msg_count = 1;
+    }
+    if ((pbhtdig_ParameterError == rslt) ||
+        ((pbhtdig_EqualConsecutiveRealms == rslt) &&
+         (p->auth_msg_count > NUM_EXPECTED_DIGEST_AUTH_MESSAGES))
+       ) {
+        return -1;
+    }
+    return 0;
+}
+
+    
 int pbproxy_handle_http_header(pubnub_t* p, char const* header)
 {
     char        scheme_basic[]  = "Basic";
@@ -97,7 +143,9 @@ int pbproxy_handle_http_header(pubnub_t* p, char const* header)
         if (p->proxy_auth_scheme != pbhtauDigest) {
             return 0;
         }
-        pbhttp_digest_parse_header(&p->digest_context, header + 1, p->realm);
+        if (process_digest_header_line(p, header + 1) != 0) {
+            return -1;
+        }
         return 0;
     default:
         if (strncmp(header, proxy_auth, sizeof proxy_auth - 1) != 0) {
@@ -112,7 +160,7 @@ int pbproxy_handle_http_header(pubnub_t* p, char const* header)
                      contents);
 
     if ((0 == strncmp(contents, scheme_basic, sizeof scheme_basic - 1)) &&
-        (p->proxy_auth_scheme <= pbhtauBasic)) {
+        (auth_sheme_priority(p->proxy_auth_scheme) <= auth_sheme_priority(pbhtauBasic))) {
         char empty_str[] = { '\0' };
         pubnub_chamebl_t key = { empty_str, 0 };
         pubnub_chamebl_t value = { empty_str, 0 };
@@ -151,22 +199,17 @@ int pbproxy_handle_http_header(pubnub_t* p, char const* header)
         p->proxy_authorization_sent = false;         
     }
     else if ((0 == strncmp(contents, scheme_digest, sizeof scheme_digest - 1)) &&
-             (p->proxy_auth_scheme <= pbhtauDigest)) {
-        int rslt;
+             (auth_sheme_priority(p->proxy_auth_scheme) <= auth_sheme_priority(pbhtauDigest))) {
         PUBNUB_LOG_TRACE("pbproxy_handle_http_header() Digest authentication\n");
         p->proxy_auth_scheme = pbhtauDigest;
         pbhttp_digest_init(&p->digest_context);
-        rslt = pbhttp_digest_parse_header(&p->digest_context,
-                                          contents + sizeof scheme_digest,
-                                          p->realm);
-        ++p->auth_msg_count;
-        if ((rslt == -1) || ((rslt == 0) && (p->auth_msg_count > 1))){
+        if (process_digest_header_line(p, contents + sizeof scheme_digest) != 0) {
             return -1;
         }
         p->proxy_authorization_sent = false;
     }
     else if ((0 == strncmp(contents, scheme_NTLM, sizeof scheme_NTLM - 1)) &&
-             (p->proxy_auth_scheme <= pbhtauNTLM)) {
+             (auth_sheme_priority(p->proxy_auth_scheme) <= auth_sheme_priority(pbhtauNTLM))) {
         if (pbhtauNTLM != p->proxy_auth_scheme) {
             pbntlm_core_init(p);
             p->proxy_auth_scheme        = pbhtauNTLM;

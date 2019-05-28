@@ -110,7 +110,7 @@ int pbpal_send(pubnub_t *pb, void const *data, size_t n);
     literal string, so, handle with care.
  */
 #define pbpal_send_literal_str(pb, litstr) \
-        pbpal_send((pb), litstr, sizeof litstr - 1)
+    pbpal_send((pb), litstr, sizeof litstr - 1)
 
 /** The effect of this is the same as:
 

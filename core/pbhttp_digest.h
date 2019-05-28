@@ -55,6 +55,23 @@ enum pbhttp_digest_qop {
     pbgtdigqop_auth_int
 };
 
+/** HTTP Digest authentication header parsing result */
+enum pbhttp_digest_parse_header_rslt {
+    /** Authentication parameter(one, or more) is invalid */ 
+    pbhtdig_ParameterError,
+    /** Realm in new 'authentication required' message is different from
+        realm previously used
+     */
+    pbhtdig_DifferentConsecutiveRealms,
+    /** Realm in new 'authentication required' message is the same as
+        realm currently in use
+     */
+    pbhtdig_EqualConsecutiveRealms,
+    /** atribute 'realm' is not found yet in 'authentication required' message header
+     */
+    pbhtdig_RealmNotFound
+};    
+
 /** 
  */
 struct pbhttp_digest_context {
@@ -93,13 +110,17 @@ void pbhttp_digest_init(struct pbhttp_digest_context *ctx);
 
     @param ctx The HTTP digest context
     @param header The string of the header (key-value pairs)
-    @param realm pinter to the corresponding pubnub context field to be filled in
-    @param consecutive_stales indicates if 'stale'-s are present in two consecutive 407 mesages
-    @return 0 equal consecutive realms, +1 different consecutive realms, -1 on Error
+    @param realm pointer to the corresponding pubnub context field to be filled in
+    @retvel pbhtdig_ParameterError invalid parameter found while parsing
+    @retval pbhtdig_EqualConsecutiveRealms realm parsed from the header is equal as
+                                           one already in use
+    @retval pbhtdig_DifferentConsecutiveRealms new realm is different from the one previously
+                                               used,
+    @retval pbhtdig_RealmNotFound realm is not discovered(yet) in digest 'auth-info' header line
  */
-int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
-                               char const* header,
-                               char* realm);
+enum pbhttp_digest_parse_header_rslt pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
+                                                                char const* header,
+                                                                char* realm);
 
 /** Sets the contents of the string buffer to send as the header
     during HTTP Digest authentication.

@@ -37,7 +37,7 @@ int pbproxy_handle_http_header(pubnub_t *p, char const* header);
 
 /** Will get new @p key : @p val(ue) pair from the authentication header string @p s
 
-    @return pointer within @p s behind the elememt found,
+    @return pointer within @p s behind the element found,
             NULL if there isn't 'key=value' pair left in @p s  
  */
 char const* pbproxy_get_next_key_value(char const* s, pubnub_chamebl_t *key, pubnub_chamebl_t *val);

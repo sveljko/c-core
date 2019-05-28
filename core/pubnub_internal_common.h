@@ -423,7 +423,18 @@ struct pubnub_ {
     /** Authentication realm - received from the server */
     char realm[PUBNUB_MAX_HTTP_AUTH_REALM + 1];
 
-    /** 407 proxy response message counter(within single transaction) */
+    /** Proxy 'authentication required' response message counter for repeating realm
+        within a single transaction.
+        At this point this field is of importance for Digest proxy authentication sheme.
+        See RFC 7616 - 5.4. Limited-Use Nonce Values :
+        ...For example, a server MAY choose to allow each nonce value to be used only once by
+        maintaining a record of whether, or not each recently issued nonce has been returned
+        and sending a next-nonce parameter in the Authentication-Info header field of every
+        response...
+
+        Doing it (within the same transaction)repeatedly, without restrictions, would be a sign
+        of irregular behaviour.
+     */
     uint8_t auth_msg_count;
 
     /** Data about NTLM authentication */

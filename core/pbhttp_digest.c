@@ -45,13 +45,14 @@ char const* pubnub_find_str_in_chamebl(pubnub_chamebl_t chamebl, char const* s)
 }
 
 
-int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
-                               char const* header,
-                               char* realm)
+enum pbhttp_digest_parse_header_rslt pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
+                                                                char const* header,
+                                                                char* realm)
 {
     char empty_str[] = { '\0' };
     char const *s = header;
-    bool equal_consecutive_realms = false;
+    bool realm_found = false;
+    bool equal_consecutive_realms;
 
     do {
         pubnub_chamebl_t key = { empty_str, 0 };
@@ -60,8 +61,9 @@ int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
         s = pbproxy_get_next_key_value(s, &key, &value);
         if (LIT_STR_EQ("realm", key.ptr)) {
             if (pbproxy_check_realm(&value) != 0) {
-                return -1;
+                return pbhtdig_ParameterError;
             }
+            realm_found = true;
             equal_consecutive_realms = (strncmp(realm, value.ptr + 1, value.size - 2) == 0) &&
                                        (strlen(realm) == (value.size - 2));
             if (!equal_consecutive_realms) {
@@ -74,17 +76,17 @@ int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
             size_t actual_size = value.size - 2;
             if ('"' != *value.ptr) {
                 PUBNUB_LOG_ERROR("Received 'nonce' is not quoted\n");
-                return -1;
+                return pbhtdig_ParameterError;
             }
             if (value.size <= 2) {
                 PUBNUB_LOG_ERROR("Received 'nonce' is too short (length = %zu)\n", value.size);
-                return -1;
+                return pbhtdig_ParameterError;
             }
             if (actual_size > maxnonce) {
                 PUBNUB_LOG_ERROR("Received `nonce` too long: %zu, maximum possible %zu\n",
                                  value.size,
                                  maxnonce);
-                return -1;
+                return pbhtdig_ParameterError;
             }
             memcpy(ctx->nonce, value.ptr + 1, actual_size);
             ctx->nonce[actual_size] = '\0';
@@ -96,7 +98,7 @@ int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
                 PUBNUB_LOG_ERROR("Received `opaque` too long: %zu, maximum possible %zu\n",
                                  value.size,
                                  maxopaque);
-                return -1;
+                return pbhtdig_ParameterError;
             }
             memcpy(ctx->opaque, value.ptr, value.size);
             ctx->opaque[value.size] = '\0';
@@ -140,8 +142,13 @@ int pbhttp_digest_parse_header(struct pbhttp_digest_context *ctx,
             PUBNUB_LOG_INFO("Unknown or unsupported HTTP digest auth field: %.*s\n", (int)key.size, key.ptr);
         }
     } while (s != NULL);
+    if (realm_found) {
+        return equal_consecutive_realms ?
+                pbhtdig_EqualConsecutiveRealms :
+                pbhtdig_DifferentConsecutiveRealms;
+    }
     
-    return equal_consecutive_realms ? 0 : +1;
+    return pbhtdig_RealmNotFound;
 }
 
 

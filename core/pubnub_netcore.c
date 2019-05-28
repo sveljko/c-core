@@ -6,6 +6,7 @@
 #include "core/pubnub_ccore.h"
 #include "core/pubnub_ccore_pubsub.h"
 #include "core/pbpal.h"
+#include "core/pubnub_version.h"
 #include "core/pubnub_version_internal.h"
 #include "core/pubnub_helper.h"
 #if PUBNUB_USE_ADVANCED_HISTORY
@@ -42,14 +43,19 @@
 #endif /* PUBNUB_RECEIVE_GZIP_RESPONSE */
 
 
+static int send_fin_head(struct pubnub_* pb)
+{
+    char fin_head[200] = "\r\nUser-Agent: ";
+    strcat(fin_head, pubnub_uagent());
+    strcat(fin_head, "\r\n" ACCEPT_ENCODING "\r\n");
+    return pbpal_send_str(pb, fin_head);
+}
+
 #define SEND_FIN_HEAD(pb)                                                      \
-                if (0 > pbpal_send_literal_str(                                \
-                           pb,                                                 \
-                           "\r\nUser-Agent: PubNub-C-core/" PUBNUB_SDK_VERSION \
-                           "\r\n" ACCEPT_ENCODING "\r\n")) {                   \
-                    outcome_detected(pb, PNR_IO_ERROR);                        \
-                    break;                                                     \
-                }
+    if (0 > send_fin_head(pb)) {                                               \
+        outcome_detected(pb, PNR_IO_ERROR);                                    \
+        break;                                                                 \
+    }
 
 
 static bool should_keep_alive(struct pubnub_* pb, enum pubnub_res rslt)

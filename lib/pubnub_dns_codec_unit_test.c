@@ -384,7 +384,7 @@ Ensure(pubnub_dns_codec, decodes_response_1_question_3_answers_no_ssl_fallback)
                   data_2,
                   sizeof bp.spare_addresses.ipv4_addresses[1].ipv4),
            equals(0));
-    attest(bp.spare_addresses.ttl_ipv4[1], equals(0));
+    attest(bp.spare_addresses.ttl_ipv4[1], equals(0xFFFF));
     attest(bp.spare_addresses.n_ipv4, equals(2));
     attest(bp.spare_addresses.ipv4_index, equals(0));
 #if PUBNUB_USE_IPV6
@@ -1057,7 +1057,7 @@ Ensure(pubnub_dns_codec, handles_response_with_RecordTypeAAAA_no_ssl_fallback)
                   data_3,
                   sizeof bp.spare_addresses.ipv6_addresses[0].ipv6),
            equals(0));
-    attest(bp.spare_addresses.ttl_ipv6[1], equals(0));
+    attest(bp.spare_addresses.ttl_ipv6[1], equals(0xFFFF));
     attest(bp.spare_addresses.n_ipv6, equals(2));
     attest(bp.spare_addresses.ipv6_index, equals(0));
     attest(memcmp(bp.spare_addresses.ipv4_addresses[0].ipv4,

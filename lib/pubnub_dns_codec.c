@@ -522,19 +522,21 @@ static int check_answer(const uint8_t** o_reader,
                                 ((uint32_t)reader[RESOURCE_DATA_TTL_OFFSET + 2] << 8) |
                                  (uint32_t)reader[RESOURCE_DATA_TTL_OFFSET + 3];
             if (ttl_ipv4 > 0) {
-                /* We have intention remembering only 2 least significant bytes(lower 16 bits:
-                   2^16 == 65536(seconds), considering that time to live is within range of
-                   five minutes(300 seconds).
+                /* We have intention remembering 2 least significant bytes(lower 16 bits:
+                   2^16 == 65536(seconds), considering that transaction('subscribe') is allowed
+                   to last up to five minutes(300 seconds) and we aim to use only necessary
+                   amount of memory.
                  */
                 if (ttl_ipv4 >= 65536) {
                     PUBNUB_LOG_WARNING("Warning: ttl for ipv4 received is out of range: "
                                        "ttl_ipv4=%u seconds\n",
                                        ttl_ipv4);
+                    spare_addresses->ttl_ipv4[spare_addresses->n_ipv4] = 0xFFFF;
                 }
                 else {
                     PUBNUB_LOG_TRACE("ttl_ipv4= %u seconds\n", ttl_ipv4);
+                    spare_addresses->ttl_ipv4[spare_addresses->n_ipv4] = (uint16_t)ttl_ipv4;
                 }
-                spare_addresses->ttl_ipv4[spare_addresses->n_ipv4] = (uint16_t)ttl_ipv4;
                 memcpy(spare_addresses->ipv4_addresses[spare_addresses->n_ipv4++].ipv4, reader, 4);
             }
         }
@@ -573,19 +575,16 @@ static int check_answer(const uint8_t** o_reader,
                                 ((uint32_t)reader[RESOURCE_DATA_TTL_OFFSET + 2] << 8) |
                                  (uint32_t)reader[RESOURCE_DATA_TTL_OFFSET + 3];
             if (ttl_ipv6 > 0) {
-                /* We have intention remembering only 2 least significant bytes(lower 16 bits:
-                   2^16 == 65536(seconds), considering that time to live is within range of
-                   five minutes(300 seconds).
-                 */
                 if (ttl_ipv6 >= 65536) {
                     PUBNUB_LOG_WARNING("Warning: ttl for ipv6 received is out of range: "
                                        "ttl_ipv6=%u seconds\n",
                                        ttl_ipv6);
+                    spare_addresses->ttl_ipv6[spare_addresses->n_ipv6] = 0xFFFF;
                 }
                 else {
                     PUBNUB_LOG_TRACE("ttl_ipv6= %u seconds\n", ttl_ipv6);
+                    spare_addresses->ttl_ipv6[spare_addresses->n_ipv6] = (uint16_t)ttl_ipv6;
                 }
-                spare_addresses->ttl_ipv6[spare_addresses->n_ipv6] = (uint16_t)ttl_ipv6;
                 memcpy(spare_addresses->ipv6_addresses[spare_addresses->n_ipv6++].ipv6, reader, 16);
             }
         }
