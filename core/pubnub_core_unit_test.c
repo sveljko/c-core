@@ -3697,8 +3697,8 @@ Ensure(single_context_pubnub, keep_alive_connection_closes_time_runs_out)
     attest(pubnub_auth_get(pbp), streqs(NULL));
     attest(pubnub_last_time_token(pbp), streqs("0"));
 
-    /* Keep connection alive for up to 1 second or up to 3 operations */
-    pubnub_set_keep_alive_param(pbp, 0, 3);
+    /* Keep connection alive for up to 2 seconds or up to 3 operations */
+    pubnub_set_keep_alive_param(pbp, 1, 3);
 
     expect_have_dns_for_pubnub_origin();
     expect_outgoing_with_url(
@@ -3716,7 +3716,7 @@ Ensure(single_context_pubnub, keep_alive_connection_closes_time_runs_out)
     /* Not publish operation */
     attest(pubnub_last_publish_result(pbp), streqs(""));
     /* Time runs out. Connection closes after following operation */
-    wait_time_in_seconds(1);
+    wait_time_in_seconds(2);
 
     expect(pbntf_enqueue_for_processing, when(pb, equals(pbp)), returns(0));
     expect(pbntf_got_socket, when(pb, equals(pbp)), returns(0));
