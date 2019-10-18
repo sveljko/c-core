@@ -46,6 +46,7 @@ char const* pubnub_res_2_string(enum pubnub_res e)
     switch (e) {
     case PNR_OK: return "OK";
     case PNR_ADDR_RESOLUTION_FAILED: return "Pubnub host name resolution failed";
+    case PNR_WAIT_CONNECT_TIMEOUT: return "Time-out while waiting on TCP connection";
     case PNR_CONNECT_FAILED: return "Connecting to Pubnub server failed";
     case PNR_CONNECTION_TIMEOUT: return "A time-out happened in the network";
     case PNR_TIMEOUT: return "Timeout";
@@ -70,6 +71,27 @@ char const* pubnub_res_2_string(enum pubnub_res e)
     case PNR_AUTHENTICATION_FAILED: return "Proxy authentication failed";
     case PNR_OBJECTS_API_INVALID_PARAM: return "Objects API invalid parameter";
     case PNR_OBJECTS_API_ERROR: return "Objects API transaction reported an error";
+    case PNR_GOT_ALL_ACTIONS: return "Actions API got all actions";
+    case PNR_ACTIONS_API_ERROR: return "Actions API transaction reported an error";
+    default: return "!?!?!";
+    }
+}
+
+
+char const* pbpal_resolv_n_connect_res_2_string(enum pbpal_resolv_n_connect_result e)
+{
+    switch (e) {
+    case pbpal_resolv_resource_failure: return "pbpal_resolv_resource_failure";
+    case pbpal_resolv_failed_send: return "pbpal_resolv_failed_send";
+    case pbpal_resolv_send_wouldblock: return "pbpal_resolv_send_wouldblock";
+    case pbpal_resolv_sent: return "pbpal_resolv_sent";
+    case pbpal_resolv_failed_rcv: return "pbpal_resolv_failed_rcv";
+    case pbpal_resolv_rcv_wouldblock: return "pbpal_resolv_rcv_wouldblock";
+    case pbpal_resolv_failed_processing: return "pbpal_resolv_failed_processing";
+    case pbpal_connect_resource_failure: return "pbpal_connect_resource_failure";
+    case pbpal_connect_failed: return "pbpal_connect_failed";
+    case pbpal_connect_wouldblock: return "pbpal_connect_wouldblock";
+    case pbpal_connect_success: return "pbpal_connect_success";
     default: return "!?!?!";
     }
 }
@@ -92,6 +114,7 @@ enum pubnub_tribool pubnub_should_retry(enum pubnub_res e)
     switch (e) {
     case PNR_OK: return pbccFalse; /* Why? All is good! */
     case PNR_ADDR_RESOLUTION_FAILED: return pbccTrue;
+    case PNR_WAIT_CONNECT_TIMEOUT: return pbccNotSet;
     case PNR_CONNECT_FAILED: return pbccTrue;
     case PNR_CONNECTION_TIMEOUT: return pbccTrue;
     case PNR_TIMEOUT: return pbccNotSet;
@@ -116,6 +139,8 @@ enum pubnub_tribool pubnub_should_retry(enum pubnub_res e)
     case PNR_AUTHENTICATION_FAILED: return pbccFalse; /* Check and fix the error reported */
     case PNR_OBJECTS_API_INVALID_PARAM: return pbccFalse; /* Check and fix the error reported */
     case PNR_OBJECTS_API_ERROR: return pbccFalse; /* Check the error reported */
+    case PNR_GOT_ALL_ACTIONS: return pbccFalse; /* Successfully finished */
+    case PNR_ACTIONS_API_ERROR: return pbccFalse; /* Check the error reported */
     }
     return pbccFalse;
 }

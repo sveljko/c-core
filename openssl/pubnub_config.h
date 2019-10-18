@@ -76,10 +76,20 @@
     */
 #define PUBNUB_DEFAULT_TRANSACTION_TIMER    310000
 
+/** Duration of the 'wait_connect_TCP_socket' timeout set during context
+    initialization, in milliseconds. Can be changed later by the user.
+    */
+#define PUBNUB_DEFAULT_WAIT_CONNECT_TIMER    10000
+
 /** Mininmal duration of the transaction timer, in milliseconds. You
  * can't set less than this.
  */
 #define PUBNUB_MIN_TRANSACTION_TIMER 10000
+
+/** Mininmal duration of the 'wait_connect_TCP_socket' timer, in milliseconds.
+ *  You can't set less than this.
+ */
+#define PUBNUB_MIN_WAIT_CONNECT_TIMER 5000
 
 #define PUBNUB_HAVE_SHA1 0
 
@@ -130,6 +140,9 @@
 #endif
 
 #define PUBNUB_DEFAULT_DNS_SERVER "8.8.8.8"
+
+/** Maximum number of consecutive retries when sending DNS query in a single transaction */
+#define PUBNUB_MAX_DNS_QUERIES 3
 #endif /* defined(PUBNUB_CALLBACK_API) */
 
 #if !defined(PUBNUB_RECEIVE_GZIP_RESPONSE)
@@ -188,6 +201,13 @@
     on two new pubnub objects: User and Space, as well as manipulating connections
     between them. */
 #define PUBNUB_USE_OBJECTS_API 1
+#endif
+
+#if !defined(PUBNUB_USE_ACTIONS_API)
+/** If true (!=0) will enable using the Actions API, which is a collection
+    of Rest API features that enables adding on, reading and removing actions
+    from published messages */
+#define PUBNUB_USE_ACTIONS_API 1
 #endif
 
 
